@@ -2,7 +2,7 @@
   "_說明": "每日 routine 依序取第一個 status 為 todo 的主題製作，完成後改為 done 並填上 file。清單做完時，自行研究並新增新的 RAG 技術主題。",
   "topics": [
     { "slug": "naive-rag", "title": "基礎 RAG 流程", "en": "Naive RAG", "level": 1, "status": "done", "file": "lessons/001-naive-rag.html" },
-    { "slug": "chunking", "title": "切塊策略：固定長度、遞迴、語意切塊與重疊", "en": "Chunking Strategies", "level": 1, "status": "todo" },
+    { "slug": "chunking", "title": "切塊策略：固定長度、遞迴、語意切塊與重疊", "en": "Chunking Strategies", "level": 1, "status": "done", "file": "lessons/002-chunking.html" },
     { "slug": "embeddings", "title": "嵌入與向量檢索：餘弦相似度、ANN、HNSW", "en": "Embeddings & Vector Search", "level": 1, "status": "todo" },
     { "slug": "hybrid-search", "title": "混合檢索：BM25 關鍵字 + 向量 + RRF 融合", "en": "Hybrid Search", "level": 2, "status": "todo" },
     { "slug": "reranking", "title": "重排序：Bi-encoder 召回、Cross-encoder 精排", "en": "Reranking", "level": 2, "status": "todo" },

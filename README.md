@@ -7,6 +7,7 @@
 | # | 課程 |
 |---|---|
 | 001 | [基礎 RAG：先查資料再回答](https://dofliu.github.io/ragTutor/lessons/001-naive-rag.html) |
+| 002 | [切塊策略：固定長度、遞迴與語意切塊](https://dofliu.github.io/ragTutor/lessons/002-chunking.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 

@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>切塊策略：固定長度、遞迴與語意切塊｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例比較固定長度、重疊、遞迴切塊與語意切塊四種文件切塊（Chunking）策略，看懂為什麼切塊品質決定了 RAG 檢索的天花板。">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .seg{gap:8px}
+  .seg button{font:inherit;font-size:13px;padding:6px 14px;border-radius:99px;border:1px solid var(--line);background:var(--soft);color:var(--ink);cursor:pointer}
+  .seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .chips button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+</style>
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">🧭 <span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 002 堂</span><span class="tag lv1">入門</span><span class="tag">約 12 分鐘</span></p>
+  <h1>切塊 Chunking：一刀切壞，後面全部白費</h1>
+  <p class="lead">檢索增強生成的第一步，是把長文件拆成一段段可以被搜尋的<b>片段（chunk）</b>。切錯位置，答案所需的關鍵句子會被拆到兩個片段裡——不管後面接哪一種進階檢索技術，都補不回那段消失的上下文。</p>
+
+  <h2>🎬 動畫：一句話怎麼被切壞、又怎麼被救回來</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="切塊策略動畫：固定長度、重疊、遞迴切塊與語意切塊">
+
+  <!-- 文件片段（持續顯示） -->
+  <g>
+    <rect x="52" y="66" width="126" height="58" rx="8" class="box" style="stroke:var(--doc)"/>
+    <text x="115" y="90" text-anchor="middle" font-size="13">陽台</text>
+    <text x="115" y="108" text-anchor="middle" font-size="13">禁止外推</text>
+
+    <rect x="190" y="66" width="126" height="58" rx="8" class="box" style="stroke:var(--warn);stroke-width:2"/>
+    <text x="253" y="90" text-anchor="middle" font-size="13" font-weight="700">寵物限重</text>
+    <text x="253" y="108" text-anchor="middle" font-size="13" font-weight="700">15公斤</text>
+
+    <rect x="328" y="66" width="126" height="58" rx="8" class="box" style="stroke:var(--warn);stroke-width:2"/>
+    <text x="391" y="90" text-anchor="middle" font-size="13" font-weight="700">以下犬貓</text>
+    <text x="391" y="108" text-anchor="middle" font-size="13" font-weight="700">需登記</text>
+
+    <rect x="466" y="66" width="126" height="58" rx="8" class="box" style="stroke:var(--doc)"/>
+    <text x="529" y="90" text-anchor="middle" font-size="13">垃圾</text>
+    <text x="529" y="108" text-anchor="middle" font-size="13">晚間丟棄</text>
+
+    <rect x="604" y="66" width="126" height="58" rx="8" class="box" style="stroke:var(--doc)"/>
+    <text x="667" y="90" text-anchor="middle" font-size="13">機車限</text>
+    <text x="667" y="108" text-anchor="middle" font-size="13">地下二樓</text>
+
+    <rect x="742" y="66" width="126" height="58" rx="8" class="box" style="stroke:var(--doc)"/>
+    <text x="805" y="90" text-anchor="middle" font-size="13">裝潢限</text>
+    <text x="805" y="108" text-anchor="middle" font-size="13">平日進行</text>
+  </g>
+
+  <!-- 標記「這是我們要追蹤的關鍵規則」 -->
+  <g>
+    <rect x="182" y="58" width="280" height="74" rx="10" style="fill:none;stroke:var(--warn);stroke-dasharray:4 5;stroke-width:1.5"/>
+    <text x="322" y="48" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--warn)">🔑 關鍵規則：寵物限重規定</text>
+  </g>
+  <g data-from="3" data-to="8">
+    <text x="472" y="46" font-size="16" font-weight="700" style="fill:var(--good)">✓</text>
+  </g>
+
+  <!-- 固定長度切塊：切點 -->
+  <g data-from="1" data-to="2">
+    <line x1="322" y1="58" x2="322" y2="178" style="stroke:var(--bad);stroke-width:2;stroke-dasharray:4 4"/>
+    <line x1="598" y1="58" x2="598" y2="178" style="stroke:var(--bad);stroke-width:2;stroke-dasharray:4 4"/>
+    <text x="184" y="192" text-anchor="middle" font-size="12" class="t-muted">片段 A</text>
+    <text x="460" y="192" text-anchor="middle" font-size="12" class="t-muted">片段 B</text>
+    <text x="736" y="192" text-anchor="middle" font-size="12" class="t-muted">片段 C</text>
+  </g>
+
+  <!-- 規則被切斷 -->
+  <g data-from="2" data-to="2">
+    <text x="322" y="145" text-anchor="middle" font-size="20" style="fill:var(--bad)" class="pulse">✂</text>
+    <text x="262" y="168" text-anchor="middle" font-size="12" style="fill:var(--bad)">…15公斤</text>
+    <text x="382" y="168" text-anchor="middle" font-size="12" style="fill:var(--bad)">犬貓需登記…</text>
+    <text x="322" y="190" text-anchor="middle" font-size="14" font-weight="700" style="fill:var(--bad)">✗　語意被切斷</text>
+  </g>
+
+  <!-- 加上重疊 -->
+  <g data-from="3" data-to="4">
+    <rect x="188" y="64" width="130" height="62" rx="10" style="fill:none;stroke:var(--accent);stroke-width:3;stroke-dasharray:2 3"/>
+    <rect x="182" y="140" width="410" height="26" rx="8" style="fill:var(--accent);opacity:.12;stroke:var(--accent)"/>
+    <text x="387" y="157" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent)">片段 B（含重疊）</text>
+  </g>
+
+  <!-- 遞迴切塊：依句子分組 -->
+  <g data-from="5" data-to="8">
+    <rect x="48" y="140" width="130" height="26" rx="8" style="fill:none;stroke:var(--doc)"/>
+    <text x="113" y="157" text-anchor="middle" font-size="12" class="t-muted">片段 A</text>
+    <rect x="186" y="140" width="268" height="26" rx="8" style="fill:var(--good);opacity:.14;stroke:var(--good);stroke-width:2.5"/>
+    <text x="320" y="157" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">片段 B ✓</text>
+    <rect x="462" y="140" width="268" height="26" rx="8" style="fill:none;stroke:var(--doc)"/>
+    <text x="596" y="157" text-anchor="middle" font-size="12" class="t-muted">片段 C</text>
+    <rect x="738" y="140" width="130" height="26" rx="8" style="fill:none;stroke:var(--doc)"/>
+    <text x="803" y="157" text-anchor="middle" font-size="12" class="t-muted">片段 D</text>
+  </g>
+
+  <!-- 語意切塊：相似度曲線 -->
+  <g data-from="7" data-to="8">
+    <polyline points="184,230 322,206 460,232 598,230 736,231" style="fill:none;stroke:var(--vec);stroke-width:2.5"/>
+    <circle cx="184" cy="230" r="3" style="fill:var(--vec)"/><circle cx="322" cy="206" r="3" style="fill:var(--vec)"/>
+    <circle cx="460" cy="232" r="3" style="fill:var(--vec)"/><circle cx="598" cy="230" r="3" style="fill:var(--vec)"/>
+    <circle cx="736" cy="231" r="3" style="fill:var(--vec)"/>
+    <text x="322" y="195" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">相似度高→同一片段</text>
+    <text x="460" y="252" text-anchor="middle" font-size="11" class="t-muted">（示意：非真實嵌入模型輸出）</text>
+  </g>
+
+  <!-- 問題 -->
+  <g data-from="2" data-to="8">
+    <rect x="20" y="330" width="190" height="54" rx="10" class="box" style="stroke:var(--query);stroke-width:2"/>
+    <text x="115" y="349" text-anchor="middle" font-size="11" class="t-muted">👤 問題</text>
+    <text x="115" y="371" text-anchor="middle" font-size="13" font-weight="700">寵物最重幾公斤？</text>
+  </g>
+
+  <!-- 檢索失敗 -->
+  <g data-from="2" data-to="2">
+    <path d="M210,345 C 300,345 300,170 322,170 C 344,170 690,250 690,345" class="flow" style="stroke:var(--bad)"/>
+    <rect x="690" y="330" width="200" height="54" rx="10" class="box" style="stroke:var(--bad);stroke-width:2"/>
+    <text x="790" y="352" text-anchor="middle" font-size="16">❓</text>
+    <text x="790" y="372" text-anchor="middle" font-size="12" style="fill:var(--bad)">兩邊都不完整</text>
+  </g>
+
+  <!-- 檢索成功 -->
+  <g data-from="3" data-to="8">
+    <path d="M210,345 C 300,345 300,166 322,166 C 344,166 690,250 690,345" class="flow" style="stroke:var(--good)"/>
+    <rect x="690" y="330" width="200" height="54" rx="10" class="box" style="stroke:var(--good);stroke-width:2.5"/>
+    <text x="800" y="349" text-anchor="middle" font-size="12" style="fill:var(--good)">✅ 15公斤以下</text>
+    <text x="800" y="367" text-anchor="middle" font-size="12" style="fill:var(--good)">之犬貓，需登記</text>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>固定長度最省事</b>只看字數，不看內容；實作一行程式，索引速度最快，但完全不管句子有沒有被切斷。</div>
+    <div class="card"><b>重疊是低成本保險</b>相鄰片段共用一段文字（常見 10%–20%），邊界句子至少會完整出現在其中一個片段裡。</div>
+    <div class="card"><b>遞迴切塊照結構走</b>依段落、句號、逗號的優先順序切，只有片段還是太長才繼續往下一層切——盡量不切句子。</div>
+    <div class="card"><b>語意切塊照意思走</b>用嵌入模型比對相鄰句子的相似度，話題改變才切；連沒有標點的逐字稿也適用，但索引時要多花運算成本。</div>
+  </div>
+
+  <h2>🧪 互動範例：親手切一份社區規約</h2>
+  <div class="prose"><p>下面是一份虛構的「社區住戶規約」全文（尚未切塊）。切換切塊策略、拖動參數，看看「寵物限重 15 公斤，以下犬貓需登記」這條規則會不會被拆散——以及拆散之後，檢索還能不能找到完整答案。</p></div>
+  <div class="card demo" id="demo">
+    <div class="row seg" id="modeSeg">
+      <button type="button" class="on" data-mode="fixed">固定長度</button>
+      <button type="button" data-mode="overlap">固定長度＋重疊</button>
+      <button type="button" data-mode="recursive">遞迴切塊</button>
+      <button type="button" data-mode="semantic">語意切塊</button>
+    </div>
+    <div class="row" id="rowSize"><label for="size">片段長度：<b id="sizev">50</b> 字</label><input type="range" id="size" min="30" max="140" step="10" value="50" style="flex:1;max-width:260px"></div>
+    <div class="row" id="rowOverlap"><label for="overlap">重疊長度：<b id="overlapv">15</b> 字</label><input type="range" id="overlap" min="0" max="50" step="5" value="15" style="flex:1;max-width:260px"></div>
+    <div class="row" id="rowSens"><label for="sens">分割敏感度：<b id="sensv">0.90</b> ×平均相似度</label><input type="range" id="sens" min="50" max="130" step="5" value="90" style="flex:1;max-width:260px"></div>
+    <div class="chips" id="qchips"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="chunks"></div>
+    <div id="verdict" style="font-size:14px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>三種切塊策略的最小實作，不需要額外套件；語意切塊用簡化的相似度邏輯示範概念，實務上會用真的嵌入模型。</p></div>
+<pre class="code"><code><span class="c"># 三種切塊策略的最小實作</span>
+<span class="k">import</span> numpy <span class="k">as</span> np
+
+<span class="c"># ① 固定長度 + 重疊：最快、最不看內容</span>
+<span class="k">def</span> <span class="f">split_fixed</span>(text, size=<span class="s">80</span>, overlap=<span class="s">20</span>):
+    step = <span class="f">max</span>(<span class="s">1</span>, size - overlap)
+    <span class="k">return</span> [text[i:i+size] <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="s">0</span>, <span class="f">len</span>(text), step)]
+
+<span class="c"># ② 遞迴切塊：先試著在句號切，句子太長才退而用逗號切</span>
+<span class="k">def</span> <span class="f">split_recursive</span>(text, size=<span class="s">80</span>):
+    sentences = [s + <span class="s">"。"</span> <span class="k">for</span> s <span class="k">in</span> text.<span class="f">split</span>(<span class="s">"。"</span>) <span class="k">if</span> s]
+    chunks, cur = [], <span class="s">""</span>
+    <span class="k">for</span> s <span class="k">in</span> sentences:
+        <span class="k">if</span> <span class="f">len</span>(s) > size:
+            <span class="k">if</span> cur:
+                chunks.<span class="f">append</span>(cur); cur = <span class="s">""</span>
+            piece = <span class="s">""</span>
+            segs = s.<span class="f">split</span>(<span class="s">"，"</span>)
+            <span class="k">for</span> i, seg <span class="k">in</span> <span class="f">enumerate</span>(segs):
+                with_sep = seg + (<span class="s">"，"</span> <span class="k">if</span> i < <span class="f">len</span>(segs) - <span class="s">1</span> <span class="k">else</span> <span class="s">""</span>)
+                <span class="k">if</span> piece <span class="k">and</span> <span class="f">len</span>(piece + with_sep) > size:
+                    chunks.<span class="f">append</span>(piece); piece = with_sep
+                <span class="k">else</span>:
+                    piece += with_sep
+            <span class="k">if</span> piece:
+                chunks.<span class="f">append</span>(piece)
+            <span class="k">continue</span>
+        <span class="k">if</span> cur <span class="k">and</span> <span class="f">len</span>(cur + s) > size:
+            chunks.<span class="f">append</span>(cur); cur = s
+        <span class="k">else</span>:
+            cur += s
+    <span class="k">if</span> cur:
+        chunks.<span class="f">append</span>(cur)
+    <span class="k">return</span> chunks
+
+<span class="c"># ③ 語意切塊：句子先嵌入，相鄰句子相似度低於平均值就切開</span>
+<span class="k">def</span> <span class="f">split_semantic</span>(sentences, embed_fn, ratio=<span class="s">0.9</span>):
+    vecs = embed_fn(sentences)                          <span class="c"># shape: (n, dim)，已正規化</span>
+    sims = [<span class="f">float</span>(vecs[i] @ vecs[i+<span class="s">1</span>]) <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(vecs) - <span class="s">1</span>)]
+    avg = np.<span class="f">mean</span>(sims)
+    chunks, cur = [], sentences[<span class="s">0</span>]
+    <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="s">1</span>, <span class="f">len</span>(sentences)):
+        <span class="k">if</span> sims[i-<span class="s">1</span>] < avg * ratio:
+            chunks.<span class="f">append</span>(cur); cur = sentences[i]
+        <span class="k">else</span>:
+            cur += sentences[i]
+    chunks.<span class="f">append</span>(cur)
+    <span class="k">return</span> chunks
+
+<span class="c"># 生產環境常用 LangChain 的現成實作：</span>
+<span class="c"># from langchain_text_splitters import RecursiveCharacterTextSplitter</span>
+<span class="c"># splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50,</span>
+<span class="c">#     separators=["\n\n", "。", "，", ""])</span></code></pre>
+
+  <h2>⚖️ 四種切塊策略比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>固定長度（無重疊）</th><th>固定長度＋重疊</th><th>遞迴切塊</th><th>語意切塊</th></tr>
+    <tr><th>索引時的計算成本</th><td>最低</td><td>低（片段數變多）</td><td>低（只需字串處理）</td><td>高（每句都要跑嵌入模型）</td></tr>
+    <tr><th>句子被切斷風險</th><td>高</td><td>中（視重疊寬度而定）</td><td>低（照標點、段落切）</td><td>最低（照話題轉換切）</td></tr>
+    <tr><th>片段長度</th><td>固定</td><td>固定</td><td>可變</td><td>可變</td></tr>
+    <tr><th>實作難度</th><td>一行程式</td><td>一行程式</td><td>需要分隔符優先順序清單</td><td>需要嵌入模型與門檻調整</td></tr>
+    <tr><th>適合情境</th><td>格式規則、追求速度</td><td>大多數情境的預設起點</td><td>有清楚段落／標點的文件（手冊、合約）</td><td>口語逐字稿、缺乏段落的長文</td></tr>
+  </table>
+
+  <h2>⚠️ 切塊常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>Overlap 不是越大越好</b>：重疊比例太高，片段數量暴增、內容大量重複，檢索結果容易被幾乎相同的片段佔滿 Top-k，反而稀釋多樣性。常見落點是片段長度的 10%–20%。</li>
+      <li><b>遞迴切塊也會失靈</b>：分隔符清單要符合文件結構；面對逐字稿、聊天紀錄這種沒有段落與標點的文字，遞迴切塊最後還是只能照字數硬切，跟固定長度沒兩樣。</li>
+      <li><b>語意切塊的門檻很敏感</b>：門檻設太嚴會切出大量瑣碎的小片段，噪音反而變多；設太鬆又會把不相關的話題黏在同一片段裡，而且每次索引都要重新跑一次嵌入模型，成本比前兩者高很多。</li>
+      <li><b>片段長度要配合嵌入模型</b>：多數嵌入模型有適合的輸入長度區間，片段太長會讓向量被平均稀釋（什麼都像又什麼都不像），片段太短則缺乏足夠上下文。</li>
+      <li><b>別忘了保留中繼資料</b>：不管用哪種策略，每個片段都應該記住來源（文件、頁碼、條號），才能在檢索結果裡附上出處，之後也才能做中繼資料過濾。</li>
+    </ul>
+    <div class="callout warn">範例中的社區規約內容與數字皆為虛構，只用於教學示範。</div>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>文件裡有一句話剛好卡在切塊的邊界上，下列何者成本最低、幾乎不用改程式邏輯就能降低它被攔腰打斷的風險？</b></p>
+    <button class="opt">A. 把片段長度改成只有 1 個字</button>
+    <button class="opt">B. 讓相鄰片段之間保留一段重疊（overlap）</button>
+    <button class="opt">C. 完全不切塊，把整份文件塞給模型</button>
+    <div class="why">重疊幾乎不需要改變邏輯，只要在切下一個片段時往回多帶一段字，就能讓邊界句子有機會完整出現在至少一個片段裡；A 會讓片段失去語意，C 在長文件上會超出模型的上下文長度而且成本高昂。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>要處理「沒有標點符號、口語化的會議逐字稿」，下列何種切塊策略理論上最適合？</b></p>
+    <button class="opt">A. 固定長度切塊</button>
+    <button class="opt">B. 遞迴切塊（依標點與段落分隔）</button>
+    <button class="opt">C. 語意切塊（依句子嵌入相似度）</button>
+    <div class="why">逐字稿常常沒有明確的段落或標點可以依靠，遞迴切塊會退化成跟固定長度一樣的字元硬切；語意切塊直接比較句子意思的相似度，跟有沒有標點無關，因此更能抓到話題轉換的位置。</div>
+  </div>
+
+  <nav class="pager" data-slug="chunking"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a></div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'問題：一份要被打散的規約', text:'這是社區規約全文，「寵物限重 15 公斤，以下犬貓需登記」是同一條規則，語意上密不可分。切塊（Chunking）的工作，就是把長文件拆成一段段適合檢索的<b>片段</b>——但拆錯位置，答案就會不見。' },
+  { title:'固定長度切塊 Fixed-size', text:'最簡單的做法：每 N 個字就切一刀，不管內容是什麼。實作只要一行程式，速度快、完全不看文件結構，是最常見的預設值。' },
+  { title:'關鍵規則被攔腰打斷', text:'切點剛好落在「15公斤」和「犬貓需登記」中間。兩個片段各自語意都不完整，向量都不夠像使用者的問題——檢索可能兩邊都選不到，或只選到一半。' },
+  { title:'加上重疊 Overlap', text:'讓相鄰片段共用一段文字（常見 10%~20% 的字數），邊界上的句子就有機會<b>完整出現在至少一個片段裡</b>。這是最常見的補救方式，幾乎不需要額外運算。' },
+  { title:'重疊只是保險，不是解法', text:'重疊只能保住「剛好在窗口內」的句子。切點本身還是照字數硬切，遇到比重疊長度更長的句子或列表項目，一樣會被腰斬。真正的解法要讓切點<b>看懂文件結構</b>。' },
+  { title:'遞迴切塊 Recursive', text:'先試著在段落或句號處切；超過長度限制才退而求其次用逗號、空白甚至字元切。LangChain 的 RecursiveCharacterTextSplitter 就是這個邏輯：能不切句子就不切。' },
+  { title:'切點跟著句子走', text:'同一條規則的兩句話被分到<b>同一個片段</b>，「15公斤」和「犬貓需登記」不再分離。片段長度不再固定，但每個片段的語意都是完整的。' },
+  { title:'語意切塊 Semantic Chunking', text:'把每個句子轉成向量，計算相鄰句子的<b>相似度</b>；相似度高就合併，相似度驟降（話題轉換）才切。連沒有標點的逐字稿，也能切在對的地方——代價是索引時要多跑一次嵌入模型。' },
+  { title:'檢索：終於找到完整答案', text:'不管是加了重疊、遞迴或語意切塊，「寵物限重15公斤，以下犬貓需登記」都完整落在同一個片段裡，檢索才找得到完整答案。<b>切塊品質，決定了檢索的天花板。</b>' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const docText = "陽台不得外推或加裝鐵窗，違反者由管理委員會通知限期改善，屆期未改善將處以罰鍰。寵物飼養以總重量15公斤以下之犬貓為限，飼主應於入住七日內至管理室辦理登記，並隨身攜帶排泄物清潔用具。垃圾應於每日晚間7點至9點自行拿到一樓資源回收室分類丟棄，逾時未丟棄之垃圾管理委員會有權要求清潔公司代為處理並收取費用。機車應停放於地下二樓標線範圍內，超出標線或占用汽車位者將被拖吊，拖吊及保管費用由車主自行負擔。住戶如需裝潢施工，僅得於平日上午9點至下午5點進行，假日及國定假日禁止施工，施工噪音不得超過管理委員會公告之分貝數值。住戶如將房屋出租，應於房客入住七日內向管理委員會登記房客基本資料，未登記者視為違反規約。";
+  const sentences = docText.split('。').filter(Boolean).map(s => s + '。');
+  const queries = ['寵物最重幾公斤？','垃圾要在晚上幾點前丟？','機車該停在哪裡？','裝潢可以在假日施工嗎？'];
+  const KEYWORDS = {
+    '寵物最重幾公斤？': '15公斤以下之犬貓',
+    '垃圾要在晚上幾點前丟？': '晚間7點至9點',
+    '機車該停在哪裡？': '地下二樓標線範圍內',
+    '裝潢可以在假日施工嗎？': '假日及國定假日禁止施工'
+  };
+  let mode = 'fixed', currentQ = queries[0];
+
+  function splitRecursive(text, size){
+    const sents = text.split('。').filter(Boolean).map(s => s + '。');
+    const chunks = []; let cur = '';
+    sents.forEach(s => {
+      if(s.length > size){
+        if(cur){ chunks.push(cur); cur = ''; }
+        let piece = '';
+        const segs = s.split('，');
+        segs.forEach((seg,i) => {
+          const withSep = seg + (i < segs.length - 1 ? '，' : '');
+          if(piece && (piece + withSep).length > size){ chunks.push(piece); piece = withSep; }
+          else piece += withSep;
+        });
+        if(piece) chunks.push(piece);
+        return;
+      }
+      if(cur && (cur + s).length > size){ chunks.push(cur); cur = s; }
+      else cur += s;
+    });
+    if(cur) chunks.push(cur);
+    return chunks;
+  }
+
+  function splitSemantic(ratio){
+    const docs = sentences.map((s,i) => ({ id:'s'+i, text:s }));
+    const idx = rt.buildIndex(docs);
+    const sims = [];
+    for(let i=0;i<idx.vecs.length-1;i++) sims.push(rt.cosine(idx.vecs[i], idx.vecs[i+1]));
+    const avg = sims.reduce((a,b)=>a+b,0) / Math.max(1, sims.length);
+    const chunks = []; let cur = sentences[0];
+    for(let i=1;i<sentences.length;i++){
+      if(sims[i-1] < avg*ratio){ chunks.push(cur); cur = sentences[i]; }
+      else cur += sentences[i];
+    }
+    chunks.push(cur);
+    return chunks;
+  }
+
+  function updateVis(){
+    $('#rowSize').style.display = mode === 'semantic' ? 'none' : 'flex';
+    $('#rowOverlap').style.display = mode === 'overlap' ? 'flex' : 'none';
+    $('#rowSens').style.display = mode === 'semantic' ? 'flex' : 'none';
+  }
+
+  function run(){
+    const size = +$('#size').value, overlap = +$('#overlap').value, ratio = +$('#sens').value / 100;
+    $('#sizev').textContent = size; $('#overlapv').textContent = overlap; $('#sensv').textContent = ratio.toFixed(2);
+    let chunks;
+    if(mode === 'fixed') chunks = rt.chunk(docText, size, 0);
+    else if(mode === 'overlap') chunks = rt.chunk(docText, size, overlap);
+    else if(mode === 'recursive') chunks = splitRecursive(docText, size);
+    else chunks = splitSemantic(ratio);
+
+    const kw = KEYWORDS[currentQ];
+    const chunkDocs = chunks.map((c,i) => ({ id:'c'+(i+1), text:c }));
+    const cIdx = rt.buildIndex(chunkDocs);
+    const hits = rt.searchVector(cIdx, currentQ, chunkDocs.length);
+    const top = hits[0];
+    const intactAny = kw ? chunks.some(c => c.includes(kw)) : null;
+
+    $('#chunks').innerHTML = chunks.map((c,i) => {
+      const has = kw && c.includes(kw);
+      const isTop = top && top.doc.text === c;
+      return `<div class="hit ${isTop ? 'top' : ''}">
+        <div class="meta"><span>片段 ${i+1}（${c.length} 字）${isTop ? ' · ✅ 檢索命中' : ''}</span>
+        <span>${kw ? (has ? '<b style="color:var(--good)">✓ 規則完整</b>' : '<span style="color:var(--bad)">規則不完整</span>') : ''}</span></div>
+        <div>${rt.highlight(c, currentQ)}</div>
+      </div>`;
+    }).join('');
+
+    $('#stat').textContent = `共 ${chunks.length} 個片段・平均 ${Math.round(chunks.reduce((a,c)=>a+c.length,0)/chunks.length)} 字` +
+      (kw ? `・關鍵規則${intactAny ? '完整出現在某個片段中' : '被拆散在不同片段裡'}` : '');
+
+    const topHas = kw && top && top.doc.text.includes(kw);
+    $('#verdict').innerHTML = !kw ? '' : topHas
+      ? '<span style="color:var(--good)">✅ 檢索到的片段包含完整規則，模型可以正確回答。</span>'
+      : '<span style="color:var(--bad)">⚠️ 檢索到的片段沒有完整規則，模型可能答錯或漏答。</span>';
+  }
+
+  $('#qchips').innerHTML = queries.map(q => `<button type="button">${q}</button>`).join('');
+  $('#qchips').querySelectorAll('button').forEach((b,i) => b.onclick = () => {
+    currentQ = queries[i];
+    $('#qchips').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    run();
+  });
+  $('#qchips').querySelector('button').classList.add('on');
+
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    updateVis(); run();
+  });
+
+  ['size','overlap','sens'].forEach(id => $('#'+id).oninput = run);
+  updateVis(); run();
+})();
+</script>
+</body>
+</html>
