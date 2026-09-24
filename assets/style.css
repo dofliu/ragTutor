@@ -1,0 +1,136 @@
+/* RAG 動畫教室：共用樣式 */
+:root{
+  --bg:#f6f7fb; --panel:#ffffff; --ink:#1b1f2a; --muted:#5b6475; --line:#dde1ea;
+  --accent:#4f46e5; --accent-2:#0891b2; --good:#16a34a; --warn:#d97706; --bad:#dc2626;
+  --doc:#2563eb; --vec:#7c3aed; --llm:#db2777; --query:#0891b2;
+  --soft:#eef0f7; --code-bg:#0f172a; --code-ink:#e2e8f0;
+  --radius:14px; --shadow:0 1px 2px rgba(0,0,0,.05),0 8px 24px rgba(20,30,60,.06);
+  --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1117; --panel:#161b24; --ink:#e6e9f0; --muted:#98a2b5; --line:#2a3140;
+    --accent:#818cf8; --accent-2:#22d3ee; --good:#4ade80; --warn:#fbbf24; --bad:#f87171;
+    --doc:#60a5fa; --vec:#a78bfa; --llm:#f472b6; --query:#22d3ee; --soft:#1d2330;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1117; --panel:#161b24; --ink:#e6e9f0; --muted:#98a2b5; --line:#2a3140;
+  --accent:#818cf8; --accent-2:#22d3ee; --good:#4ade80; --warn:#fbbf24; --bad:#f87171;
+  --doc:#60a5fa; --vec:#a78bfa; --llm:#f472b6; --query:#22d3ee; --soft:#1d2330;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.7;font-size:16px}
+a{color:var(--accent)}
+img,svg{max-width:100%}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px}
+header.top{border-bottom:1px solid var(--line);background:var(--panel)}
+header.top .wrap{display:flex;align-items:center;gap:12px;min-height:56px;flex-wrap:wrap}
+header.top .brand{font-weight:800;text-decoration:none;color:var(--ink);display:flex;align-items:center;gap:8px}
+header.top .brand b{color:var(--accent)}
+header.top nav{margin-left:auto;display:flex;gap:14px;font-size:14px;flex-wrap:wrap}
+header.top nav a{color:var(--muted);text-decoration:none}
+header.top nav a:hover{color:var(--ink)}
+.theme-btn{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;padding:2px 8px;cursor:pointer;font:inherit;font-size:13px}
+h1{font-size:clamp(26px,5vw,40px);line-height:1.25;margin:.4em 0 .2em}
+h2{font-size:clamp(20px,3.4vw,26px);margin:1.8em 0 .5em}
+h3{font-size:18px;margin:1.2em 0 .4em}
+.lead{color:var(--muted);font-size:17px;max-width:760px}
+.tag{display:inline-block;font-size:12px;padding:1px 9px;border-radius:99px;background:var(--soft);color:var(--muted);margin-right:6px;border:1px solid var(--line)}
+.tag.lv1{color:var(--good)} .tag.lv2{color:var(--warn)} .tag.lv3{color:var(--bad)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.muted{color:var(--muted)}
+footer{border-top:1px solid var(--line);margin-top:48px;padding:22px 0;color:var(--muted);font-size:13px}
+
+/* ---------- 課程卡片 ---------- */
+.lesson-card{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:var(--ink);transition:transform .15s,border-color .15s}
+.lesson-card:hover{transform:translateY(-2px);border-color:var(--accent)}
+.lesson-card .no{font-family:var(--mono);font-size:12px;color:var(--accent)}
+.lesson-card h3{margin:0;font-size:17px}
+.lesson-card p{margin:0;color:var(--muted);font-size:14px}
+.roadmap{list-style:none;padding:0;margin:0;display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.roadmap li{padding:8px 12px;border:1px dashed var(--line);border-radius:10px;font-size:14px;color:var(--muted)}
+.roadmap li b{color:var(--ink);font-weight:600}
+
+/* ---------- 動畫播放器 ---------- */
+.player{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.player .stage{background:var(--soft);padding:10px;display:flex;justify-content:center}
+.player .stage svg{width:100%;height:auto;max-height:460px;display:block;overflow:visible}
+.player .caption{padding:14px 18px 6px;min-height:118px}
+.player .caption .step-no{font-family:var(--mono);font-size:12px;color:var(--accent)}
+.player .caption h3{margin:2px 0 4px}
+.player .caption p{margin:0;color:var(--muted)}
+.player .controls{display:flex;align-items:center;gap:8px;padding:10px 18px 16px;flex-wrap:wrap}
+.player button{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:9px;padding:6px 14px;cursor:pointer}
+.player button:hover{border-color:var(--accent)}
+.player button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.player .dots{display:flex;gap:6px;margin-left:auto}
+.player .dots i{width:10px;height:10px;border-radius:50%;background:var(--line);cursor:pointer;display:block}
+.player .dots i.on{background:var(--accent)}
+.player .bar{height:3px;background:var(--line)}
+.player .bar b{display:block;height:100%;width:0;background:var(--accent);transition:width .1s linear}
+
+/* SVG 元素的分鏡顯示：data-from / data-to / data-hot 由 lesson.js 控制 */
+.stage [data-from],.stage [data-to]{transition:opacity .5s ease,transform .6s ease}
+.stage .off{opacity:0;pointer-events:none}
+.stage .dim{opacity:.22}
+.stage .hot{filter:drop-shadow(0 0 6px var(--accent))}
+.stage text{font-family:var(--font);fill:var(--ink)}
+.stage .t-muted{fill:var(--muted)}
+.stage .t-mono{font-family:var(--mono)}
+.stage .box{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+.stage .flow{fill:none;stroke-width:2.5;stroke-dasharray:7 7;animation:flow 1s linear infinite}
+.stage .arrow{fill:none;stroke:var(--muted);stroke-width:2}
+@keyframes flow{to{stroke-dashoffset:-28}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.stage .pulse{transform-box:fill-box;transform-origin:center;animation:pulse 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.stage .flow,.stage .pulse{animation:none}}
+
+/* ---------- 內文 ---------- */
+.prose{max-width:780px}
+.callout{border-left:4px solid var(--accent);background:var(--soft);padding:10px 16px;border-radius:0 10px 10px 0;margin:16px 0}
+.callout.warn{border-color:var(--warn)}
+.keypoints{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));margin:12px 0}
+.keypoints .card{padding:14px}
+.keypoints b{display:block;font-size:22px;color:var(--accent)}
+pre.code{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:14px 16px;overflow:auto;font-family:var(--mono);font-size:13.5px;line-height:1.6}
+pre.code .c{color:#94a3b8} pre.code .k{color:#c4b5fd} pre.code .s{color:#86efac} pre.code .f{color:#7dd3fc}
+code{font-family:var(--mono);font-size:.92em;background:var(--soft);padding:1px 5px;border-radius:5px}
+pre code{background:none;padding:0}
+table.cmp{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0;display:block;overflow-x:auto}
+table.cmp th,table.cmp td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+table.cmp th{color:var(--muted);font-weight:600;white-space:nowrap}
+
+/* ---------- 互動範例 ---------- */
+.demo{display:grid;gap:14px}
+.demo input[type=text],.demo textarea,.demo select{width:100%;font:inherit;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.demo .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.demo .row > input[type=text]{flex:1;min-width:200px}
+.demo button{font:inherit;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:8px 16px;cursor:pointer}
+.demo button.ghost{background:transparent;color:var(--accent)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{font-size:13px;padding:3px 10px;border-radius:99px;background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+.hits{display:grid;gap:8px}
+.hit{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel);position:relative;overflow:hidden;transition:border-color .3s,opacity .3s}
+.hit.top{border-color:var(--good)}
+.hit.low{opacity:.55}
+.hit .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-family:var(--mono)}
+.hit .score-bar{height:4px;background:var(--soft);border-radius:4px;margin-top:6px}
+.hit .score-bar b{display:block;height:100%;background:var(--good);border-radius:4px;transition:width .6s ease}
+.hit mark{background:color-mix(in srgb,var(--warn) 30%,transparent);color:inherit;border-radius:3px}
+.prompt-box{white-space:pre-wrap;font-family:var(--mono);font-size:13px;background:var(--soft);border:1px dashed var(--line);border-radius:10px;padding:12px;max-height:340px;overflow:auto}
+
+/* ---------- 課程導覽 ---------- */
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:36px;flex-wrap:wrap}
+.pager a{flex:1;min-width:200px;text-decoration:none}
+.pager a.next{text-align:right}
+.quiz .opt{display:block;width:100%;text-align:left;margin:6px 0;font:inherit;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.quiz .opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 12%,var(--panel))}
+.quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--panel))}
+.quiz .why{display:none;color:var(--muted);font-size:14px;margin-top:6px}
+.quiz.done .why{display:block}

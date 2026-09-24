@@ -1,0 +1,15 @@
+{
+  "lessons": [
+    {
+      "no": 1,
+      "slug": "naive-rag",
+      "file": "lessons/001-naive-rag.html",
+      "title": "基礎 RAG：先查資料再回答",
+      "en": "Naive RAG",
+      "level": 1,
+      "summary": "切塊、嵌入、向量資料庫、Top-k 檢索、組合提示、生成——一次看懂 RAG 的完整流程。",
+      "tags": ["入門", "流程總覽"],
+      "date": "2026-09-24"
+    }
+  ]
+}

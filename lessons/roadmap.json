@@ -1,0 +1,27 @@
+{
+  "_說明": "每日 routine 依序取第一個 status 為 todo 的主題製作，完成後改為 done 並填上 file。清單做完時，自行研究並新增新的 RAG 技術主題。",
+  "topics": [
+    { "slug": "naive-rag", "title": "基礎 RAG 流程", "en": "Naive RAG", "level": 1, "status": "done", "file": "lessons/001-naive-rag.html" },
+    { "slug": "chunking", "title": "切塊策略：固定長度、遞迴、語意切塊與重疊", "en": "Chunking Strategies", "level": 1, "status": "todo" },
+    { "slug": "embeddings", "title": "嵌入與向量檢索：餘弦相似度、ANN、HNSW", "en": "Embeddings & Vector Search", "level": 1, "status": "todo" },
+    { "slug": "hybrid-search", "title": "混合檢索：BM25 關鍵字 + 向量 + RRF 融合", "en": "Hybrid Search", "level": 2, "status": "todo" },
+    { "slug": "reranking", "title": "重排序：Bi-encoder 召回、Cross-encoder 精排", "en": "Reranking", "level": 2, "status": "todo" },
+    { "slug": "query-rewriting", "title": "查詢改寫與多重查詢 Multi-Query", "en": "Query Rewriting / Multi-Query", "level": 2, "status": "todo" },
+    { "slug": "hyde", "title": "HyDE：先生成假設答案再檢索", "en": "HyDE", "level": 2, "status": "todo" },
+    { "slug": "parent-document", "title": "父子文件檢索：小塊檢索、大塊回傳", "en": "Parent-Document / Small-to-Big", "level": 2, "status": "todo" },
+    { "slug": "contextual-retrieval", "title": "情境化檢索：替每個片段加上文件脈絡", "en": "Contextual Retrieval", "level": 2, "status": "todo" },
+    { "slug": "rag-fusion", "title": "RAG-Fusion：多查詢 + 倒數排名融合", "en": "RAG-Fusion", "level": 2, "status": "todo" },
+    { "slug": "metadata-filtering", "title": "中繼資料過濾與自我查詢檢索", "en": "Metadata Filtering / Self-Query", "level": 2, "status": "todo" },
+    { "slug": "context-compression", "title": "上下文壓縮：只留下與問題有關的句子", "en": "Contextual Compression", "level": 2, "status": "todo" },
+    { "slug": "self-rag", "title": "Self-RAG：模型自己判斷何時檢索、是否可信", "en": "Self-RAG", "level": 3, "status": "todo" },
+    { "slug": "crag", "title": "CRAG 修正式 RAG：檢索品質評估與網路補救", "en": "Corrective RAG", "level": 3, "status": "todo" },
+    { "slug": "adaptive-rag", "title": "Adaptive RAG：依問題難度選擇路線", "en": "Adaptive RAG", "level": 3, "status": "todo" },
+    { "slug": "raptor", "title": "RAPTOR：遞迴摘要樹檢索", "en": "RAPTOR", "level": 3, "status": "todo" },
+    { "slug": "graphrag", "title": "GraphRAG：知識圖譜與社群摘要", "en": "GraphRAG", "level": 3, "status": "todo" },
+    { "slug": "colbert", "title": "ColBERT 延遲互動：逐詞向量比對", "en": "ColBERT / Late Interaction", "level": 3, "status": "todo" },
+    { "slug": "agentic-rag", "title": "Agentic RAG：讓代理人規劃多步檢索", "en": "Agentic RAG", "level": 3, "status": "todo" },
+    { "slug": "multimodal-rag", "title": "多模態 RAG：圖片、表格與 PDF 版面", "en": "Multimodal RAG", "level": 3, "status": "todo" },
+    { "slug": "rag-evaluation", "title": "RAG 評估：忠實度、答案相關性、檢索召回", "en": "RAG Evaluation", "level": 2, "status": "todo" },
+    { "slug": "long-context-vs-rag", "title": "長上下文 vs RAG：何時該用哪個", "en": "Long Context vs RAG", "level": 2, "status": "todo" }
+  ]
+}

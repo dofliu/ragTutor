@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>基礎 RAG 流程｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂 RAG（檢索增強生成）的完整流程：切塊、嵌入、向量資料庫、檢索、組合提示與生成。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">🧭 <span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 001 堂</span><span class="tag lv1">入門</span><span class="tag">約 10 分鐘</span></p>
+  <h1>基礎 RAG：讓大型語言模型「先查資料再回答」</h1>
+  <p class="lead">Retrieval-Augmented Generation（檢索增強生成）是把「搜尋」接在「生成」前面的架構。模型不再只靠訓練時記住的知識，而是每次回答前，先從你的資料中找出相關段落，再根據這些段落作答。</p>
+
+  <h2>🎬 動畫：一個問題的旅程</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="基礎 RAG 流程動畫">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" style="fill:var(--muted)"/></marker>
+  </defs>
+  <!-- 泳道 -->
+  <g data-from="1">
+    <rect x="8" y="12" width="904" height="190" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+    <text x="24" y="36" font-size="14" font-weight="700" style="fill:var(--doc)">① 索引階段（離線，事先做一次）</text>
+  </g>
+  <rect x="8" y="218" width="904" height="200" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+  <text x="24" y="242" font-size="14" font-weight="700" style="fill:var(--query)">② 查詢階段（線上，每個問題都做）</text>
+
+  <!-- 文件 -->
+  <g data-from="1" data-hot="1">
+    <rect x="44" y="64" width="80" height="100" rx="6" class="box"/>
+    <rect x="36" y="72" width="80" height="100" rx="6" class="box"/>
+    <rect x="28" y="80" width="80" height="100" rx="6" class="box" style="stroke:var(--doc)"/>
+    <g style="stroke:var(--muted);stroke-width:2"><line x1="40" y1="100" x2="96" y2="100"/><line x1="40" y1="114" x2="90" y2="114"/><line x1="40" y1="128" x2="96" y2="128"/><line x1="40" y1="142" x2="80" y2="142"/><line x1="40" y1="156" x2="92" y2="156"/></g>
+    <text x="68" y="196" text-anchor="middle" font-size="13">員工手冊 PDF</text>
+  </g>
+
+  <!-- 切塊 -->
+  <g data-from="2">
+    <path d="M128 125 H172" class="arrow" marker-end="url(#ah)"/>
+    <g data-hot="2">
+      <rect x="182" y="62"  width="92" height="24" rx="5" style="fill:var(--doc);opacity:.85"/>
+      <rect x="182" y="92"  width="92" height="24" rx="5" style="fill:var(--doc);opacity:.7"/>
+      <rect x="182" y="122" width="92" height="24" rx="5" style="fill:var(--doc);opacity:.55"/>
+      <rect x="182" y="152" width="92" height="24" rx="5" style="fill:var(--doc);opacity:.4"/>
+      <text x="228" y="79"  text-anchor="middle" font-size="12" style="fill:#fff">片段 #1</text>
+      <text x="228" y="109" text-anchor="middle" font-size="12" style="fill:#fff">片段 #2</text>
+      <text x="228" y="139" text-anchor="middle" font-size="12" style="fill:#fff">片段 #3</text>
+      <text x="228" y="169" text-anchor="middle" font-size="12" style="fill:#fff">片段 …</text>
+    </g>
+    <text x="228" y="196" text-anchor="middle" font-size="13">切塊 Chunking</text>
+  </g>
+
+  <!-- 嵌入模型 -->
+  <g data-from="3">
+    <path d="M278 120 H330" class="arrow" marker-end="url(#ah)"/>
+    <g data-hot="3 5"><rect x="340" y="88" width="120" height="64" rx="12" class="box" style="stroke:var(--vec);stroke-width:2.5"/>
+    <text x="400" y="116" text-anchor="middle" font-size="14" font-weight="700" style="fill:var(--vec)">嵌入模型</text>
+    <text x="400" y="136" text-anchor="middle" font-size="11" class="t-muted">Embedding Model</text></g>
+    <path d="M464 120 H500" class="arrow" marker-end="url(#ah)"/>
+    <g class="t-mono" font-size="11" data-hot="3">
+      <text x="508" y="92"  style="fill:var(--vec)">[0.12, -0.8, …]</text>
+      <text x="508" y="112" style="fill:var(--vec)">[0.53, 0.07, …]</text>
+      <text x="508" y="132" style="fill:var(--vec)">[-0.3, 0.44, …]</text>
+      <text x="508" y="152" style="fill:var(--vec)">[0.91, -0.2, …]</text>
+    </g>
+    <text x="560" y="196" text-anchor="middle" font-size="13" data-to="5">每個片段 → 一個向量</text>
+  </g>
+
+  <!-- 向量資料庫 -->
+  <g data-from="4">
+    <path d="M618 120 H672" class="arrow" marker-end="url(#ah)"/>
+    <g data-hot="4 6">
+      <path d="M690 70 v90 a70 16 0 0 0 140 0 v-90" class="box" style="stroke:var(--vec);stroke-width:2"/>
+      <ellipse cx="760" cy="70" rx="70" ry="16" class="box" style="stroke:var(--vec);stroke-width:2"/>
+      <path d="M690 100 a70 16 0 0 0 140 0 M690 130 a70 16 0 0 0 140 0" style="fill:none;stroke:var(--line);stroke-width:1.5"/>
+      <g style="fill:var(--vec)"><circle cx="725" cy="118" r="4"/><circle cx="752" cy="146" r="4"/><circle cx="790" cy="112" r="4"/><circle cx="808" cy="150" r="4"/><circle cx="770" cy="170" r="4"/></g>
+    </g>
+    <text x="760" y="104" text-anchor="middle" font-size="13" font-weight="700">向量資料庫</text>
+    <text x="760" y="196" text-anchor="middle" font-size="12" class="t-muted" data-to="5">FAISS / Chroma / pgvector…</text>
+  </g>
+
+  <!-- 使用者問題 -->
+  <g data-hot="0 5">
+    <rect x="24" y="262" width="176" height="64" rx="12" class="box" style="stroke:var(--query);stroke-width:2.5"/>
+    <text x="112" y="287" text-anchor="middle" font-size="12" class="t-muted">👤 使用者問題</text>
+    <text x="112" y="310" text-anchor="middle" font-size="14" font-weight="700">出差住宿上限多少？</text>
+  </g>
+
+  <!-- step 0：沒有 RAG 時直接問 LLM -->
+  <g data-to="0">
+    <path d="M200 294 H690" class="flow" style="stroke:var(--query)"/>
+    <text x="440" y="282" text-anchor="middle" font-size="13" class="t-muted">直接問模型……</text>
+  </g>
+
+  <!-- 問題向量 -->
+  <g data-from="5">
+    <path d="M204 294 H226" class="arrow" marker-end="url(#ah)"/>
+    <rect x="232" y="276" width="62" height="36" rx="8" style="fill:var(--query);opacity:.9" data-hot="5"/>
+    <text x="263" y="299" text-anchor="middle" font-size="11" class="t-mono" style="fill:#fff">[0.5,…]</text>
+    <text x="263" y="338" text-anchor="middle" font-size="12" class="t-muted">問題向量</text>
+  </g>
+
+  <!-- 檢索 -->
+  <g data-from="6">
+    <path d="M294 284 C 430 250, 600 240, 692 150" class="flow" style="stroke:var(--query)"/>
+    <text x="560" y="213" text-anchor="middle" font-size="12" style="fill:var(--query)">找最相似的 k 個向量</text>
+    <path d="M770 180 C 750 262, 520 262, 438 318" class="flow" style="stroke:var(--good)"/>
+    <g data-hot="6">
+      <rect x="336" y="318" width="96" height="20" rx="4" style="fill:var(--good)"/>
+      <rect x="336" y="342" width="96" height="20" rx="4" style="fill:var(--good);opacity:.75"/>
+      <rect x="336" y="366" width="96" height="20" rx="4" style="fill:var(--good);opacity:.55"/>
+      <text x="384" y="332" text-anchor="middle" font-size="11" style="fill:#fff">#12 相似度 .82</text>
+      <text x="384" y="356" text-anchor="middle" font-size="11" style="fill:#fff">#07 相似度 .64</text>
+      <text x="384" y="380" text-anchor="middle" font-size="11" style="fill:#fff">#31 相似度 .51</text>
+    </g>
+    <text x="384" y="306" text-anchor="middle" font-size="12" font-weight="700">Top-3 片段</text>
+  </g>
+
+  <!-- 組合提示 -->
+  <g data-from="7">
+    <path d="M436 352 H466" class="arrow" marker-end="url(#ah)"/>
+    <g data-hot="7">
+      <rect x="472" y="262" width="150" height="136" rx="10" class="box" style="stroke:var(--accent);stroke-width:2"/>
+      <text x="547" y="283" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--accent)">增強後的 Prompt</text>
+      <rect x="484" y="294" width="126" height="18" rx="4" style="fill:var(--soft)"/><text x="492" y="307" font-size="11" class="t-muted">指示：只根據資料回答</text>
+      <rect x="484" y="318" width="126" height="40" rx="4" style="fill:var(--good);opacity:.25"/><text x="492" y="334" font-size="11">參考資料：</text><text x="492" y="350" font-size="11">片段 #12、#07、#31</text>
+      <rect x="484" y="364" width="126" height="22" rx="4" style="fill:var(--query);opacity:.25"/><text x="492" y="379" font-size="11">問題：出差住宿上限？</text>
+    </g>
+  </g>
+
+  <!-- LLM -->
+  <g data-hot="0 8">
+    <rect x="660" y="282" width="100" height="70" rx="35" class="box" style="stroke:var(--llm);stroke-width:2.5"/>
+    <text x="710" y="314" text-anchor="middle" font-size="16" font-weight="800" style="fill:var(--llm)">LLM</text>
+    <text x="710" y="334" text-anchor="middle" font-size="11" class="t-muted">大型語言模型</text>
+  </g>
+  <g data-from="7"><path d="M626 322 H652" class="flow" style="stroke:var(--accent)"/></g>
+
+  <!-- 回答 -->
+  <path d="M764 318 H782" class="arrow" marker-end="url(#ah)"/>
+  <g data-to="0">
+    <rect x="788" y="262" width="118" height="112" rx="10" class="box" style="stroke:var(--bad);stroke-width:2"/>
+    <text x="847" y="288" text-anchor="middle" font-size="20">🤔</text>
+    <text x="847" y="312" text-anchor="middle" font-size="12">「大概 3000 元</text>
+    <text x="847" y="330" text-anchor="middle" font-size="12">左右吧？」</text>
+    <text x="847" y="358" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--bad)">✗ 幻覺</text>
+  </g>
+  <g data-from="1" data-to="7">
+    <rect x="788" y="262" width="118" height="112" rx="10" class="box" style="stroke-dasharray:4 4"/>
+    <text x="847" y="322" text-anchor="middle" font-size="12" class="t-muted">等待中…</text>
+  </g>
+  <g data-from="8" class="pulse">
+    <rect x="788" y="262" width="118" height="112" rx="10" class="box" style="stroke:var(--good);stroke-width:2.5"/>
+    <text x="847" y="288" text-anchor="middle" font-size="20">✅</text>
+    <text x="847" y="310" text-anchor="middle" font-size="12">「國內每晚</text>
+    <text x="847" y="327" text-anchor="middle" font-size="12">上限 2,800 元」</text>
+    <text x="847" y="352" text-anchor="middle" font-size="11" style="fill:var(--good)">出處：片段 #12</text>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>2 個階段</b>索引（離線）把文件切塊、嵌入、存進向量資料庫；查詢（線上）檢索相關片段並交給 LLM。</div>
+    <div class="card"><b>不必重新訓練</b>知識更新只要重新索引文件，模型權重完全不動。</div>
+    <div class="card"><b>可附出處</b>答案能回溯到哪一個片段，方便使用者查證。</div>
+    <div class="card"><b>品質瓶頸在檢索</b>找錯片段，再強的模型也會答錯——後續課程的技術大多在改善這一步。</div>
+  </div>
+
+  <h2>🧪 互動範例：親手跑一次檢索</h2>
+  <div class="prose"><p>下面是一份虛構的「星河科技員工手冊」，已經切成 8 個片段。輸入問題後，瀏覽器會把問題與每個片段轉成向量（這裡用中文二元組的 TF-IDF 模擬嵌入），計算餘弦相似度，取出最相關的 k 個片段，最後組出要送給 LLM 的 Prompt。</p></div>
+  <div class="card demo" id="demo">
+    <div class="row">
+      <input type="text" id="q" value="出差住宿每晚可以報多少錢？" aria-label="問題">
+      <button id="go">檢索</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="row"><label for="k">Top-k：<b id="kv">3</b></label><input type="range" id="k" min="1" max="5" value="3" style="flex:1;max-width:260px"></div>
+    <div class="hits" id="hits"></div>
+    <h3 style="margin:.4em 0 0">送給 LLM 的 Prompt</h3>
+    <div class="prompt-box" id="prompt"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>一個最小可運作的 RAG：<code>sentence-transformers</code> 產生嵌入、NumPy 做相似度，再把片段放進 Prompt 交給 Claude 生成。</p></div>
+<pre class="code"><code><span class="k">import</span> numpy <span class="k">as</span> np
+<span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer
+<span class="k">import</span> anthropic
+
+<span class="c"># ① 索引階段：切塊 → 嵌入 → 存起來</span>
+chunks = [<span class="s">"國內出差住宿每晚上限 2,800 元，需檢附收據。"</span>,
+          <span class="s">"員工每年享有 14 天特休，未休完可遞延一年。"</span>,
+          <span class="s">"遠端工作每週最多 2 天，需事先於系統登記。"</span>]
+embedder = SentenceTransformer(<span class="s">"BAAI/bge-m3"</span>)
+vectors = embedder.<span class="f">encode</span>(chunks, normalize_embeddings=<span class="k">True</span>)
+
+<span class="c"># ② 查詢階段：問題嵌入 → 相似度 → Top-k</span>
+<span class="k">def</span> <span class="f">retrieve</span>(question, k=<span class="s">2</span>):
+    q = embedder.<span class="f">encode</span>([question], normalize_embeddings=<span class="k">True</span>)[<span class="s">0</span>]
+    scores = vectors @ q                      <span class="c"># 已正規化 → 內積即餘弦相似度</span>
+    top = np.<span class="f">argsort</span>(-scores)[:k]
+    <span class="k">return</span> [chunks[i] <span class="k">for</span> i <span class="k">in</span> top]
+
+<span class="k">def</span> <span class="f">answer</span>(question):
+    context = <span class="s">"\n"</span>.<span class="f">join</span>(<span class="s">f"[{i+1}] {c}"</span> <span class="k">for</span> i, c <span class="k">in</span> <span class="f">enumerate</span>(<span class="f">retrieve</span>(question)))
+    prompt = (<span class="s">"只根據下列參考資料回答，並標註出處編號；資料中沒有就說不知道。\n\n"</span>
+              <span class="s">f"參考資料：\n{context}\n\n問題：{question}"</span>)
+    client = anthropic.<span class="f">Anthropic</span>()
+    msg = client.messages.<span class="f">create</span>(model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">512</span>,
+                                 messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text
+
+<span class="f">print</span>(<span class="f">answer</span>(<span class="s">"出差住宿每晚可以報多少？"</span>))</code></pre>
+
+  <h2>⚖️ RAG 與其他做法比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>直接問 LLM</th><th>微調 Fine-tuning</th><th>RAG</th></tr>
+    <tr><th>用到私有資料</th><td>✗</td><td>✓（寫進權重）</td><td>✓（執行時查詢）</td></tr>
+    <tr><th>資料更新成本</th><td>—</td><td>高：要重新訓練</td><td>低：重新索引即可</td></tr>
+    <tr><th>可附出處</th><td>✗</td><td>✗</td><td>✓</td></tr>
+    <tr><th>擅長</th><td>通用知識、寫作</td><td>語氣、格式、特定任務行為</td><td>事實型問答、文件查詢</td></tr>
+  </table>
+
+  <h2>⚠️ 基礎 RAG 常見的坑</h2>
+  <div class="prose">
+    <ul>
+      <li><b>切塊切壞了</b>：一句話被切成兩半，答案所需的上下文散落在不同片段。→ 下一堂「切塊策略」。</li>
+      <li><b>語意相近但不相關</b>：向量檢索只看「像不像」，專有名詞、料號、法條編號容易漏掉。→「混合檢索」。</li>
+      <li><b>Top-k 的兩難</b>：k 太小漏掉資訊，k 太大塞進雜訊、稀釋模型注意力。→「重排序」。</li>
+      <li><b>問題本身太模糊</b>：「那個規定呢？」這種問題很難檢索。→「查詢改寫」。</li>
+    </ul>
+    <div class="callout warn">範例中的員工手冊內容與數字皆為虛構，只用於教學示範。</div>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="2">
+    <p><b>公司的報帳規定每季都會修改，想讓 AI 助理永遠回答最新版本，最適合的做法是？</b></p>
+    <button class="opt">A. 每季重新微調一次模型</button>
+    <button class="opt">B. 把規定寫進系統提示詞，越長越好</button>
+    <button class="opt">C. 用 RAG，規定更新時重新索引文件</button>
+    <div class="why">RAG 把「知識」放在外部資料庫，更新文件後重新切塊與嵌入即可，不必動模型；還能附上出處讓員工查證。</div>
+  </div>
+
+  <nav class="pager" data-slug="naive-rag"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a></div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:7000, steps:[
+  { title:'LLM 的困境：不知道你的資料', text:'模型只記得訓練時看過的公開資料。問它公司內部規定，它不會說「不知道」，而是編出一個聽起來合理的答案——這就是<b>幻覺</b>。' },
+  { title:'準備知識來源', text:'把公司文件（PDF、網頁、資料庫）收集起來。RAG 的第一階段是<b>索引</b>：事先把這些資料整理成可以快速搜尋的形式。' },
+  { title:'切塊 Chunking', text:'整份文件太長，無法一次塞給模型，也不利於精準搜尋。所以把它切成數百字的<b>片段</b>，每個片段是一個獨立的檢索單位。' },
+  { title:'嵌入 Embedding', text:'<b>嵌入模型</b>把每個片段轉成一串數字（向量）。意思相近的文字，向量在空間中的位置也相近——這讓「用意思搜尋」成為可能。' },
+  { title:'存入向量資料庫', text:'向量與原文一起存進<b>向量資料庫</b>，建立索引以便在幾百萬筆資料中快速找到最近鄰。索引階段到此完成，之後只在文件更新時重做。' },
+  { title:'問題也變成向量', text:'使用者提問時，用<b>同一個嵌入模型</b>把問題轉成向量。必須是同一個模型，問題和片段才在同一個座標空間裡可以比較。' },
+  { title:'相似度檢索 Top-k', text:'在資料庫中找出與問題向量<b>最相似的 k 個片段</b>（通常用餘弦相似度）。這一步決定了模型能看到哪些資料，是整個 RAG 品質的關鍵。' },
+  { title:'組合增強提示 Augment', text:'把「回答指示 + 檢索到的片段 + 使用者問題」組成一個新的 Prompt。這就是 RAG 中的 <b>A（Augmented）</b>：用外部資料增強提示。' },
+  { title:'生成有根據的回答 Generate', text:'LLM 根據提供的資料作答，並附上出處。答案從「憑印象」變成「有所本」，而且知識更新時只要重建索引，不必重新訓練模型。' }
+]});
+
+(function(){
+  const { rt, escapeHtml } = RagTutor;
+  const docs = [
+    { id:'#01', text:'星河科技上班時間為週一至週五 9:00 至 18:00，中午休息一小時，可彈性於 8:00 至 10:00 間打卡。' },
+    { id:'#02', text:'員工到職滿一年享有 14 天特休假，未休完的特休可遞延至次年度使用，逾期則折算薪資。' },
+    { id:'#03', text:'遠端工作每週最多兩天，需於前一週在人資系統登記，並確保視訊會議時可以即時上線。' },
+    { id:'#04', text:'國內出差住宿每晚上限為新台幣 2,800 元，海外出差依城市等級每晚 120 至 250 美元，報帳需檢附收據。' },
+    { id:'#05', text:'出差交通以高鐵標準車廂或經濟艙為原則，計程車費用需註明起訖地點與事由。' },
+    { id:'#06', text:'公司每年補助員工教育訓練費用最高 20,000 元，課程需與職務相關並於結訓後繳交心得。' },
+    { id:'#07', text:'新進員工到職第一週需完成資訊安全課程，並啟用雙重驗證後才能存取公司內部系統。' },
+    { id:'#08', text:'加班需事先經主管核准，平日加班前兩小時以 1.34 倍計薪，可選擇換成補休。' }
+  ];
+  const index = rt.buildIndex(docs);
+  const samples = ['出差住宿每晚可以報多少錢？','特休沒休完怎麼辦？','可以在家上班嗎？','加班費怎麼算？','公司會補助上課嗎？'];
+  const $ = s => document.querySelector(s);
+  $('#chips').innerHTML = samples.map(s => `<button type="button">${s}</button>`).join('');
+  $('#chips').querySelectorAll('button').forEach(b => b.onclick = () => { $('#q').value = b.textContent; run(); });
+
+  function run(){
+    const q = $('#q').value.trim(); const k = +$('#k').value;
+    $('#kv').textContent = k;
+    const all = rt.searchVector(index, q, docs.length);
+    const max = Math.max(all[0]?.score || 0, 1e-6);
+    $('#hits').innerHTML = all.map((h, r) => `
+      <div class="hit ${r < k ? 'top' : 'low'}">
+        <div class="meta"><span>${r < k ? '✅ 入選 ' : ''}片段 ${h.doc.id}</span><span>相似度 ${h.score.toFixed(3)}</span></div>
+        <div>${rt.highlight(h.doc.text, q)}</div>
+        <div class="score-bar"><b style="width:${(h.score/max*100).toFixed(1)}%"></b></div>
+      </div>`).join('');
+    const ctx = all.slice(0, k).map((h, i) => `[${i+1}] (${h.doc.id}) ${h.doc.text}`).join('\n');
+    $('#prompt').textContent = `你是星河科技的人資助理。只根據下列參考資料回答，並標註出處編號；資料中沒有答案就回答「手冊中沒有相關規定」。\n\n參考資料：\n${ctx}\n\n問題：${q}`;
+  }
+  $('#go').onclick = run;
+  $('#q').addEventListener('keydown', e => { if(e.key === 'Enter') run(); });
+  $('#k').oninput = run;
+  run();
+})();
+</script>
+</body>
+</html>
