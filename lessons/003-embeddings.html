@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>嵌入與向量檢索：餘弦相似度、ANN 與 HNSW｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂嵌入向量怎麼用餘弦相似度比較「像不像」，以及資料量變大時，為什麼需要近似最近鄰（ANN）索引；並實際比較暴力法與 HNSW 概念圖狀索引的比對次數與準確度。">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .seg{gap:8px}
+  .seg button{font:inherit;font-size:13px;padding:6px 14px;border-radius:99px;border:1px solid var(--line);background:var(--soft);color:var(--ink);cursor:pointer}
+  .seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .chips button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+</style>
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html">🧭 <span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 003 堂</span><span class="tag lv1">入門</span><span class="tag">約 12 分鐘</span></p>
+  <h1>嵌入與向量檢索：從「像不像」到毫秒級找到最相似的幾筆</h1>
+  <p class="lead">當資料庫裡有幾百萬筆嵌入向量，不可能每次查詢都跟每一筆比對一次。這堂課會看懂<b>餘弦相似度</b>怎麼衡量兩個向量「像不像」，以及當資料量大到暴力法撐不住時，<b>近似最近鄰（Approximate Nearest Neighbor, ANN）</b>索引——特別是最常見的圖狀索引 <b>HNSW</b>——如何用遠少於全部資料筆數的比較次數，換來幾乎一樣準確的結果。</p>
+
+  <h2>🎬 動畫：從暴力法比對到 HNSW 分層搜尋</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="嵌入向量檢索動畫：暴力法逐一比對，到 HNSW 分層圖狀索引的近似最近鄰搜尋">
+
+  <!-- 向量空間示意（步驟 0-4） -->
+  <g data-from="0" data-to="4">
+    <rect x="8" y="40" width="904" height="350" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+    <text x="24" y="62" font-size="12.5" font-weight="700" style="fill:var(--muted)">向量空間示意（實際嵌入向量有數百維，這裡簡化成 2 維方便呈現相似度關係）</text>
+  </g>
+
+  <g data-from="0" data-to="4">
+    <circle cx="125" cy="105" r="7" style="fill:var(--doc)"/>
+    <circle cx="165" cy="90"  r="7" style="fill:var(--doc)"/>
+    <circle cx="195" cy="120" r="7" style="fill:var(--doc)"/>
+    <circle cx="175" cy="155" r="7" style="fill:var(--doc)"/>
+    <circle cx="130" cy="160" r="7" style="fill:var(--doc)"/>
+    <circle cx="470" cy="85"  r="7" style="fill:var(--doc)"/>
+    <circle cx="510" cy="75"  r="7" style="fill:var(--doc)"/>
+    <circle cx="545" cy="100" r="7" style="fill:var(--doc)"/>
+    <circle cx="525" cy="135" r="7" style="fill:var(--doc)"/>
+    <circle cx="480" cy="130" r="7" style="fill:var(--doc)"/>
+    <circle cx="120" cy="280" r="7" style="fill:var(--doc)"/>
+    <circle cx="160" cy="265" r="7" style="fill:var(--doc)"/>
+    <circle cx="195" cy="290" r="7" style="fill:var(--doc)"/>
+    <circle cx="180" cy="325" r="7" style="fill:var(--doc)"/>
+    <circle cx="130" cy="320" r="7" style="fill:var(--doc)"/>
+    <circle cx="480" cy="290" r="7" style="fill:var(--doc)"/>
+    <circle cx="520" cy="275" r="7" style="fill:var(--doc)"/>
+    <circle cx="555" cy="300" r="7" style="fill:var(--doc)"/>
+    <circle cx="535" cy="335" r="7" style="fill:var(--doc)"/>
+    <circle cx="490" cy="330" r="7" style="fill:var(--doc)"/>
+  </g>
+
+  <g data-from="0" data-to="4">
+    <circle cx="215" cy="160" r="9" style="fill:var(--query)" class="pulse"/>
+    <text x="215" y="141" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--query)">👤 查詢向量</text>
+  </g>
+
+  <!-- 步驟 1：暴力法逐一比對 -->
+  <g data-from="1" data-to="1">
+    <line x1="215" y1="160" x2="125" y2="105" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="165" y2="90"  class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="195" y2="120" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="175" y2="155" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="130" y2="160" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="470" y2="85"  class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="510" y2="75"  class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="545" y2="100" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="525" y2="135" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="480" y2="130" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="120" y2="280" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="160" y2="265" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="195" y2="290" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="180" y2="325" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="130" y2="320" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="480" y2="290" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="520" y2="275" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="555" y2="300" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="535" y2="335" class="flow" style="stroke:var(--bad)"/>
+    <line x1="215" y1="160" x2="490" y2="330" class="flow" style="stroke:var(--bad)"/>
+    <rect x="670" y="150" width="220" height="56" rx="10" class="box" style="stroke:var(--bad);stroke-width:2"/>
+    <text x="780" y="172" text-anchor="middle" font-size="12" style="fill:var(--bad)">暴力法 Brute-force：逐一比對</text>
+    <text x="780" y="192" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--bad)">比對次數 = 20 / 20（全部）</text>
+  </g>
+
+  <!-- 步驟 2：資料量放大 -->
+  <g data-from="2" data-to="4">
+    <circle cx="300" cy="65"  r="4" style="fill:var(--muted)"/>
+    <circle cx="390" cy="65"  r="4" style="fill:var(--muted)"/>
+    <circle cx="55"  cy="215" r="4" style="fill:var(--muted)"/>
+    <circle cx="345" cy="205" r="4" style="fill:var(--muted)"/>
+    <circle cx="600" cy="205" r="4" style="fill:var(--muted)"/>
+    <circle cx="300" cy="375" r="4" style="fill:var(--muted)"/>
+  </g>
+  <g data-from="2" data-to="2">
+    <rect x="670" y="150" width="220" height="56" rx="10" class="box" style="stroke:var(--bad);stroke-width:2"/>
+    <text x="780" y="172" text-anchor="middle" font-size="12" style="fill:var(--bad)">資料量持續成長……</text>
+    <text x="780" y="192" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--bad)">比對次數也跟著等比增加</text>
+  </g>
+
+  <!-- 步驟 3：ANN 概念 -->
+  <g data-from="3" data-to="3">
+    <rect x="650" y="70" width="250" height="120" rx="12" class="box" style="stroke:var(--accent);stroke-width:2.5"/>
+    <text x="775" y="98" text-anchor="middle" font-size="14" font-weight="700" style="fill:var(--accent)">近似最近鄰 ANN</text>
+    <text x="775" y="117" text-anchor="middle" font-size="11.5" class="t-muted">Approximate Nearest Neighbor</text>
+    <text x="775" y="142" text-anchor="middle" font-size="12.5">用一點點準確度，</text>
+    <text x="775" y="162" text-anchor="middle" font-size="12.5">換取大量的查詢速度</text>
+  </g>
+
+  <!-- 步驟 4：建立 k-NN 圖狀索引 -->
+  <g data-from="4" data-to="4">
+    <line x1="125" y1="105" x2="165" y2="90"  style="stroke:var(--vec);opacity:.6"/>
+    <line x1="165" y1="90"  x2="195" y2="120" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="195" y1="120" x2="175" y2="155" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="175" y1="155" x2="130" y2="160" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="130" y1="160" x2="125" y2="105" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="470" y1="85"  x2="510" y2="75"  style="stroke:var(--vec);opacity:.6"/>
+    <line x1="510" y1="75"  x2="545" y2="100" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="545" y1="100" x2="525" y2="135" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="525" y1="135" x2="480" y2="130" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="480" y1="130" x2="470" y2="85"  style="stroke:var(--vec);opacity:.6"/>
+    <line x1="120" y1="280" x2="160" y2="265" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="160" y1="265" x2="195" y2="290" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="195" y1="290" x2="180" y2="325" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="180" y1="325" x2="130" y2="320" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="130" y1="320" x2="120" y2="280" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="480" y1="290" x2="520" y2="275" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="520" y1="275" x2="555" y2="300" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="555" y1="300" x2="535" y2="335" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="535" y1="335" x2="490" y2="330" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="490" y1="330" x2="480" y2="290" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="195" y1="120" x2="555" y2="300" style="stroke:var(--accent);stroke-width:2;stroke-dasharray:3 4"/>
+    <line x1="470" y1="85"  x2="120" y2="280" style="stroke:var(--accent);stroke-width:2;stroke-dasharray:3 4"/>
+    <rect x="650" y="70" width="250" height="90" rx="12" class="box" style="stroke:var(--vec);stroke-width:2"/>
+    <text x="775" y="96"  text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--vec)">建立索引（只需要做一次）</text>
+    <text x="775" y="118" text-anchor="middle" font-size="12">每個點只連到幾個</text>
+    <text x="775" y="138" text-anchor="middle" font-size="12">最相似的鄰居，形成一張圖</text>
+  </g>
+
+  <!-- 步驟 5-7：HNSW 分層圖 -->
+  <g data-from="5" data-to="7">
+    <text x="24" y="70"  font-size="12" class="t-muted">Layer 2（最稀疏，長距離捷徑）</text>
+    <text x="24" y="175" font-size="12" class="t-muted">Layer 1</text>
+    <text x="24" y="285" font-size="12" class="t-muted">Layer 0（包含全部節點）</text>
+
+    <line x1="90"  y1="310" x2="220" y2="310" style="stroke:var(--vec);opacity:.5"/>
+    <line x1="220" y1="310" x2="350" y2="310" style="stroke:var(--vec);opacity:.5"/>
+    <line x1="350" y1="310" x2="480" y2="310" style="stroke:var(--vec);opacity:.5"/>
+    <line x1="480" y1="310" x2="610" y2="310" style="stroke:var(--vec);opacity:.5"/>
+    <line x1="610" y1="310" x2="740" y2="310" style="stroke:var(--vec);opacity:.5"/>
+    <circle cx="90"  cy="310" r="7" style="fill:var(--doc)"/>
+    <circle cx="220" cy="310" r="7" style="fill:var(--doc)"/>
+    <circle cx="350" cy="310" r="7" style="fill:var(--doc)"/>
+    <circle cx="480" cy="310" r="7" style="fill:var(--doc)"/>
+    <circle cx="610" cy="310" r="7" style="fill:var(--doc)"/>
+    <circle cx="740" cy="310" r="7" style="fill:var(--doc)"/>
+
+    <line x1="90" y1="200" x2="350" y2="200" style="stroke:var(--vec);opacity:.6"/>
+    <line x1="350" y1="200" x2="610" y2="200" style="stroke:var(--vec);opacity:.6"/>
+    <circle cx="90"  cy="200" r="7" style="fill:var(--doc)"/>
+    <circle cx="350" cy="200" r="7" style="fill:var(--doc)"/>
+    <circle cx="610" cy="200" r="7" style="fill:var(--doc)"/>
+
+    <line x1="350" y1="95" x2="610" y2="95" style="stroke:var(--accent);stroke-width:2;stroke-dasharray:3 4"/>
+    <circle cx="350" cy="95" r="7" style="fill:var(--doc)"/>
+    <circle cx="610" cy="95" r="8" style="fill:var(--query)"/>
+    <text x="610" y="78" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--query)">入口點 entry</text>
+
+    <line x1="610" y1="103" x2="610" y2="192" style="stroke:var(--line);stroke-dasharray:2 3"/>
+    <line x1="350" y1="103" x2="350" y2="192" style="stroke:var(--line);stroke-dasharray:2 3"/>
+    <line x1="90"  y1="208" x2="90"  y2="302" style="stroke:var(--line);stroke-dasharray:2 3"/>
+    <line x1="350" y1="208" x2="350" y2="302" style="stroke:var(--line);stroke-dasharray:2 3"/>
+    <line x1="610" y1="208" x2="610" y2="302" style="stroke:var(--line);stroke-dasharray:2 3"/>
+
+    <circle cx="90" cy="380" r="8" style="fill:var(--query)" class="pulse"/>
+    <text x="90" y="404" text-anchor="middle" font-size="11" style="fill:var(--query)">👤 查詢向量</text>
+    <line x1="90" y1="372" x2="90" y2="318" style="stroke:var(--query);stroke-dasharray:3 3"/>
+  </g>
+
+  <!-- 步驟 6：貪婪跳到查詢附近，逐層下降 -->
+  <g data-from="6" data-to="6">
+    <line x1="610" y1="95"  x2="350" y2="95"  class="flow" style="stroke:var(--good);stroke-width:3"/>
+    <line x1="350" y1="103" x2="350" y2="192" class="flow" style="stroke:var(--good);stroke-width:3"/>
+    <line x1="350" y1="200" x2="90"  y2="200" class="flow" style="stroke:var(--good);stroke-width:3"/>
+    <line x1="90"  y1="208" x2="90"  y2="302" class="flow" style="stroke:var(--good);stroke-width:3"/>
+    <circle cx="350" cy="95"  r="10" style="fill:none;stroke:var(--good);stroke-width:2.5"/>
+    <circle cx="90"  cy="200" r="10" style="fill:none;stroke:var(--good);stroke-width:2.5"/>
+    <rect x="650" y="150" width="250" height="76" rx="10" class="box" style="stroke:var(--good);stroke-width:2"/>
+    <text x="775" y="174" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)">貪婪移動＋往下一層</text>
+    <text x="775" y="194" text-anchor="middle" font-size="12">每層只跟鄰居比較，</text>
+    <text x="775" y="212" text-anchor="middle" font-size="12">找不到更近的才往下一層</text>
+  </g>
+
+  <!-- 步驟 7：最底層細部搜尋 -->
+  <g data-from="7" data-to="7">
+    <circle cx="90"  cy="310" r="11" style="fill:none;stroke:var(--good);stroke-width:2.5"/>
+    <circle cx="220" cy="310" r="11" style="fill:none;stroke:var(--good);stroke-width:2.5"/>
+    <line x1="90" y1="310" x2="220" y2="310" class="flow" style="stroke:var(--good);stroke-width:3"/>
+    <rect x="650" y="150" width="250" height="76" rx="10" class="box" style="stroke:var(--good);stroke-width:2"/>
+    <text x="775" y="174" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)">最底層細部搜尋</text>
+    <text x="775" y="194" text-anchor="middle" font-size="12">用候選清單 ef 持續探索，</text>
+    <text x="775" y="212" text-anchor="middle" font-size="12">篩選出最終 top-k</text>
+  </g>
+
+  <!-- 步驟 8：回到向量空間，比較結果 -->
+  <g data-from="8" data-to="8">
+    <rect x="8" y="40" width="904" height="350" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+    <text x="24" y="62" font-size="12.5" font-weight="700" style="fill:var(--muted)">綠色＝實際走訪並比較過的節點　灰色＝完全沒被碰過</text>
+    <circle cx="125" cy="105" r="7" style="fill:var(--good)"/>
+    <circle cx="165" cy="90"  r="7" style="fill:var(--good)"/>
+    <circle cx="195" cy="120" r="7" style="fill:var(--good)"/>
+    <circle cx="175" cy="155" r="7" style="fill:var(--good)"/>
+    <circle cx="130" cy="160" r="7" style="fill:var(--good)"/>
+    <circle cx="470" cy="85"  r="7" style="fill:var(--line)"/>
+    <circle cx="510" cy="75"  r="7" style="fill:var(--line)"/>
+    <circle cx="545" cy="100" r="7" style="fill:var(--line)"/>
+    <circle cx="525" cy="135" r="7" style="fill:var(--line)"/>
+    <circle cx="480" cy="130" r="7" style="fill:var(--line)"/>
+    <circle cx="120" cy="280" r="7" style="fill:var(--line)"/>
+    <circle cx="160" cy="265" r="7" style="fill:var(--line)"/>
+    <circle cx="195" cy="290" r="7" style="fill:var(--line)"/>
+    <circle cx="180" cy="325" r="7" style="fill:var(--line)"/>
+    <circle cx="130" cy="320" r="7" style="fill:var(--line)"/>
+    <circle cx="480" cy="290" r="7" style="fill:var(--line)"/>
+    <circle cx="520" cy="275" r="7" style="fill:var(--line)"/>
+    <circle cx="555" cy="300" r="7" style="fill:var(--line)"/>
+    <circle cx="535" cy="335" r="7" style="fill:var(--line)"/>
+    <circle cx="490" cy="330" r="7" style="fill:var(--line)"/>
+    <circle cx="215" cy="160" r="9" style="fill:var(--query)" class="pulse"/>
+    <text x="215" y="141" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--query)">👤 查詢向量</text>
+    <rect x="670" y="150" width="220" height="76" rx="10" class="box" style="stroke:var(--good);stroke-width:2.5"/>
+    <text x="780" y="174" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)">只走訪一小部分節點</text>
+    <text x="780" y="194" text-anchor="middle" font-size="12">結果跟暴力法幾乎一樣</text>
+    <text x="780" y="212" text-anchor="middle" font-size="12" style="fill:var(--good)">✅ 速度大增，準確度幾乎不變</text>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>嵌入把內容變成向量</b>句子、片語甚至圖片都能被嵌入模型轉成一串固定長度的數字，語意相近的內容在向量空間裡的距離也相近。</div>
+    <div class="card"><b>餘弦相似度看方向不看長度</b>比較兩個向量的夾角，是最常見的「像不像」量尺，跟向量的長度（大小）無關。</div>
+    <div class="card"><b>暴力法保證正確但線性成長</b>要跟資料庫裡每一筆都比對一次，資料筆數變兩倍，比對次數也大約變兩倍。</div>
+    <div class="card"><b>ANN 用少量誤差換速度</b>HNSW 等圖狀索引只跟一小部分鄰居比較，用遠低於資料筆數的比對次數，換來接近暴力法的準確度。</div>
+  </div>
+
+  <h2>🧪 互動範例：暴力法 vs. 圖形 ANN，實際比一次</h2>
+  <div class="prose"><p>下面是一份虛構的「晴果 3C 配件」線上賣場常見問答，共 30 筆，分成退換貨、保固、運送、商品規格、付款五類。切換「暴力法」與「圖形 ANN（模擬 HNSW 概念）」，並調整 <b>ef</b>（搜尋候選清單大小）與 <b>M</b>（每個節點的鄰居數），看看比對次數怎麼變化，以及找到的結果跟暴力法是否一致。</p></div>
+  <div class="card demo" id="demo">
+    <div class="row seg" id="modeSeg">
+      <button type="button" class="on" data-mode="brute">暴力法 Brute-force</button>
+      <button type="button" data-mode="ann">圖形 ANN（模擬 HNSW 概念）</button>
+    </div>
+    <div class="chips" id="qchips"></div>
+    <div class="row"><label for="k">Top-k：<b id="kv">3</b></label><input type="range" id="k" min="1" max="5" value="3" style="flex:1;max-width:220px"></div>
+    <div class="row" id="rowM"><label for="m">M（每點連結的鄰居數）：<b id="mv">3</b></label><input type="range" id="m" min="2" max="5" value="3" style="flex:1;max-width:220px"></div>
+    <div class="row" id="rowEf"><label for="ef">ef（搜尋候選清單大小）：<b id="efv">5</b></label><input type="range" id="ef" min="1" max="15" value="5" style="flex:1;max-width:220px"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+    <div id="verdict" style="font-size:14px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>餘弦相似度、暴力法，以及一個簡化版的圖狀索引（NSW 的核心概念：只幫每個節點保留最相似的 <code>M</code> 個鄰居，查詢時沿著鄰居移動，不跟全部節點比對）。</p></div>
+<pre class="code"><code><span class="k">import</span> numpy <span class="k">as</span> np
+
+<span class="c"># ① 餘弦相似度：只看方向，不看向量長度</span>
+<span class="k">def</span> <span class="f">cosine</span>(a, b):
+    <span class="k">return</span> <span class="f">float</span>(a @ b) / (np.linalg.<span class="f">norm</span>(a) * np.linalg.<span class="f">norm</span>(b) + <span class="s">1e-9</span>)
+
+<span class="c"># ② 暴力法：保證正確，但要跟每一筆都比對一次</span>
+<span class="k">def</span> <span class="f">brute_force_search</span>(query_vec, vectors, k=<span class="s">3</span>):
+    scores = [<span class="f">cosine</span>(query_vec, v) <span class="k">for</span> v <span class="k">in</span> vectors]
+    order = np.<span class="f">argsort</span>(scores)[::-<span class="s">1</span>][:k]
+    <span class="k">return</span> [(i, scores[i]) <span class="k">for</span> i <span class="k">in</span> order]
+
+<span class="c"># ③ 建立簡化版圖狀索引：每個節點只保留最相似的 M 個鄰居</span>
+<span class="k">def</span> <span class="f">build_graph</span>(vectors, M=<span class="s">4</span>):
+    n = <span class="f">len</span>(vectors)
+    graph = {i: <span class="f">set</span>() <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(n)}
+    <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(n):
+        order = <span class="f">sorted</span>((j <span class="k">for</span> j <span class="k">in</span> <span class="f">range</span>(n) <span class="k">if</span> j != i),
+                       key=<span class="k">lambda</span> j: -<span class="f">cosine</span>(vectors[i], vectors[j]))
+        <span class="k">for</span> j <span class="k">in</span> order[:M]:
+            graph[i].<span class="f">add</span>(j); graph[j].<span class="f">add</span>(i)          <span class="c"># 邊視為雙向</span>
+    <span class="k">return</span> graph
+
+<span class="c"># ④ 貪婪圖搜尋：從入口點出發，只跟走訪過的鄰居比較</span>
+<span class="k">def</span> <span class="f">greedy_search</span>(query_vec, vectors, graph, entry=<span class="s">0</span>, ef=<span class="s">4</span>, k=<span class="s">3</span>):
+    scored = <span class="k">lambda</span> i: <span class="f">cosine</span>(query_vec, vectors[i])
+    visited = {entry}
+    candidates = [(<span class="f">scored</span>(entry), entry)]
+    found = [(<span class="f">scored</span>(entry), entry)]
+    <span class="k">while</span> candidates:
+        candidates.<span class="f">sort</span>(reverse=<span class="k">True</span>)
+        score, cur = candidates.<span class="f">pop</span>(<span class="s">0</span>)
+        found.<span class="f">sort</span>(reverse=<span class="k">True</span>)
+        <span class="k">if</span> <span class="f">len</span>(found) >= ef <span class="k">and</span> score < found[ef - <span class="s">1</span>][<span class="s">0</span>]:
+            <span class="k">break</span>                                       <span class="c"># 已經找不到更好的候選，提前停止</span>
+        <span class="k">for</span> nb <span class="k">in</span> graph[cur]:
+            <span class="k">if</span> nb <span class="k">in</span> visited:
+                <span class="k">continue</span>
+            visited.<span class="f">add</span>(nb)
+            s = <span class="f">scored</span>(nb)
+            candidates.<span class="f">append</span>((s, nb)); found.<span class="f">append</span>((s, nb))
+    found.<span class="f">sort</span>(reverse=<span class="k">True</span>)
+    <span class="k">return</span> found[:k], <span class="f">len</span>(visited)                          <span class="c"># len(visited) 就是實際比對次數</span>
+
+<span class="c"># 生產環境請直接用現成的 ANN 函式庫，例如：</span>
+<span class="c"># import hnswlib</span>
+<span class="c"># index = hnswlib.Index(space="cosine", dim=768)</span>
+<span class="c"># index.init_index(max_elements=len(vectors), M=16, ef_construction=200)</span>
+<span class="c"># index.add_items(vectors)</span>
+<span class="c"># index.set_ef(64)</span></code></pre>
+
+  <h2>⚖️ 向量索引方法比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>暴力法 Flat</th><th>IVF（分群）</th><th>LSH（雜湊）</th><th>HNSW（圖狀）</th></tr>
+    <tr><th>是否精確</th><td>精確（100%）</td><td>近似</td><td>近似</td><td>近似</td></tr>
+    <tr><th>查詢速度</th><td>隨資料筆數線性增加</td><td>比暴力法快很多</td><td>取決於雜湊桶設計</td><td>通常四者中最快，召回率也高</td></tr>
+    <tr><th>記憶體用量</th><td>最省（只存原始向量）</td><td>中等（向量＋分群中心）</td><td>較高（常需多組雜湊表）</td><td>較高（每點要存多層鄰居清單）</td></tr>
+    <tr><th>索引建置</th><td>幾乎不用建置</td><td>需要先用資料訓練分群（如 k-means）</td><td>建置快，只需算雜湊值</td><td>建置較慢，逐點插入並調整鄰居</td></tr>
+    <tr><th>新增資料</th><td>隨時可加，無需重建</td><td>可加，但資料分布變化大時建議重新訓練</td><td>容易，直接算雜湊值歸桶</td><td>設計上支援逐筆新增</td></tr>
+    <tr><th>常見套件</th><td>FAISS IndexFlat、pgvector 預設</td><td>FAISS IndexIVFFlat</td><td>FAISS、早期向量檢索系統</td><td>FAISS IndexHNSWFlat、hnswlib、pgvector、Milvus、Qdrant</td></tr>
+  </table>
+
+  <h2>⚠️ 向量檢索常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>資料量小就別急著上 ANN</b>：多一層索引結構與調參成本，可能超過它省下來的運算時間；先量測暴力法的實際查詢表現，資料量真的大到撐不住時再換成 ANN 索引。</li>
+      <li><b>ef / M 沒調好</b>：太小會漏掉真正相關的結果（召回率低），太大則失去 ANN 原本要節省的比對次數與記憶體，兩者都要依實際資料實測調整，沒有放諸四海皆準的預設值。</li>
+      <li><b>圖狀索引不容易刪除節點</b>：像 HNSW 這類索引刪除節點會破壞圖的連通性，常見做法是先標記為已刪除、之後再整批重建索引，而不是即時物理刪除。</li>
+      <li><b>距離度量要跟嵌入模型一致</b>：有些嵌入模型的輸出只有在用餘弦相似度或內積比較時才有意義，如果索引用歐幾里得距離建立，排序結果可能不符預期。</li>
+      <li><b>相似不等於正確</b>：ANN 只保證找到向量空間裡「距離夠近」的候選，不保證語意完全符合問題，仍要靠後續的重排序或生成模型把關。</li>
+    </ul>
+    <div class="callout warn">範例中的賣場問答內容與規則皆為虛構，只用於教學示範。</div>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>假設向量資料庫中有 1000 萬筆嵌入向量，若使用暴力法（brute-force）逐一比對餘弦相似度來回答一次查詢，運算量大致會如何隨資料筆數變化？</b></p>
+    <button class="opt">A. 幾乎不受資料筆數影響</button>
+    <button class="opt">B. 大致與資料筆數成正比（資料變兩倍，比對次數也大約變兩倍）</button>
+    <button class="opt">C. 資料筆數增加，比對次數反而變少</button>
+    <div class="why">暴力法要跟每一筆向量都算一次相似度，才能保證找到真正最相似的結果，所以運算量會隨資料筆數線性成長；這正是資料量大的系統需要 ANN 索引的原因。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>下列關於 HNSW 的敘述，何者正確？</b></p>
+    <button class="opt">A. HNSW 保證每次都能找到「真正」最相似的向量，不會有任何誤差</button>
+    <button class="opt">B. HNSW 只用一層結構，跟暴力法比對的節點數量完全一樣</button>
+    <button class="opt">C. HNSW 從稀疏的上層開始快速跳到查詢附近的區域，再到密集的下層做細部搜尋，屬於近似最近鄰（ANN）搜尋</button>
+    <div class="why">HNSW 是分層圖狀索引：上層節點少、連結長，適合快速跳到大致正確的區域；下層節點多、連結短，適合做細部比較。它屬於近似最近鄰搜尋，為了速度犧牲了「保證找到最相似」的性質，但通常能取得很高的召回率。</div>
+  </div>
+
+  <nav class="pager" data-slug="embeddings"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a></div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'問題起點：向量資料庫裡有很多向量', text:'向量資料庫裡已經存了很多筆嵌入向量（這裡簡化畫成 2 維方便呈現）。使用者送來一個<b>查詢向量</b>，系統要從裡面找出跟它最相似的幾筆——這就是<b>向量檢索</b>要解決的問題。' },
+  { title:'暴力法 Brute-force：逐一比對', text:'最直覺的做法是<b>暴力法</b>：把查詢向量跟資料庫裡每一筆都算一次餘弦相似度，再依分數排序取出前幾名。這個做法保證找到真正最相似的結果，但比對次數等於資料的總筆數。' },
+  { title:'資料量放大，暴力法越來越慢', text:'實際系統裡的資料量常常是幾百萬甚至上億筆。暴力法的比對次數會跟著資料筆數<b>等比例增加</b>，資料越多，每一次查詢就要花越多時間——這是暴力法的天花板。' },
+  { title:'近似最近鄰 Approximate Nearest Neighbor', text:'與其保證找到「絕對最相似」，不如用一點點準確度換取大量速度——這就是<b>近似最近鄰（ANN）</b>搜尋的核心想法：只要找到「足夠相似」的結果，就不用跟每一筆都比對。' },
+  { title:'建立圖狀索引：只連最相似的幾個鄰居', text:'在<b>建立索引</b>時（只需要做一次），先把每個向量跟其他向量兩兩比較一次，讓每個點只保留跟它最相似的幾個<b>鄰居</b>連線，形成一張圖，而不是每次查詢都要重新比對全部。' },
+  { title:'HNSW：把圖分成好幾層', text:'<b>HNSW</b>（Hierarchical Navigable Small World）把這張圖切成好幾層：上層節點少、連線長，像高速公路一樣可以快速跳過大段距離；下層節點多、連線短，適合做精細定位。' },
+  { title:'從上層貪婪跳到查詢附近', text:'查詢從最上層固定的<b>入口點</b>出發，每一步都跳到目前鄰居裡跟查詢最像的那個；當這一層再也找不到更像的鄰居，就往下一層繼續——不需要跟其他節點比較。' },
+  { title:'到達最底層，用候選清單細部篩選', text:'到了包含全部節點的最底層，用一份大小為 <b>ef</b> 的候選清單，持續探索周圍鄰居並保留目前最好的幾筆，最後從清單裡取出最終的 <b>top-k</b> 個結果。' },
+  { title:'結果：比對次數大減，答案幾乎一樣', text:'整個過程只走訪了一小部分節點（圖中綠色），跟暴力法比對「每一筆」（灰色）比起來省下大量運算，但找到的結果幾乎完全一致——這就是近似最近鄰搜尋的威力。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+
+  const CORPUS = [
+    '商品到貨後如有瑕疵，七天內可申請退貨退款。',
+    '未拆封的商品享有十四天猶豫期，可全額退款。',
+    '退貨運費由買家負擔，商品瑕疵除外由賣場吸收。',
+    '特價出清商品經公告後恕不接受退換貨。',
+    '退款將於收到退回商品並驗貨後五個工作天內完成。',
+    '換貨僅限同商品不同顏色，且需保留完整包裝與配件。',
+    '行動電源提供一年保固，人為損壞不在保固範圍內。',
+    '傳輸線保固期間內故障可直接更換全新品，無須送修。',
+    '保固認定以購買發票或訂單編號為準，請妥善保存。',
+    '藍牙耳機電池屬耗材，非保固範圍內項目。',
+    '保固期間內如非人為因素故障，提供免費檢測與維修服務。',
+    '過保固商品仍可付費送修，維修前會先告知報價。',
+    '全館滿千免運，未滿千元酌收運費六十元。',
+    '一般商品下單後兩個工作天內出貨，離島地區另計。',
+    '貨到付款需於取件時當面確認商品外觀是否完整。',
+    '超商取貨僅限單件商品重量在五公斤以內。',
+    '出貨後將以簡訊通知物流追蹤編號，請留意簡訊通知。',
+    '預購商品到貨時間依供應商到貨時程另行通知。',
+    '行動電源提供多種容量選擇，並支援雙向快充功能。',
+    '傳輸線支援快速充電與資料傳輸雙重用途。',
+    '藍牙耳機支援防水防汗設計，適合運動時配戴。',
+    '手機殼採用軍規防摔材質，並附贈鏡頭保護貼。',
+    '螢幕保護貼採用鋼化玻璃材質，具備抗刮防指紋功能。',
+    '車用充電器支援雙孔輸出，可同時為兩台裝置充電。',
+    '目前支援信用卡、行動支付與貨到付款三種付款方式。',
+    '信用卡付款可選擇分期付款，分期期數依銀行規定。',
+    '行動支付付款完成後將立即產生電子發票。',
+    '團購訂單需全數付款完成後才會統一出貨。',
+    '使用購物金折抵時，需與其他優惠券分開結帳。',
+    '發票開立方式可於結帳頁面選擇二聯式或三聯式。'
+  ].map((text, i) => ({ id: 'd' + (i + 1), text }));
+  const N = CORPUS.length;
+  const ENTRY = 0;
+
+  const index = rt.buildIndex(CORPUS);
+  const simMat = [];
+  for(let i=0;i<N;i++){
+    simMat.push([]);
+    for(let j=0;j<N;j++) simMat[i][j] = i === j ? 1 : rt.cosine(index.vecs[i], index.vecs[j]);
+  }
+
+  const queries = ['商品壞掉可以退貨嗎？','行動電源保固多久？','多久會出貨？','傳輸線可以快充嗎？','信用卡付款可以分期嗎？'];
+  let mode = 'brute', currentQ = queries[0];
+
+  function buildGraph(M){
+    const adj = Array.from({length:N}, () => new Set());
+    for(let i=0;i<N;i++){
+      const order = [...Array(N).keys()].filter(j => j !== i).sort((a,b) => simMat[i][b] - simMat[i][a]).slice(0,M);
+      order.forEach(j => { adj[i].add(j); adj[j].add(i); });
+    }
+    return adj;
+  }
+
+  function bruteForce(qVec, k){
+    const scored = CORPUS.map((d,i) => ({ i, doc:d, score: rt.cosine(qVec, index.vecs[i]) }));
+    scored.sort((a,b) => b.score - a.score);
+    return { top: scored.slice(0,k), comparisons: N };
+  }
+
+  function annSearch(qVec, adj, ef, k){
+    const scoreOf = i => rt.cosine(qVec, index.vecs[i]);
+    const visited = new Set([ENTRY]);
+    const entryScore = scoreOf(ENTRY);
+    let candidates = [{ i:ENTRY, doc:CORPUS[ENTRY], score:entryScore }];
+    let found = [{ i:ENTRY, doc:CORPUS[ENTRY], score:entryScore }];
+    let guard = 0;
+    while(candidates.length && guard++ < 200){
+      candidates.sort((a,b) => b.score - a.score);
+      const cur = candidates.shift();
+      found.sort((a,b) => b.score - a.score);
+      if(found.length >= ef && cur.score < found[ef-1].score) break;
+      adj[cur.i].forEach(nb => {
+        if(visited.has(nb)) return;
+        visited.add(nb);
+        const s = scoreOf(nb);
+        candidates.push({ i:nb, doc:CORPUS[nb], score:s });
+        found.push({ i:nb, doc:CORPUS[nb], score:s });
+      });
+    }
+    found.sort((a,b) => b.score - a.score);
+    return { top: found.slice(0,k), comparisons: visited.size };
+  }
+
+  function updateVis(){
+    const ann = mode === 'ann';
+    $('#rowM').style.display = ann ? 'flex' : 'none';
+    $('#rowEf').style.display = ann ? 'flex' : 'none';
+  }
+
+  function run(){
+    const k = +$('#k').value; $('#kv').textContent = k;
+    const M = +$('#m').value; $('#mv').textContent = M;
+    const ef = +$('#ef').value; $('#efv').textContent = ef;
+    const qVec = index.vec(rt.tokenize(currentQ));
+    const bf = bruteForce(qVec, k);
+    const exactIds = new Set(bf.top.map(h => h.i));
+
+    let result;
+    if(mode === 'brute'){
+      result = bf;
+    } else {
+      const adj = buildGraph(M);
+      result = annSearch(qVec, adj, Math.max(ef, k), k);
+    }
+    const recall = result.top.filter(h => exactIds.has(h.i)).length;
+
+    $('#hits').innerHTML = result.top.map(h => {
+      const isExact = exactIds.has(h.i);
+      return `<div class="hit ${isExact ? 'top' : ''}">
+        <div class="meta"><span>${isExact ? '✅ 與暴力法一致 · ' : ''}${h.doc.id}</span><span>相似度 ${h.score.toFixed(3)}</span></div>
+        <div>${rt.highlight(h.doc.text, currentQ)}</div>
+      </div>`;
+    }).join('');
+
+    $('#stat').textContent = mode === 'brute'
+      ? `比對次數：${result.comparisons} / ${N}（暴力法固定要跟全部比對一次）`
+      : `比對次數：${result.comparisons} / ${N}（只比對圖上實際走訪過的節點）`;
+
+    $('#verdict').innerHTML = mode === 'brute'
+      ? '<span style="color:var(--good)">✅ 保證是真正最相似的 top-k（100% 正確）。</span>'
+      : (recall === k
+          ? `<span style="color:var(--good)">✅ 只比對 ${result.comparisons} 次，結果跟暴力法的 top-k 完全一致（召回 ${recall}/${k}）。</span>`
+          : `<span style="color:var(--warn)">⚠️ 只比對 ${result.comparisons} 次，但漏掉了 ${k - recall} 筆真正最相似的結果（召回 ${recall}/${k}）——可以試著調高 ef 或 M。</span>`);
+  }
+
+  $('#qchips').innerHTML = queries.map(q => `<button type="button">${q}</button>`).join('');
+  $('#qchips').querySelectorAll('button').forEach((b,i) => b.onclick = () => {
+    currentQ = queries[i];
+    $('#qchips').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    run();
+  });
+  $('#qchips').querySelector('button').classList.add('on');
+
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    updateVis(); run();
+  });
+
+  ['k','m','ef'].forEach(id => $('#'+id).oninput = run);
+  updateVis(); run();
+})();
+</script>
+</body>
+</html>

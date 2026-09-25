@@ -3,7 +3,7 @@
   "topics": [
     { "slug": "naive-rag", "title": "基礎 RAG 流程", "en": "Naive RAG", "level": 1, "status": "done", "file": "lessons/001-naive-rag.html" },
     { "slug": "chunking", "title": "切塊策略：固定長度、遞迴、語意切塊與重疊", "en": "Chunking Strategies", "level": 1, "status": "done", "file": "lessons/002-chunking.html" },
-    { "slug": "embeddings", "title": "嵌入與向量檢索：餘弦相似度、ANN、HNSW", "en": "Embeddings & Vector Search", "level": 1, "status": "todo" },
+    { "slug": "embeddings", "title": "嵌入與向量檢索：餘弦相似度、ANN、HNSW", "en": "Embeddings & Vector Search", "level": 1, "status": "done", "file": "lessons/003-embeddings.html" },
     { "slug": "hybrid-search", "title": "混合檢索：BM25 關鍵字 + 向量 + RRF 融合", "en": "Hybrid Search", "level": 2, "status": "todo" },
     { "slug": "reranking", "title": "重排序：Bi-encoder 召回、Cross-encoder 精排", "en": "Reranking", "level": 2, "status": "todo" },
     { "slug": "query-rewriting", "title": "查詢改寫與多重查詢 Multi-Query", "en": "Query Rewriting / Multi-Query", "level": 2, "status": "todo" },

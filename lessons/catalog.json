@@ -21,6 +21,17 @@
       "summary": "文件怎麼切，決定了檢索能不能找到完整答案。比較固定長度、重疊、遞迴切塊與語意切塊四種做法的優缺點。",
       "tags": ["入門", "切塊"],
       "date": "2026-09-24"
+    },
+    {
+      "no": 3,
+      "slug": "embeddings",
+      "file": "lessons/003-embeddings.html",
+      "title": "嵌入與向量檢索：餘弦相似度、ANN 與 HNSW",
+      "en": "Embeddings & Vector Search",
+      "level": 1,
+      "summary": "資料量大到暴力法撐不住時，向量資料庫怎麼用近似最近鄰（ANN）索引，尤其是圖狀索引 HNSW，用少量比對次數換來接近精確的結果。",
+      "tags": ["入門", "向量檢索"],
+      "date": "2026-09-25"
     }
   ]
 }
