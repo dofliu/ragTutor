@@ -47,6 +47,13 @@ scripts/check.js        無頭瀏覽器檢查：錯誤、水平捲動、每個�
 10. `<nav class="pager" data-slug="<slug>">`（自動產生上下堂連結）
 11. 頁尾與 `<script>`：`RagTutor.player({...})` + demo 程式
 
+## 視覺風格：簡約札記（Journal）· 火影橘
+
+- 主色 `--accent`（火影橘）只用在重點：刊頭方塊、h2 上方短橫線、步驟編號、主要按鈕、選中狀態；連結文字用 `--accent-ink`，橘底上的文字用 `--on-accent`（不要寫死 `#fff`）。
+- 紙張感：米白底、細線分隔、無陰影、小圓角（`--radius`）；標題用 `--serif`，編號／日期／英文副標用 `--mono`。
+- 共用元件（`.seg`、`.chips`、`.keypoints`、`.demo`…）的樣式都在 `assets/style.css`，課程頁不要再各自加 `<style>` 覆寫。
+- SVG 內的語意色（`--doc`、`--vec`、`--query`…）維持不變；`--warn` 是芥末黃，刻意和火影橘區分開。
+
 ## 規範
 
 - 語言：繁體中文（台灣用語），技術名詞第一次出現附英文。

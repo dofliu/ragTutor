@@ -8,49 +8,58 @@
 <link rel="stylesheet" href="assets/style.css">
 <script src="assets/lesson.js"></script>
 <style>
-  .hero{display:grid;gap:24px;grid-template-columns:1.1fr 1fr;align-items:center;padding:36px 0 8px}
-  @media (max-width:760px){.hero{grid-template-columns:1fr}}
-  .hero svg{width:100%;height:auto}
-  .hero svg text{font-family:var(--font);fill:var(--ink)}
+  .masthead{padding:44px 0 8px;display:grid;gap:28px;grid-template-columns:1.25fr 1fr;align-items:end}
+  @media (max-width:760px){.masthead{grid-template-columns:1fr}}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--accent-ink);margin:0}
+  .masthead h1{font-size:clamp(34px,6.4vw,56px);line-height:1.2;margin:.25em 0 .35em}
+  .masthead h1 em{font-style:normal;color:var(--accent-ink)}
+  .masthead .lead{margin:0 0 1.2em}
+  .masthead svg{width:100%;height:auto}
+  .masthead svg text{font-family:var(--font);fill:var(--ink)}
   .dot{animation:travel 4s linear infinite;offset-rotate:0deg}
   @keyframes travel{from{offset-distance:0%}to{offset-distance:100%}}
   @media (prefers-reduced-motion: reduce){.dot{animation:none}}
-  .stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:14px}
-  .stats b{color:var(--ink);font-size:20px;margin-right:4px}
+  .stats{display:flex;gap:28px;flex-wrap:wrap;align-items:baseline;font-size:13px;color:var(--muted);margin:0 0 18px}
+  .stats b{font-family:var(--serif);color:var(--ink);font-size:28px;margin-right:6px}
+  .start{display:inline-block;padding:8px 18px;font-size:15px;text-decoration:none;background:var(--accent);color:var(--on-accent);border-radius:var(--radius)}
+  .start:hover{filter:brightness(1.06)}
+  .section-note{color:var(--muted);font-size:14px;margin:-.2em 0 1em}
 </style>
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="index.html">🧭 <span>RAG <b>動畫教室</b></span></a>
-  <nav><a href="#lessons">所有課程</a><a href="#roadmap">路線圖</a><a href="https://github.com/dofliu/ragTutor">GitHub</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+  <a class="brand" href="index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="#lessons">課程</a><a href="#roadmap">路線圖</a><a href="https://github.com/dofliu/ragTutor">GitHub</a><button class="theme-btn" type="button">◐ 主題</button></nav>
 </div></header>
 
 <main class="wrap">
-  <section class="hero">
+  <section class="masthead">
     <div>
-      <h1>每天一堂，<br>用動畫看懂 RAG</h1>
-      <p class="lead">檢索增強生成（Retrieval-Augmented Generation）讓大型語言模型先查資料、再回答。這裡每天新增一種 RAG 技術的教學頁：分鏡動畫說明原理、瀏覽器裡就能操作的範例、可以直接改來用的程式碼。</p>
+      <p class="kicker" id="issue">DAILY NOTES ON RAG</p>
+      <h1>每天一堂，<br>用動畫看懂 <em>RAG</em></h1>
+      <p class="lead">檢索增強生成（Retrieval-Augmented Generation）讓大型語言模型先查資料、再回答。這裡每天記下一種 RAG 技術：分鏡動畫說明原理、瀏覽器裡就能操作的範例、可以直接改來用的程式碼。</p>
       <div class="stats"><span><b id="n-lessons">–</b>堂已上線</span><span><b id="n-todo">–</b>堂排隊中</span></div>
-      <p><a class="theme-btn" style="display:inline-block;padding:8px 16px;font-size:15px;text-decoration:none;background:var(--accent);color:#fff;border-color:var(--accent)" id="start" href="lessons/001-naive-rag.html">從第一堂開始 →</a></p>
+      <a class="start" id="start" href="lessons/001-naive-rag.html">從第一堂開始 →</a>
     </div>
     <svg viewBox="0 0 440 260" role="img" aria-label="問題經過檢索取得文件，再交給語言模型產生答案">
-      <path id="route" d="M40 200 C 110 200, 120 70, 220 70 S 330 200, 400 200" fill="none" style="stroke:var(--line)" stroke-width="3" stroke-dasharray="6 7"/>
-      <g><rect x="10" y="176" width="64" height="46" rx="10" style="fill:var(--panel);stroke:var(--query)" stroke-width="2"/><text x="42" y="204" text-anchor="middle" font-size="13">❓ 問題</text></g>
-      <g><path d="M180 40 v50 a40 10 0 0 0 80 0 v-50" style="fill:var(--panel);stroke:var(--vec)" stroke-width="2"/><ellipse cx="220" cy="40" rx="40" ry="10" style="fill:var(--panel);stroke:var(--vec)" stroke-width="2"/><text x="220" y="124" text-anchor="middle" font-size="13">知識庫</text></g>
-      <g><rect x="366" y="176" width="64" height="46" rx="23" style="fill:var(--panel);stroke:var(--llm)" stroke-width="2"/><text x="398" y="204" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--llm)">LLM</text></g>
-      <rect class="dot" width="16" height="11" rx="2" style="fill:var(--doc);offset-path:path('M40 200 C 110 200, 120 70, 220 70 S 330 200, 400 200')"/>
-      <rect class="dot" width="16" height="11" rx="2" style="fill:var(--good);offset-path:path('M40 200 C 110 200, 120 70, 220 70 S 330 200, 400 200');animation-delay:-1.3s"/>
-      <rect class="dot" width="16" height="11" rx="2" style="fill:var(--warn);offset-path:path('M40 200 C 110 200, 120 70, 220 70 S 330 200, 400 200');animation-delay:-2.6s"/>
+      <path d="M40 200 C 110 200, 120 70, 220 70 S 330 200, 400 200" fill="none" style="stroke:var(--line)" stroke-width="2" stroke-dasharray="5 7"/>
+      <g><rect x="10" y="176" width="64" height="46" rx="4" style="fill:var(--panel);stroke:var(--query)" stroke-width="1.5"/><text x="42" y="204" text-anchor="middle" font-size="13">❓ 問題</text></g>
+      <g><path d="M180 40 v50 a40 10 0 0 0 80 0 v-50" style="fill:var(--panel);stroke:var(--vec)" stroke-width="1.5"/><ellipse cx="220" cy="40" rx="40" ry="10" style="fill:var(--panel);stroke:var(--vec)" stroke-width="1.5"/><text x="220" y="124" text-anchor="middle" font-size="13">知識庫</text></g>
+      <g><rect x="366" y="176" width="64" height="46" rx="23" style="fill:var(--panel);stroke:var(--accent)" stroke-width="1.5"/><text x="398" y="204" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--accent-ink)">LLM</text></g>
+      <rect class="dot" width="14" height="10" rx="1" style="fill:var(--accent);offset-path:path('M40 200 C 110 200, 120 70, 220 70 S 330 200, 400 200')"/>
+      <rect class="dot" width="14" height="10" rx="1" style="fill:var(--doc);offset-path:path('M40 200 C 110 200, 120 70, 220 70 S 330 200, 400 200');animation-delay:-1.3s"/>
+      <rect class="dot" width="14" height="10" rx="1" style="fill:var(--good);offset-path:path('M40 200 C 110 200, 120 70, 220 70 S 330 200, 400 200');animation-delay:-2.6s"/>
       <text x="220" y="245" text-anchor="middle" font-size="13" style="fill:var(--muted)">Retrieve → Augment → Generate</text>
     </svg>
   </section>
 
-  <h2 id="lessons">📚 課程</h2>
-  <div class="grid" id="lesson-grid"><p class="muted">載入中…</p></div>
+  <h2 id="lessons">課程札記</h2>
+  <p class="section-note">最新的一堂在最上面。</p>
+  <div class="entries" id="lesson-list"><p class="muted">載入中…</p></div>
 
-  <h2 id="roadmap">🗺️ 接下來的主題</h2>
-  <p class="muted">依序每天上線一堂，由淺入深。</p>
-  <ul class="roadmap" id="roadmap-list"></ul>
+  <h2 id="roadmap">接下來的主題</h2>
+  <p class="section-note">依序每天上線一堂，由淺入深。</p>
+  <ol class="roadmap" id="roadmap-list"></ol>
 </main>
 
 <footer><div class="wrap">RAG 動畫教室 · 內容可自由用於教學推廣 · <a href="https://github.com/dofliu/ragTutor">原始碼</a></div></footer>
@@ -58,26 +67,32 @@
 <script>
 (async function(){
   const esc = RagTutor.escapeHtml, lv = ['', '入門', '進階', '高階'];
+  const pad = n => String(n).padStart(3,'0');
   try{
     const [cat, road] = await Promise.all([
       fetch('lessons/catalog.json', {cache:'no-cache'}).then(r => r.json()),
       fetch('lessons/roadmap.json', {cache:'no-cache'}).then(r => r.json())
     ]);
     const lessons = cat.lessons;
-    document.getElementById('lesson-grid').innerHTML = lessons.slice().reverse().map(l => `
-      <a class="card lesson-card" href="${l.file}">
-        <span class="no">#${String(l.no).padStart(3,'0')} · ${esc(l.en)}</span>
-        <h3>${esc(l.title)}</h3>
-        <p>${esc(l.summary)}</p>
-        <span><span class="tag lv${l.level}">${lv[l.level]}</span><span class="tag">${l.date}</span></span>
+    document.getElementById('lesson-list').innerHTML = lessons.slice().reverse().map((l, i) => `
+      <a class="entry" href="${l.file}">
+        <div class="when"><b>No.${pad(l.no)}</b>${esc(l.date)}</div>
+        <div>
+          <h3>${esc(l.title)}${i === 0 ? '<span class="new">NEW</span>' : ''}</h3>
+          <div class="en">${esc(l.en)}</div>
+          <p>${esc(l.summary)}</p>
+          <span class="tag lv${l.level}">${lv[l.level]}</span>${(l.tags || []).filter(t => t !== lv[l.level]).map(t => `<span class="tag">${esc(t)}</span>`).join('')}
+        </div>
       </a>`).join('');
     const todo = road.topics.filter(t => t.status !== 'done');
-    document.getElementById('roadmap-list').innerHTML = todo.map(t =>
-      `<li><b>${esc(t.title)}</b><br>${esc(t.en)} · ${lv[t.level]}</li>`).join('');
+    document.getElementById('roadmap-list').innerHTML = todo.map((t, i) =>
+      `<li><span class="n">No.${pad(lessons.length + i + 1)}</span><span><b>${esc(t.title)}</b><br>${esc(t.en)} · ${lv[t.level]}</span></li>`).join('');
     document.getElementById('n-lessons').textContent = lessons.length;
     document.getElementById('n-todo').textContent = todo.length;
+    const last = lessons[lessons.length - 1];
+    if(last) document.getElementById('issue').textContent = `DAILY NOTES ON RAG · No.${pad(last.no)} · ${last.date}`;
   }catch(e){
-    document.getElementById('lesson-grid').innerHTML = '<p class="muted">請透過網站（GitHub Pages 或本機 http server）開啟以載入課程清單。</p>';
+    document.getElementById('lesson-list').innerHTML = '<p class="muted">請透過網站（GitHub Pages 或本機 http server）開啟以載入課程清單。</p>';
   }
 })();
 </script>
