@@ -176,8 +176,12 @@
   </div>
 
   <h2>🧪 互動範例：親手跑一次檢索</h2>
-  <div class="prose"><p>下面是一份虛構的「星河科技員工手冊」，已經切成 8 個片段。輸入問題後，瀏覽器會把問題與每個片段轉成向量（這裡用中文二元組的 TF-IDF 模擬嵌入），計算餘弦相似度，取出最相關的 k 個片段，最後組出要送給 LLM 的 Prompt。</p></div>
+  <div class="prose"><p>下面有兩份虛構的知識庫：「星河科技員工手冊」與鷗灣離岸風場的《OW-8 風機運維手冊》，各切成 8 個片段。輸入問題後，瀏覽器會把問題與每個片段轉成向量（這裡用中文二元組的 TF-IDF 模擬嵌入），計算餘弦相似度，取出最相關的 k 個片段，最後組出要送給 LLM 的 Prompt。切換到運維手冊，試試現場技師常查的「葉片旋角馬達故障怎麼處理？」。</p></div>
   <div class="card demo" id="demo">
+    <div class="row seg" id="corpusSeg">
+      <button type="button" class="on" data-c="hr">星河科技員工手冊</button>
+      <button type="button" data-c="wind">OW-8 風機運維手冊</button>
+    </div>
     <div class="row">
       <input type="text" id="q" value="出差住宿每晚可以報多少錢？" aria-label="問題">
       <button id="go">檢索</button>
@@ -218,7 +222,8 @@ vectors = embedder.<span class="f">encode</span>(chunks, normalize_embeddings=<s
                                  messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
     <span class="k">return</span> msg.content[<span class="s">0</span>].text
 
-<span class="f">print</span>(<span class="f">answer</span>(<span class="s">"出差住宿每晚可以報多少？"</span>))</code></pre>
+<span class="f">print</span>(<span class="f">answer</span>(<span class="s">"出差住宿每晚可以報多少？"</span>))
+<span class="c"># 風電運維版：把 chunks 換成運維手冊段落，再問 answer("葉片旋角馬達故障怎麼處理？")</span></code></pre>
 
   <h2>⚖️ RAG 與其他做法比較</h2>
   <table class="cmp">
@@ -237,7 +242,7 @@ vectors = embedder.<span class="f">encode</span>(chunks, normalize_embeddings=<s
       <li><b>Top-k 的兩難</b>：k 太小漏掉資訊，k 太大塞進雜訊、稀釋模型注意力。→「重排序」。</li>
       <li><b>問題本身太模糊</b>：「那個規定呢？」這種問題很難檢索。→「查詢改寫」。</li>
     </ul>
-    <div class="callout warn">範例中的員工手冊內容與數字皆為虛構，只用於教學示範。</div>
+    <div class="callout warn">範例中的員工手冊，以及鷗灣離岸風場、OW-8 機型、運維手冊內容與告警代碼皆為虛構，只用於教學示範；實際作業以原廠手冊與現場規範為準。</div>
   </div>
 
   <h2>📝 小測驗</h2>
@@ -268,26 +273,52 @@ RagTutor.player({ el:'#p1', interval:7000, steps:[
 ]});
 
 (function(){
-  const { rt, escapeHtml } = RagTutor;
-  const docs = [
-    { id:'#01', text:'星河科技上班時間為週一至週五 9:00 至 18:00，中午休息一小時，可彈性於 8:00 至 10:00 間打卡。' },
-    { id:'#02', text:'員工到職滿一年享有 14 天特休假，未休完的特休可遞延至次年度使用，逾期則折算薪資。' },
-    { id:'#03', text:'遠端工作每週最多兩天，需於前一週在人資系統登記，並確保視訊會議時可以即時上線。' },
-    { id:'#04', text:'國內出差住宿每晚上限為新台幣 2,800 元，海外出差依城市等級每晚 120 至 250 美元，報帳需檢附收據。' },
-    { id:'#05', text:'出差交通以高鐵標準車廂或經濟艙為原則，計程車費用需註明起訖地點與事由。' },
-    { id:'#06', text:'公司每年補助員工教育訓練費用最高 20,000 元，課程需與職務相關並於結訓後繳交心得。' },
-    { id:'#07', text:'新進員工到職第一週需完成資訊安全課程，並啟用雙重驗證後才能存取公司內部系統。' },
-    { id:'#08', text:'加班需事先經主管核准，平日加班前兩小時以 1.34 倍計薪，可選擇換成補休。' }
-  ];
-  const index = rt.buildIndex(docs);
-  const samples = ['出差住宿每晚可以報多少錢？','特休沒休完怎麼辦？','可以在家上班嗎？','加班費怎麼算？','公司會補助上課嗎？'];
+  const { rt } = RagTutor;
+  const CORPORA = {
+    hr: {
+      docs: [
+        { id:'#01', text:'星河科技上班時間為週一至週五 9:00 至 18:00，中午休息一小時，可彈性於 8:00 至 10:00 間打卡。' },
+        { id:'#02', text:'員工到職滿一年享有 14 天特休假，未休完的特休可遞延至次年度使用，逾期則折算薪資。' },
+        { id:'#03', text:'遠端工作每週最多兩天，需於前一週在人資系統登記，並確保視訊會議時可以即時上線。' },
+        { id:'#04', text:'國內出差住宿每晚上限為新台幣 2,800 元，海外出差依城市等級每晚 120 至 250 美元，報帳需檢附收據。' },
+        { id:'#05', text:'出差交通以高鐵標準車廂或經濟艙為原則，計程車費用需註明起訖地點與事由。' },
+        { id:'#06', text:'公司每年補助員工教育訓練費用最高 20,000 元，課程需與職務相關並於結訓後繳交心得。' },
+        { id:'#07', text:'新進員工到職第一週需完成資訊安全課程，並啟用雙重驗證後才能存取公司內部系統。' },
+        { id:'#08', text:'加班需事先經主管核准，平日加班前兩小時以 1.34 倍計薪，可選擇換成補休。' }
+      ],
+      samples: ['出差住宿每晚可以報多少錢？','特休沒休完怎麼辦？','可以在家上班嗎？','加班費怎麼算？','公司會補助上課嗎？'],
+      system: '你是星河科技的人資助理。只根據下列參考資料回答，並標註出處編號；資料中沒有答案就回答「手冊中沒有相關規定」。'
+    },
+    wind: {
+      docs: [
+        { id:'#01', text:'OW-8 每支葉片各有一組旋角馬達、旋角齒輪箱與絕對值編碼器，由輪轂內的旋角控制櫃驅動，三支葉片可以各自調整角度。' },
+        { id:'#02', text:'告警 PT-203 旋角馬達過溫：常見原因是馬達煞車沒有完全釋放而持續拖磨、散熱風扇故障或旋角齒輪箱潤滑不足，請先檢查煞車間隙與風扇運轉。' },
+        { id:'#03', text:'告警 PT-205 旋角馬達煞車異常：量測煞車線圈電壓並檢查電磁煞車間隙，煞車片磨耗超過手冊限值時更換（料號 PT-BRK-05）。' },
+        { id:'#04', text:'告警 PT-211 葉片角度偏差過大：三支葉片的旋角角度不一致，多半是編碼器訊號異常或單一旋角馬達出力不足，請比對三支葉片的編碼器讀值。' },
+        { id:'#05', text:'告警 PT-230 旋角備援電源測試失敗：備援電池或超級電容負責在電網失電時緊急順槳，測試失敗時不得重新啟動風機，需更換備援電源模組。' },
+        { id:'#06', text:'更換旋角馬達前，須先將葉片順槳並鎖上轉子鎖，對旋角控制櫃執行上鎖掛牌（LOTO），確認備援電源已放電後才能進入輪轂作業。' },
+        { id:'#07', text:'告警 YW-042 偏航誤差過大：機艙方向與風向持續偏離，請檢查風向計訊號與偏航馬達，必要時由遠端監控中心手動對風。' },
+        { id:'#08', text:'告警 GB-117 齒輪箱高速軸軸承溫度過高：檢查齒輪油油位與冷卻器，並調閱狀態監測系統的振動頻譜，確認軸承是否有早期損傷。' }
+      ],
+      samples: ['葉片旋角馬達故障怎麼處理？','PT-230 是什麼告警？','換旋角馬達前要做哪些安全措施？','三支葉片角度不一致','偏航對不準風向怎麼辦？'],
+      system: '你是鷗灣離岸風場的運維助理。只根據下列《OW-8 運維手冊》內容回答，並標註出處編號；手冊中沒有答案就回答「手冊中沒有相關說明，請聯絡原廠技術支援」。'
+    }
+  };
+  let cur, index;
   const $ = s => document.querySelector(s);
-  $('#chips').innerHTML = samples.map(s => `<button type="button">${s}</button>`).join('');
-  $('#chips').querySelectorAll('button').forEach(b => b.onclick = () => { $('#q').value = b.textContent; run(); });
+
+  function setCorpus(key){
+    cur = CORPORA[key]; index = rt.buildIndex(cur.docs);
+    $('#chips').innerHTML = cur.samples.map(s => `<button type="button">${s}</button>`).join('');
+    $('#chips').querySelectorAll('button').forEach(b => b.onclick = () => { $('#q').value = b.textContent; run(); });
+    $('#q').value = cur.samples[0];
+    run();
+  }
 
   function run(){
     const q = $('#q').value.trim(); const k = +$('#k').value;
     $('#kv').textContent = k;
+    const docs = cur.docs;
     const all = rt.searchVector(index, q, docs.length);
     const max = Math.max(all[0]?.score || 0, 1e-6);
     $('#hits').innerHTML = all.map((h, r) => `
@@ -297,12 +328,16 @@ RagTutor.player({ el:'#p1', interval:7000, steps:[
         <div class="score-bar"><b style="width:${(h.score/max*100).toFixed(1)}%"></b></div>
       </div>`).join('');
     const ctx = all.slice(0, k).map((h, i) => `[${i+1}] (${h.doc.id}) ${h.doc.text}`).join('\n');
-    $('#prompt').textContent = `你是星河科技的人資助理。只根據下列參考資料回答，並標註出處編號；資料中沒有答案就回答「手冊中沒有相關規定」。\n\n參考資料：\n${ctx}\n\n問題：${q}`;
+    $('#prompt').textContent = `${cur.system}\n\n參考資料：\n${ctx}\n\n問題：${q}`;
   }
+  $('#corpusSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    $('#corpusSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    setCorpus(b.dataset.c);
+  });
   $('#go').onclick = run;
   $('#q').addEventListener('keydown', e => { if(e.key === 'Enter') run(); });
   $('#k').oninput = run;
-  run();
+  setCorpus('hr');
 })();
 </script>
 </body>

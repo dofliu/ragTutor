@@ -138,9 +138,13 @@
     <div class="card"><b>語意切塊照意思走</b>用嵌入模型比對相鄰句子的相似度，話題改變才切；連沒有標點的逐字稿也適用，但索引時要多花運算成本。</div>
   </div>
 
-  <h2>🧪 互動範例：親手切一份社區規約</h2>
-  <div class="prose"><p>下面是一份虛構的「社區住戶規約」全文（尚未切塊）。切換切塊策略、拖動參數，看看「寵物限重 15 公斤，以下犬貓需登記」這條規則會不會被拆散——以及拆散之後，檢索還能不能找到完整答案。</p></div>
+  <h2>🧪 互動範例：親手切一份社區規約或運維手冊</h2>
+  <div class="prose"><p>下面是一份虛構的「社區住戶規約」全文（尚未切塊）。切換切塊策略、拖動參數，看看「寵物限重 15 公斤，以下犬貓需登記」這條規則會不會被拆散——以及拆散之後，檢索還能不能找到完整答案。也可以切換成《OW-8 運維手冊》的旋角馬達章節，看「更換旋角馬達前，須先將葉片順槳並鎖上轉子鎖」這條安全規定會不會被切斷。</p></div>
   <div class="card demo" id="demo">
+    <div class="row seg" id="docSeg">
+      <button type="button" class="on" data-doc="rules">社區住戶規約</button>
+      <button type="button" data-doc="wind">OW-8 運維手冊：旋角馬達</button>
+    </div>
     <div class="row seg" id="modeSeg">
       <button type="button" class="on" data-mode="fixed">固定長度</button>
       <button type="button" data-mode="overlap">固定長度＋重疊</button>
@@ -231,7 +235,7 @@
       <li><b>片段長度要配合嵌入模型</b>：多數嵌入模型有適合的輸入長度區間，片段太長會讓向量被平均稀釋（什麼都像又什麼都不像），片段太短則缺乏足夠上下文。</li>
       <li><b>別忘了保留中繼資料</b>：不管用哪種策略，每個片段都應該記住來源（文件、頁碼、條號），才能在檢索結果裡附上出處，之後也才能做中繼資料過濾。</li>
     </ul>
-    <div class="callout warn">範例中的社區規約內容與數字皆為虛構，只用於教學示範。</div>
+    <div class="callout warn">範例中的社區規約，以及鷗灣離岸風場、OW-8 機型、運維手冊內容與數字皆為虛構，只用於教學示範；實際作業以原廠手冊與現場規範為準。</div>
   </div>
 
   <h2>📝 小測驗</h2>
@@ -271,16 +275,44 @@ RagTutor.player({ el:'#p1', interval:8000, steps:[
 (function(){
   const { rt } = RagTutor;
   const $ = s => document.querySelector(s);
-  const docText = "陽台不得外推或加裝鐵窗，違反者由管理委員會通知限期改善，屆期未改善將處以罰鍰。寵物飼養以總重量15公斤以下之犬貓為限，飼主應於入住七日內至管理室辦理登記，並隨身攜帶排泄物清潔用具。垃圾應於每日晚間7點至9點自行拿到一樓資源回收室分類丟棄，逾時未丟棄之垃圾管理委員會有權要求清潔公司代為處理並收取費用。機車應停放於地下二樓標線範圍內，超出標線或占用汽車位者將被拖吊，拖吊及保管費用由車主自行負擔。住戶如需裝潢施工，僅得於平日上午9點至下午5點進行，假日及國定假日禁止施工，施工噪音不得超過管理委員會公告之分貝數值。住戶如將房屋出租，應於房客入住七日內向管理委員會登記房客基本資料，未登記者視為違反規約。";
-  const sentences = docText.split('。').filter(Boolean).map(s => s + '。');
-  const queries = ['寵物最重幾公斤？','垃圾要在晚上幾點前丟？','機車該停在哪裡？','裝潢可以在假日施工嗎？'];
-  const KEYWORDS = {
-    '寵物最重幾公斤？': '15公斤以下之犬貓',
-    '垃圾要在晚上幾點前丟？': '晚間7點至9點',
-    '機車該停在哪裡？': '地下二樓標線範圍內',
-    '裝潢可以在假日施工嗎？': '假日及國定假日禁止施工'
+  const DOCS = {
+    rules: {
+      text: "陽台不得外推或加裝鐵窗，違反者由管理委員會通知限期改善，屆期未改善將處以罰鍰。寵物飼養以總重量15公斤以下之犬貓為限，飼主應於入住七日內至管理室辦理登記，並隨身攜帶排泄物清潔用具。垃圾應於每日晚間7點至9點自行拿到一樓資源回收室分類丟棄，逾時未丟棄之垃圾管理委員會有權要求清潔公司代為處理並收取費用。機車應停放於地下二樓標線範圍內，超出標線或占用汽車位者將被拖吊，拖吊及保管費用由車主自行負擔。住戶如需裝潢施工，僅得於平日上午9點至下午5點進行，假日及國定假日禁止施工，施工噪音不得超過管理委員會公告之分貝數值。住戶如將房屋出租，應於房客入住七日內向管理委員會登記房客基本資料，未登記者視為違反規約。",
+      keywords: {
+        '寵物最重幾公斤？': '15公斤以下之犬貓',
+        '垃圾要在晚上幾點前丟？': '晚間7點至9點',
+        '機車該停在哪裡？': '地下二樓標線範圍內',
+        '裝潢可以在假日施工嗎？': '假日及國定假日禁止施工'
+      }
+    },
+    wind: {
+      text: "本節適用 OW-8 機型，每半年保養一次，檢查旋角齒輪箱油位與軸承潤滑。更換旋角馬達前，須先將葉片順槳並鎖上轉子鎖，再對旋角控制櫃執行上鎖掛牌，確認備援電源已放電後才能進入輪轂。告警 PT-203 旋角馬達過溫時，先確認馬達煞車是否完全釋放，煞車拖磨是最常見的原因，其次才是散熱風扇故障。旋角備援電源每月自動執行一次負載測試，測試失敗會觸發告警 PT-230，此時風機不得重新啟動，需更換備援電源模組。三支葉片角度偏差超過手冊限值時觸發告警 PT-211，應比對三支葉片的絕對值編碼器讀值，找出讀值異常的那一支。旋角馬達更換後，須執行旋角校正與緊急順槳測試，確認動作正常才能解除上鎖掛牌並恢復運轉。",
+      keywords: {
+        '換旋角馬達前要先做什麼？': '順槳並鎖上轉子鎖',
+        '旋角馬達過溫最常見的原因？': '煞車拖磨是最常見的原因',
+        '備援電源測試失敗可以開機嗎？': '風機不得重新啟動',
+        'PT-211 要比對什麼？': '絕對值編碼器讀值'
+      }
+    }
   };
-  let mode = 'fixed', currentQ = queries[0];
+  let docText, sentences, KEYWORDS, queries, mode = 'fixed', currentQ;
+
+  function setDoc(key){
+    docText = DOCS[key].text;
+    sentences = docText.split('。').filter(Boolean).map(s => s + '。');
+    KEYWORDS = DOCS[key].keywords;
+    queries = Object.keys(KEYWORDS);
+    currentQ = queries[0];
+    $('#qchips').innerHTML = queries.map(q => `<button type="button">${q}</button>`).join('');
+    $('#qchips').querySelectorAll('button').forEach((b,i) => b.onclick = () => {
+      currentQ = queries[i];
+      $('#qchips').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      run();
+    });
+    $('#qchips').querySelector('button').classList.add('on');
+    run();
+  }
 
   function splitRecursive(text, size){
     const sents = text.split('。').filter(Boolean).map(s => s + '。');
@@ -361,14 +393,10 @@ RagTutor.player({ el:'#p1', interval:8000, steps:[
       : '<span style="color:var(--bad)">⚠️ 檢索到的片段沒有完整規則，模型可能答錯或漏答。</span>';
   }
 
-  $('#qchips').innerHTML = queries.map(q => `<button type="button">${q}</button>`).join('');
-  $('#qchips').querySelectorAll('button').forEach((b,i) => b.onclick = () => {
-    currentQ = queries[i];
-    $('#qchips').querySelectorAll('button').forEach(x => x.classList.remove('on'));
-    b.classList.add('on');
-    run();
+  $('#docSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    $('#docSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    setDoc(b.dataset.doc);
   });
-  $('#qchips').querySelector('button').classList.add('on');
 
   $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
     mode = b.dataset.mode;
@@ -378,7 +406,7 @@ RagTutor.player({ el:'#p1', interval:8000, steps:[
   });
 
   ['size','overlap','sens'].forEach(id => $('#'+id).oninput = run);
-  updateVis(); run();
+  updateVis(); setDoc('rules');
 })();
 </script>
 </body>

@@ -114,8 +114,12 @@
   </div>
 
   <h2>🧪 互動範例：BM25 vs. 向量 vs. 混合 RRF，實際排一次</h2>
-  <div class="prose"><p>下面是一份虛構的「風禾家電」客服知識庫，共 30 筆，涵蓋洗衣機、冷氣、除濕機、冰箱、電鍋等常見故障代碼與保養問答。切換三種模式，並比較同一個查詢在 <b>BM25</b>、<b>向量（TF-IDF 模擬）</b>與<b>混合 RRF</b> 下，前幾名結果有什麼不同——特別留意每一筆結果在「另一種方法」裡排第幾名。</p></div>
+  <div class="prose"><p>下面是一份虛構的「風禾家電」客服知識庫，共 30 筆，涵蓋洗衣機、冷氣、除濕機、冰箱、電鍋等常見故障代碼與保養問答；也可以切換成《OW-8 運維手冊》的 30 個段落，裡面同時有 <code>PT-203</code> 這類告警代碼、料號，以及「葉片轉到一半卡住不動」這類口語描述。切換三種模式，並比較同一個查詢在 <b>BM25</b>、<b>向量（TF-IDF 模擬）</b>與<b>混合 RRF</b> 下，前幾名結果有什麼不同——特別留意每一筆結果在「另一種方法」裡排第幾名。</p></div>
   <div class="card demo" id="demo">
+    <div class="row seg" id="corpusSeg">
+      <button type="button" class="on" data-c="appliance">風禾家電客服</button>
+      <button type="button" data-c="wind">OW-8 風機運維手冊</button>
+    </div>
     <div class="row seg" id="modeSeg">
       <button type="button" class="on" data-mode="bm25">BM25 關鍵字</button>
       <button type="button" data-mode="vector">向量（TF-IDF 模擬）</button>
@@ -171,7 +175,8 @@ bm25_ranked = <span class="f">sorted</span>(
     key=<span class="k">lambda</span> x: -x[<span class="s">1</span>]
 )[:<span class="s">50</span>]
 vector_ranked = <span class="f">vector_search</span>(query_vec, doc_vecs, k=<span class="s">50</span>)
-final_top_k = <span class="f">rrf_fuse</span>([bm25_ranked, vector_ranked], k=<span class="s">60</span>)[:<span class="s">5</span>]</code></pre>
+final_top_k = <span class="f">rrf_fuse</span>([bm25_ranked, vector_ranked], k=<span class="s">60</span>)[:<span class="s">5</span>]
+<span class="c"># 例：技師查「PT-203 旋角馬達過溫」時，BM25 靠代碼命中告警段落，向量補上用口語描述同一故障的段落</span></code></pre>
 
   <h2>⚖️ 檢索方式比較</h2>
   <table class="cmp">
@@ -193,7 +198,7 @@ final_top_k = <span class="f">rrf_fuse</span>([bm25_ranked, vector_ranked], k=<s
       <li><b>RRF 只看名次，不看分數差距</b>：如果想讓其中一種方法的意見更有份量（例如更信任向量檢索），需要改用加權分數融合並先把分數常態化，而不是直接套用 RRF。</li>
       <li><b>混合檢索救不回本來就很差的單一方法</b>：如果中文分詞本身就切得亂七八糟，或嵌入模型完全不適合你的領域，融合出來的結果一樣不會好，問題要先從源頭處理。</li>
     </ul>
-    <div class="callout warn">範例中的品牌「風禾家電」與其產品線、錯誤代碼皆為虛構，僅供教學示範。</div>
+    <div class="callout warn">範例中的品牌「風禾家電」與其產品線、錯誤代碼，以及鷗灣離岸風場、OW-8 機型、運維手冊內容、告警代碼與料號皆為虛構，僅供教學示範；實際作業以原廠手冊與現場規範為準。</div>
   </div>
 
   <h2>📝 小測驗</h2>
@@ -233,7 +238,7 @@ RagTutor.player({ el:'#p1', interval:8500, steps:[
   const { rt } = RagTutor;
   const $ = s => document.querySelector(s);
 
-  const CORPUS = [
+  const APPLIANCE = [
     '洗衣機面板顯示 E1 代表進水異常，請檢查水龍頭是否開啟、進水管是否扭折。',
     '洗衣機面板顯示 E3 代表排水異常，請檢查排水管是否被異物阻塞或彎折過度。',
     '洗衣機面板顯示 E5 代表脫水時門蓋未確實關閉，請重新關緊門蓋再啟動。',
@@ -264,12 +269,61 @@ RagTutor.player({ el:'#p1', interval:8500, steps:[
     '烘乾機型號 DR-800 具備自動感溼停機功能，偵測衣物乾燥即自動結束行程。',
     '客服據點提供到府收送服務，家電送修前建議先拍照記錄外觀與面板顯示的錯誤代碼。',
     '產品保固期間內非人為因素故障，提供免費到府檢修服務，保固以購買憑證日期為準。'
-  ].map((text, i) => ({ id: 'd' + (i + 1), text }));
-  const N = CORPUS.length;
-  const index = rt.buildIndex(CORPUS);
+  ];
+  const WIND = [
+    '告警 PT-203 旋角馬達過溫：常見原因是馬達煞車沒有完全釋放而拖磨，其次是散熱風扇故障。',
+    '告警 PT-205 旋角馬達煞車異常：量測煞車線圈電壓，並檢查電磁煞車間隙。',
+    '告警 PT-211 三支葉片角度偏差過大：比對各葉片的絕對值編碼器讀值。',
+    '告警 PT-230 旋角備援電源測試失敗：更換電池或超級電容模組前不得重新啟動風機。',
+    '告警 PT-240 旋角驅動器通訊中斷：檢查輪轂滑環與通訊線路是否鬆脫或磨損。',
+    '葉片轉到一半卡住不動、控制櫃聞到焦味時，先切斷旋角控制櫃電源，再檢查馬達繞組與煞車。',
+    '旋角馬達料號 PT-MTR-02 適用 OW-8 機型；舊款 OW-6 請改用料號 PT-MTR-01。',
+    '更換旋角馬達前須先將葉片順槳並鎖上轉子鎖，對旋角控制櫃執行上鎖掛牌。',
+    '旋角馬達更換後需重新執行旋角校正，並完成緊急順槳測試才能恢復運轉。',
+    '旋角齒輪箱每半年檢查一次油位與漏油狀況，油位不足時補充指定型號齒輪油。',
+    '告警 YW-042 偏航誤差過大：檢查風向計訊號與偏航馬達，必要時由遠端手動對風。',
+    '機艙一直對不準風向、發電量明顯偏低時，可能是風向計安裝角度偏差，需重新校正。',
+    '偏航煞車片磨耗會造成機艙轉向時異音與抖動，需依手冊限值更換煞車片。',
+    '機艙連續往同一方向偏航會讓電纜扭轉，達到限制時系統會自動解纜。',
+    '偏航齒圈與小齒輪需定期補充潤滑脂，潤滑不足會加速齒面磨耗。',
+    '告警 GB-117 齒輪箱高速軸軸承溫度過高：檢查齒輪油油位與冷卻器運轉。',
+    '告警 GB-120 齒輪油壓力過低：檢查油泵、濾芯與管路是否洩漏。',
+    '機艙裡傳出規律的金屬敲擊聲、振動持續變大時，應以內視鏡檢查齒面是否點蝕剝落。',
+    '齒輪油每年取樣送驗，分析金屬顆粒與水分，判斷齒輪與軸承的磨耗程度。',
+    '齒輪箱冷卻器散熱片被鹽霧與灰塵堵塞時，油溫會持續偏高，需定期清潔。',
+    '告警 CV-310 變流器功率模組過溫：檢查冷卻水泵運轉與冷卻液液位。',
+    '告警 GN-150 發電機繞組溫度過高：風機會自動降載，需檢查冷卻風扇與空氣濾網。',
+    '電網電壓驟降時變流器會執行低電壓穿越，事件紀錄可在監控系統查詢。',
+    '發電機絕緣電阻需定期量測，數值偏低時要檢查繞組是否受潮。',
+    '變流器冷卻液需定期檢查濃度與液位，洩漏時會讓功率模組散熱不足。',
+    '進入輪轂前必須鎖上轉子鎖，並確認旋角系統已執行上鎖掛牌。',
+    '登塔作業需穿戴全身式安全帶與防墜器，並確認攀爬設備已通過檢查。',
+    '離岸風機登船作業需確認浪高與風速在作業限值內，並全程穿著救生衣。',
+    '任何維修作業前需向遠端監控中心報備，並將風機切換為維修模式。',
+    '送修零件時請附上告警代碼、風機編號與故障發生時間，方便原廠追蹤。'
+  ];
+  const CORPORA = {
+    appliance: { texts: APPLIANCE, queries: ['洗衣機顯示 E3 是什麼問題？','洗衣機保養與清潔異味','冷氣濾網多久清洗一次','除濕機水箱燈亮怎麼辦','WM-2200 脫水轉速','冰箱結霜門邊膠條'] },
+    wind: { texts: WIND, queries: ['葉片旋角馬達故障','PT-203 是什麼告警？','旋角馬達過溫怎麼辦','葉片卡住不會轉','PT-MTR-02 適用哪些機型','偏航對不準風向'] }
+  };
+  let CORPUS, N, index, queries, mode = 'bm25', currentQ;
 
-  const queries = ['洗衣機顯示 E3 是什麼問題？','洗衣機保養與清潔異味','冷氣濾網多久清洗一次','除濕機水箱燈亮怎麼辦','WM-2200 脫水轉速','冰箱結霜門邊膠條'];
-  let mode = 'bm25', currentQ = queries[0];
+  function setCorpus(key){
+    CORPUS = CORPORA[key].texts.map((text, i) => ({ id: 'd' + (i + 1), text }));
+    N = CORPUS.length;
+    index = rt.buildIndex(CORPUS);
+    queries = CORPORA[key].queries;
+    currentQ = queries[0];
+    $('#qchips').innerHTML = queries.map(q => `<button type="button">${q}</button>`).join('');
+    $('#qchips').querySelectorAll('button').forEach((b,i) => b.onclick = () => {
+      currentQ = queries[i];
+      $('#qchips').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      run();
+    });
+    $('#qchips').querySelector('button').classList.add('on');
+    run();
+  }
 
   function run(){
     const k = +$('#k').value; $('#kv').textContent = k;
@@ -301,14 +355,10 @@ RagTutor.player({ el:'#p1', interval:8500, steps:[
       : `此清單只用${mode === 'bm25' ? 'BM25 關鍵字' : '向量（TF-IDF 模擬）'}排序，共 ${N} 篇候選。`;
   }
 
-  $('#qchips').innerHTML = queries.map(q => `<button type="button">${q}</button>`).join('');
-  $('#qchips').querySelectorAll('button').forEach((b,i) => b.onclick = () => {
-    currentQ = queries[i];
-    $('#qchips').querySelectorAll('button').forEach(x => x.classList.remove('on'));
-    b.classList.add('on');
-    run();
+  $('#corpusSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    $('#corpusSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    setCorpus(b.dataset.c);
   });
-  $('#qchips').querySelector('button').classList.add('on');
 
   $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
     mode = b.dataset.mode;
@@ -318,7 +368,7 @@ RagTutor.player({ el:'#p1', interval:8500, steps:[
   });
 
   $('#k').oninput = run;
-  run();
+  setCorpus('appliance');
 })();
 </script>
 </body>

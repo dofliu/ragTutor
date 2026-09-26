@@ -246,8 +246,12 @@
   </div>
 
   <h2>🧪 互動範例：暴力法 vs. 圖形 ANN，實際比一次</h2>
-  <div class="prose"><p>下面是一份虛構的「晴果 3C 配件」線上賣場常見問答，共 30 筆，分成退換貨、保固、運送、商品規格、付款五類。切換「暴力法」與「圖形 ANN（模擬 HNSW 概念）」，並調整 <b>ef</b>（搜尋候選清單大小）與 <b>M</b>（每個節點的鄰居數），看看比對次數怎麼變化，以及找到的結果跟暴力法是否一致。</p></div>
+  <div class="prose"><p>下面是一份虛構的「晴果 3C 配件」線上賣場常見問答，共 30 筆，分成退換貨、保固、運送、商品規格、付款五類；也可以切換成《OW-8 運維手冊》的 30 個段落，分成旋角、偏航、齒輪箱、發電機與變流器、工安五類。切換「暴力法」與「圖形 ANN（模擬 HNSW 概念）」，並調整 <b>ef</b>（搜尋候選清單大小）與 <b>M</b>（每個節點的鄰居數），看看比對次數怎麼變化，以及找到的結果跟暴力法是否一致。</p></div>
   <div class="card demo" id="demo">
+    <div class="row seg" id="corpusSeg">
+      <button type="button" class="on" data-c="shop">晴果 3C 賣場問答</button>
+      <button type="button" data-c="wind">OW-8 風機運維手冊</button>
+    </div>
     <div class="row seg" id="modeSeg">
       <button type="button" class="on" data-mode="brute">暴力法 Brute-force</button>
       <button type="button" data-mode="ann">圖形 ANN（模擬 HNSW 概念）</button>
@@ -334,7 +338,7 @@
       <li><b>距離度量要跟嵌入模型一致</b>：有些嵌入模型的輸出只有在用餘弦相似度或內積比較時才有意義，如果索引用歐幾里得距離建立，排序結果可能不符預期。</li>
       <li><b>相似不等於正確</b>：ANN 只保證找到向量空間裡「距離夠近」的候選，不保證語意完全符合問題，仍要靠後續的重排序或生成模型把關。</li>
     </ul>
-    <div class="callout warn">範例中的賣場問答內容與規則皆為虛構，只用於教學示範。</div>
+    <div class="callout warn">範例中的賣場問答，以及鷗灣離岸風場、OW-8 機型、運維手冊內容與告警代碼皆為虛構，只用於教學示範；實際作業以原廠手冊與現場規範為準。</div>
   </div>
 
   <h2>📝 小測驗</h2>
@@ -375,7 +379,7 @@ RagTutor.player({ el:'#p1', interval:8000, steps:[
   const { rt } = RagTutor;
   const $ = s => document.querySelector(s);
 
-  const CORPUS = [
+  const SHOP = [
     '商品到貨後如有瑕疵，七天內可申請退貨退款。',
     '未拆封的商品享有十四天猶豫期，可全額退款。',
     '退貨運費由買家負擔，商品瑕疵除外由賣場吸收。',
@@ -406,19 +410,67 @@ RagTutor.player({ el:'#p1', interval:8000, steps:[
     '團購訂單需全數付款完成後才會統一出貨。',
     '使用購物金折抵時，需與其他優惠券分開結帳。',
     '發票開立方式可於結帳頁面選擇二聯式或三聯式。'
-  ].map((text, i) => ({ id: 'd' + (i + 1), text }));
-  const N = CORPUS.length;
+  ];
+  const WIND = [
+    '告警 PT-203 旋角馬達過溫：多半是馬達煞車沒有完全釋放而拖磨，其次是散熱風扇故障。',
+    '告警 PT-205 旋角馬達煞車異常：量測煞車線圈電壓，並檢查電磁煞車間隙是否過大。',
+    '告警 PT-211 三支葉片角度偏差過大：比對各葉片編碼器讀值，找出異常的那一支。',
+    '告警 PT-230 旋角備援電源測試失敗：更換電池或超級電容模組前不得重新啟動風機。',
+    '旋角齒輪箱每半年檢查一次油位與漏油狀況，油位不足時補充指定型號的齒輪油。',
+    '更換旋角馬達後需重新執行旋角校正，並完成緊急順槳測試才能恢復運轉。',
+    '告警 YW-042 偏航誤差過大：檢查風向計訊號與偏航馬達，必要時由遠端手動對風。',
+    '偏航煞車片磨耗會造成機艙對風時異音與抖動，需依手冊限值定期更換煞車片。',
+    '機艙連續往同一方向偏航會讓電纜扭轉，達到限制時系統會自動解纜。',
+    '偏航齒圈與小齒輪需定期補充潤滑脂，潤滑不足會加速齒面磨耗。',
+    '偏航馬達過載跳脫時，先檢查偏航煞車是否正確釋放，再量測馬達絕緣。',
+    '風向計安裝角度偏差會讓偏航誤差長期存在，需以對風校正檢查安裝角度。',
+    '告警 GB-117 齒輪箱高速軸軸承溫度過高：檢查齒輪油油位與冷卻器運轉。',
+    '齒輪油每年取樣送驗，分析金屬顆粒與水分含量，判斷齒輪與軸承磨耗程度。',
+    '齒輪箱冷卻器散熱片被鹽霧與灰塵堵塞時，油溫會持續偏高，需定期清潔。',
+    '狀態監測系統的振動頻譜出現軸承特徵頻率時，代表軸承可能已有早期損傷。',
+    '齒輪油濾芯壓差告警代表濾芯阻塞，需停機更換濾芯並檢查油中雜質。',
+    '齒輪箱異音伴隨振動上升時，應以內視鏡檢查齒面是否有點蝕或剝落。',
+    '告警 CV-310 變流器功率模組過溫：檢查冷卻水泵運轉與冷卻液液位。',
+    '變流器冷卻液需定期檢查濃度與液位，洩漏時會造成功率模組散熱不足。',
+    '發電機繞組溫度過高時風機會降載運轉，需檢查發電機冷卻風扇與空氣濾網。',
+    '發電機軸承需依手冊週期補充潤滑脂，補脂過量同樣會讓軸承溫度升高。',
+    '電網電壓驟降時變流器會執行低電壓穿越，事件紀錄可在監控系統中查詢。',
+    '發電機絕緣電阻需定期量測，數值偏低時要檢查繞組是否受潮。',
+    '進入輪轂前必須先鎖上轉子鎖，並確認旋角系統已執行上鎖掛牌。',
+    '登塔作業需穿戴全身式安全帶與防墜器，並確認攀爬設備已通過檢查。',
+    '離岸風機登船作業需確認浪高與風速在作業限值內，並全程穿著救生衣。',
+    '高處作業時工具需加裝防落繩，避免工具掉落傷及下方人員。',
+    '任何維修作業前需向遠端監控中心報備，並將風機切換為維修模式。',
+    '機艙內動火作業需申請動火許可，並在作業區配置滅火器與監火人員。'
+  ];
+  const CORPORA = {
+    shop: { texts: SHOP, queries: ['商品壞掉可以退貨嗎？','行動電源保固多久？','多久會出貨？','傳輸線可以快充嗎？','信用卡付款可以分期嗎？'] },
+    wind: { texts: WIND, queries: ['葉片旋角馬達故障怎麼處理？','偏航對不準風向怎麼辦？','齒輪箱油溫一直偏高','變流器過溫告警','進入輪轂前要做哪些安全措施？'] }
+  };
   const ENTRY = 0;
+  let CORPUS, N, index, simMat, queries, mode = 'brute', currentQ;
 
-  const index = rt.buildIndex(CORPUS);
-  const simMat = [];
-  for(let i=0;i<N;i++){
-    simMat.push([]);
-    for(let j=0;j<N;j++) simMat[i][j] = i === j ? 1 : rt.cosine(index.vecs[i], index.vecs[j]);
+  function setCorpus(key){
+    CORPUS = CORPORA[key].texts.map((text, i) => ({ id: 'd' + (i + 1), text }));
+    N = CORPUS.length;
+    index = rt.buildIndex(CORPUS);
+    simMat = [];
+    for(let i=0;i<N;i++){
+      simMat.push([]);
+      for(let j=0;j<N;j++) simMat[i][j] = i === j ? 1 : rt.cosine(index.vecs[i], index.vecs[j]);
+    }
+    queries = CORPORA[key].queries;
+    currentQ = queries[0];
+    $('#qchips').innerHTML = queries.map(q => `<button type="button">${q}</button>`).join('');
+    $('#qchips').querySelectorAll('button').forEach((b,i) => b.onclick = () => {
+      currentQ = queries[i];
+      $('#qchips').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      run();
+    });
+    $('#qchips').querySelector('button').classList.add('on');
+    run();
   }
-
-  const queries = ['商品壞掉可以退貨嗎？','行動電源保固多久？','多久會出貨？','傳輸線可以快充嗎？','信用卡付款可以分期嗎？'];
-  let mode = 'brute', currentQ = queries[0];
 
   function buildGraph(M){
     const adj = Array.from({length:N}, () => new Set());
@@ -501,14 +553,10 @@ RagTutor.player({ el:'#p1', interval:8000, steps:[
           : `<span style="color:var(--warn)">⚠️ 只比對 ${result.comparisons} 次，但漏掉了 ${k - recall} 筆真正最相似的結果（召回 ${recall}/${k}）——可以試著調高 ef 或 M。</span>`);
   }
 
-  $('#qchips').innerHTML = queries.map(q => `<button type="button">${q}</button>`).join('');
-  $('#qchips').querySelectorAll('button').forEach((b,i) => b.onclick = () => {
-    currentQ = queries[i];
-    $('#qchips').querySelectorAll('button').forEach(x => x.classList.remove('on'));
-    b.classList.add('on');
-    run();
+  $('#corpusSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    $('#corpusSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    setCorpus(b.dataset.c);
   });
-  $('#qchips').querySelector('button').classList.add('on');
 
   $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
     mode = b.dataset.mode;
@@ -518,7 +566,7 @@ RagTutor.player({ el:'#p1', interval:8000, steps:[
   });
 
   ['k','m','ef'].forEach(id => $('#'+id).oninput = run);
-  updateVis(); run();
+  updateVis(); setCorpus('shop');
 })();
 </script>
 </body>
