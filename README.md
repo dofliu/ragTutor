@@ -9,6 +9,7 @@
 | 001 | [基礎 RAG：先查資料再回答](https://dofliu.github.io/ragTutor/lessons/001-naive-rag.html) |
 | 002 | [切塊策略：固定長度、遞迴與語意切塊](https://dofliu.github.io/ragTutor/lessons/002-chunking.html) |
 | 003 | [嵌入與向量檢索：餘弦相似度、ANN 與 HNSW](https://dofliu.github.io/ragTutor/lessons/003-embeddings.html) |
+| 004 | [混合檢索：BM25 關鍵字 + 向量 + RRF 融合](https://dofliu.github.io/ragTutor/lessons/004-hybrid-search.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 
