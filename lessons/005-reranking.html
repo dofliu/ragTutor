@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>重排序：Bi-encoder 召回、Cross-encoder 精排｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂為什麼向量檢索（Bi-encoder）抓出的候選排序不夠精準，以及 Cross-encoder 重排序（Reranking）如何用「查詢與文件一起看」的方式，把候選池重新排出更精準的順序。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 005 堂</span><span class="tag lv2">進階</span><span class="tag">約 14 分鐘</span></p>
+  <h1>重排序：候選池抓對了，順序還可以更準</h1>
+  <p class="lead">向量檢索（<b>Bi-encoder</b>）能從整本手冊裡快速抓出一批候選片段，但它把問題與文件各自壓成一個向量再比對，字詞之間的細微交互常常被平均掉，正確答案可能只排在候選池中間。<b>重排序（Reranking）</b>用更精細的 <b>Cross-encoder</b> 模型，把「問題」與「每一篇候選文件」綁在一起重新評分，只精排這一小批候選，換來更準確的排序。</p>
+
+  <h2>🎬 動畫：候選池不變，順序變準了</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="重排序動畫：Bi-encoder 召回的候選排序不夠精準，Cross-encoder 如何把查詢與文件一起評分並重新排序">
+  <defs>
+    <marker id="ah5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" style="fill:var(--muted)"/></marker>
+  </defs>
+
+  <!-- 使用者問題（全程顯示） -->
+  <g data-from="0" data-to="7">
+    <rect x="310" y="14" width="300" height="48" rx="10" style="fill:var(--panel);stroke:var(--query);stroke-width:2"/>
+    <text x="460" y="33" text-anchor="middle" font-size="11.5" class="t-muted">👤 技師的問題</text>
+    <text x="460" y="52" text-anchor="middle" font-size="13" font-weight="700">「葉片旋角馬達故障」</text>
+  </g>
+
+  <!-- 手冊範圍外框（全程顯示） -->
+  <g data-from="0" data-to="7">
+    <rect x="8" y="76" width="904" height="336" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+    <text x="24" y="96" font-size="12" font-weight="700" style="fill:var(--muted)">《OW-8 運維手冊》旋角系統章節（節錄）</text>
+  </g>
+
+  <!-- 步驟 0-3：Bi-encoder 候選排序（重排前） -->
+  <g data-from="0" data-to="3">
+    <text x="40" y="118" font-size="12.5" font-weight="700" style="fill:var(--vec)">🧭 Bi-encoder 候選排序（Top-5，重排前）</text>
+    <rect x="40" y="128" width="840" height="30" rx="6" class="box"/>
+    <text x="52" y="148" font-size="12">① 旋角控制系統概述：三支葉片各自由旋角馬達與齒輪箱驅動</text>
+    <text x="864" y="148" text-anchor="end" font-size="11" class="t-mono t-muted">.81</text>
+
+    <rect x="40" y="162" width="840" height="30" rx="6" class="box"/>
+    <text x="52" y="182" font-size="12">② PT-205 旋角馬達煞車異常：檢查電磁煞車間隙</text>
+    <text x="864" y="182" text-anchor="end" font-size="11" class="t-mono t-muted">.77</text>
+
+    <rect x="40" y="196" width="840" height="30" rx="6" data-hot="0" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="52" y="216" font-size="12" font-weight="700">③ PT-203 旋角馬達過溫：馬達煞車未完全釋放而拖磨　✅ 正解</text>
+    <text x="864" y="216" text-anchor="end" font-size="11" class="t-mono">.74</text>
+
+    <rect x="40" y="230" width="840" height="30" rx="6" class="box"/>
+    <text x="52" y="250" font-size="12">④ PT-211 三支葉片角度偏差過大：比對編碼器讀值</text>
+    <text x="864" y="250" text-anchor="end" font-size="11" class="t-mono t-muted">.69</text>
+
+    <rect x="40" y="264" width="840" height="30" rx="6" class="box"/>
+    <text x="52" y="284" font-size="12">⑤ PT-240 旋角驅動器通訊中斷：檢查滑環與通訊線路</text>
+    <text x="864" y="284" text-anchor="end" font-size="11" class="t-mono t-muted">.64</text>
+  </g>
+
+  <!-- 每一步各自的重點註記 -->
+  <text x="460" y="322" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="0" data-to="0">⚠️ 正解「PT-203 旋角馬達過溫」只排第 3 名，不是第 1 名</text>
+  <text x="460" y="322" text-anchor="middle" font-size="12" style="fill:var(--vec)" data-from="1" data-to="1">score = cosine(embed(問題), embed(文件))　——　文件向量事先算好，查詢只需再算一次</text>
+  <text x="460" y="322" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="2" data-to="2">⚠️ 問題與文件從沒有「互相看過對方」，字詞的細微交互容易被平均掉</text>
+  <text x="460" y="322" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="3" data-to="3">候選池已經涵蓋正解，接下來交給更精細的模型重新排序</text>
+
+  <!-- 步驟 4-5：Cross-encoder 逐篇打分 -->
+  <g data-from="4" data-to="5">
+    <text x="460" y="118" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)">⚙ Cross-Encoder 逐篇打分（示意）</text>
+
+    <rect x="120" y="140" width="180" height="50" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:2"/>
+    <text x="210" y="160" text-anchor="middle" font-size="11" class="t-muted">問題</text>
+    <text x="210" y="178" text-anchor="middle" font-size="11.5">「葉片旋角馬達故障」</text>
+
+    <rect x="620" y="140" width="200" height="50" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:2" data-hot="4"/>
+    <text x="720" y="160" text-anchor="middle" font-size="11" class="t-muted">候選文件（逐篇取出）</text>
+    <text x="720" y="178" text-anchor="middle" font-size="11.5">PT-203 旋角馬達過溫…</text>
+
+    <path d="M300 165 H385" class="arrow" marker-end="url(#ah5)"/>
+    <path d="M620 165 H535" class="arrow" marker-end="url(#ah5)"/>
+
+    <rect x="385" y="128" width="150" height="74" rx="10" style="fill:var(--panel);stroke:var(--accent);stroke-width:2.5" data-hot="4 5"/>
+    <text x="460" y="153" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)">Cross-Encoder</text>
+    <text x="460" y="170" text-anchor="middle" font-size="10.5" class="t-muted">單一 Transformer</text>
+    <text x="460" y="186" text-anchor="middle" font-size="10.5" class="t-muted">問題／文件 full attention 互看</text>
+
+    <path d="M460 202 V226" class="arrow" marker-end="url(#ah5)" data-from="5"/>
+    <g data-from="5">
+      <rect x="410" y="228" width="100" height="32" rx="7" style="fill:var(--good);opacity:.9"/>
+      <text x="460" y="249" text-anchor="middle" font-size="13" font-weight="700" style="fill:#fff">分數 0.93</text>
+    </g>
+
+    <text x="460" y="286" text-anchor="middle" font-size="12" class="t-muted" data-to="4">↻ 對候選池中每一篇文件都要重新跑一次，沒辦法預先存好</text>
+    <text x="460" y="286" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="5">⚠️ 逐篇跑完整模型，比 Bi-encoder 慢很多——只適合重排一小批候選</text>
+  </g>
+
+  <!-- 步驟 6-7：重排後的排序 -->
+  <g data-from="6" data-to="7">
+    <text x="40" y="118" font-size="12.5" font-weight="700" style="fill:var(--accent)">✅ Cross-Encoder 重排後排序（Top-3）</text>
+
+    <rect x="40" y="128" width="840" height="32" rx="6" data-hot="6 7" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="52" y="149" font-size="12" font-weight="700">① PT-203 旋角馬達過溫：馬達煞車未完全釋放而拖磨　✅ 正解</text>
+    <text x="864" y="149" text-anchor="end" font-size="11" class="t-mono">.93</text>
+
+    <rect x="40" y="166" width="840" height="32" rx="6" class="box"/>
+    <text x="52" y="187" font-size="12">② PT-205 旋角馬達煞車異常：檢查電磁煞車間隙</text>
+    <text x="864" y="187" text-anchor="end" font-size="11" class="t-mono t-muted">.71</text>
+
+    <rect x="40" y="204" width="840" height="32" rx="6" class="box"/>
+    <text x="52" y="225" font-size="12">③ 旋角控制系統概述：三支葉片各自由旋角馬達與齒輪箱驅動</text>
+    <text x="864" y="225" text-anchor="end" font-size="11" class="t-mono t-muted">.58</text>
+
+    <text x="460" y="262" text-anchor="middle" font-size="12" class="t-muted">原排名：③→①　　②→②（不變）　　①→③（只是背景概述，不是排除步驟）</text>
+    <text x="460" y="298" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="7">兩階段檢索：Bi-encoder 快速召回 + Cross-encoder 精準把關，技師第一眼就看到正確的排除步驟</text>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>Bi-encoder 快但粗</b>問題與文件各自獨立壓成一個向量，文件向量可以事先算好，一次比對就能從幾百萬篇裡抓出候選，但對字詞細節不夠敏感。</div>
+    <div class="card"><b>Cross-encoder 準但慢</b>把問題與候選文件串成一對，一起送進同一個模型做 full attention 聯合計算，能捕捉字詞交互，但無法預先算好，只能逐篇對候選重新跑。</div>
+    <div class="card"><b>兩階段是業界標準做法</b>先用 Bi-encoder 或混合檢索抓出候選池（通常幾十到幾百篇），再用 Cross-encoder 只對這一小批候選精排，兼顧速度與準度。</div>
+    <div class="card"><b>候選池大小是關鍵旋鈕</b>Reranker 只能矯正候選池「裡面」的順序；候選池一開始就漏掉正解，重排也救不回來——這一點與上一堂的 RRF 融合完全相通。</div>
+  </div>
+
+  <h2>🧪 互動範例：Bi-encoder 排序 vs. 重排後排序</h2>
+  <div class="prose"><p>下面是《OW-8 運維手冊》旋角系統章節的 13 個段落。由於這個網站是純靜態頁面、不載入外部機器學習函式庫，這裡的「Cross-encoder」是<b>簡化模擬</b>：把「Bi-encoder 相似度」與「問題和文件之間最長共同子字串的比例」加權合併，用來示意 Cross-encoder 能捕捉<b>逐字對照、片語層級</b>的關聯，而不是像 Bi-encoder 只比較兩個壓縮後的向量。切換模式，觀察哪些候選被重新排到前面、哪些被排到後面。</p></div>
+  <div class="card demo" id="demo">
+    <div class="row seg" id="modeSeg">
+      <button type="button" class="on" data-mode="bi">只用 Bi-encoder 排序</button>
+      <button type="button" data-mode="rerank">Bi-encoder 召回 + Cross-encoder 精排（模擬）</button>
+    </div>
+    <div class="chips" id="qchips"></div>
+    <div class="row"><label for="n">候選池大小 Top-N：<b id="nv">6</b></label><input type="range" id="n" min="4" max="10" value="6" style="flex:1;max-width:220px"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>用 <code>sentence-transformers</code> 實作兩階段檢索：<code>SentenceTransformer</code> 做 Bi-encoder 召回，<code>CrossEncoder</code> 對候選池精排。正式環境也可以用 Cohere Rerank、Voyage Rerank 等托管重排序 API。</p></div>
+<pre class="code"><code><span class="k">import</span> numpy <span class="k">as</span> np
+<span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer, CrossEncoder
+<span class="k">import</span> anthropic
+
+<span class="c"># ① Bi-encoder 召回：文件向量事先算好，查詢來的時候只需再算一次</span>
+bi_encoder = SentenceTransformer(<span class="s">"BAAI/bge-m3"</span>)
+chunks = [<span class="s">"..."</span>]  <span class="c"># 《OW-8 運維手冊》旋角系統各段落</span>
+chunk_vecs = bi_encoder.<span class="f">encode</span>(chunks, normalize_embeddings=<span class="k">True</span>)
+
+<span class="k">def</span> <span class="f">recall</span>(question, top_n=<span class="s">20</span>):
+    q = bi_encoder.<span class="f">encode</span>([question], normalize_embeddings=<span class="k">True</span>)[<span class="s">0</span>]
+    scores = chunk_vecs @ q                       <span class="c"># 已正規化 → 內積即餘弦相似度</span>
+    top = np.<span class="f">argsort</span>(-scores)[:top_n]
+    <span class="k">return</span> [chunks[i] <span class="k">for</span> i <span class="k">in</span> top]
+
+<span class="c"># ② Cross-encoder 精排：問題與每篇候選一起送進模型，逐篇算一次聯合分數</span>
+reranker = CrossEncoder(<span class="s">"BAAI/bge-reranker-v2-m3"</span>)
+
+<span class="k">def</span> <span class="f">rerank</span>(question, candidates, top_k=<span class="s">3</span>):
+    pairs = [[question, c] <span class="k">for</span> c <span class="k">in</span> candidates]
+    scores = reranker.<span class="f">predict</span>(pairs)          <span class="c"># 無法預先算好，只能對候選逐篇跑</span>
+    order = np.<span class="f">argsort</span>(-scores)[:top_k]
+    <span class="k">return</span> [candidates[i] <span class="k">for</span> i <span class="k">in</span> order]
+
+<span class="k">def</span> <span class="f">answer</span>(question):
+    candidates = <span class="f">recall</span>(question, top_n=<span class="s">20</span>)      <span class="c"># 候選池抓大一點</span>
+    top = <span class="f">rerank</span>(question, candidates, top_k=<span class="s">3</span>)   <span class="c"># reranker 只精排這一小批</span>
+    context = <span class="s">"\n"</span>.<span class="f">join</span>(<span class="s">f"[{i+1}] {c}"</span> <span class="k">for</span> i, c <span class="k">in</span> <span class="f">enumerate</span>(top))
+    prompt = (<span class="s">"只根據下列參考資料回答，並標註出處編號；資料中沒有就說不知道。\n\n"</span>
+              <span class="s">f"參考資料：\n{context}\n\n問題：{question}"</span>)
+    client = anthropic.<span class="f">Anthropic</span>()
+    msg = client.messages.<span class="f">create</span>(model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">512</span>,
+                                 messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text
+
+<span class="f">print</span>(<span class="f">answer</span>(<span class="s">"葉片旋角馬達故障怎麼處理？"</span>))
+<span class="c"># candidates 也可以先用上一堂的混合檢索（BM25 + 向量 + RRF）產生，reranker 只是最後再精排一次</span></code></pre>
+
+  <h2>⚖️ 三種做法比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>純 Bi-encoder（向量）</th><th>純 Cross-encoder（對全庫重排）</th><th>兩階段：Bi-encoder 召回 + Cross-encoder 精排</th></tr>
+    <tr><th>排序精準度</th><td>中等：只比對壓縮後的向量</td><td>最高：問題與文件聯合計算</td><td>高：只精排候選池，仍保有 Cross-encoder 的精準度</td></tr>
+    <tr><th>查詢延遲</th><td>低：一次 ANN 查詢</td><td>極高：對全庫逐篇跑模型，規模一大就不可行</td><td>中等：多一次對候選池的精排，但候選池通常只有幾十篇</td></tr>
+    <tr><th>可否預先算好文件向量</th><td>✅ 可以，索引時就算好</td><td>✗ 不行，問題與文件要一起輸入模型</td><td>召回階段可以，精排階段不行</td></tr>
+    <tr><th>適用規模</th><td>百萬篇級的整庫搜尋</td><td>只適合幾十篇以內的小規模比較</td><td>先用 Bi-encoder／混合檢索縮小到幾十篇，再精排</td></tr>
+    <tr><th>常見套件／服務</th><td>FAISS、pgvector、Pinecone、Weaviate</td><td>sentence-transformers <code>CrossEncoder</code></td><td>Cohere Rerank、Voyage Rerank、BAAI <code>bge-reranker</code> 系列</td></tr>
+  </table>
+
+  <h2>⚠️ 重排序常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>候選池太小，重排也救不回來</b>：如果 Bi-encoder 或混合檢索一開始只抓前 3 名就交給 Cross-encoder，正解不在候選池裡，重排師再精準也沒用——候選池要抓得比最終需要的 Top-k 大上許多。</li>
+      <li><b>不要對整個資料庫直接跑 Cross-encoder</b>：它沒辦法預先算好文件向量，也不能用 ANN 索引加速；沒有先用召回階段縮小規模，查詢延遲會大到無法接受。</li>
+      <li><b>重排序模型的訓練資料要跟場景相符</b>：許多公開的 Cross-encoder（例如以 MS MARCO 段落排序資料訓練）擅長的是「這段文字有沒有回答這個問題」，如果拿來判斷「這是不是最新版本的手冊」這類需求，效果可能不如預期，需要另外驗證或微調。</li>
+      <li><b>重排序會增加延遲與成本</b>：候選池裡每一篇都要多跑一次模型前向計算，線上服務要抓好延遲預算，候選池也不能無限增加。</li>
+      <li><b>不是每個情境都值得多這一層</b>：如果 Bi-encoder 或混合檢索本身準確度已經夠用（例如範圍小、結構化程度高的知識庫），多加一層 Cross-encoder 可能只有邊際改善，卻多了一份要維護與付費的服務。</li>
+    </ul>
+    <div class="callout warn">範例中的鷗灣離岸風場、OW-8 機型、運維手冊內容、告警代碼與料號皆為虛構，僅供教學示範；互動範例中的「Cross-encoder」為簡化規則模擬，並非真正的深度學習模型；實際作業以原廠手冊與現場規範為準。</div>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>Cross-encoder 為什麼通常比 Bi-encoder 更能抓到問題與文件之間的細微關聯？</b></p>
+    <button class="opt">A. 因為 Cross-encoder 的向量維度比較高</button>
+    <button class="opt">B. 因為它把問題與文件一起送進同一個模型做聯合計算（full attention），而不是像 Bi-encoder 各自壓成一個向量後才比對</button>
+    <button class="opt">C. 因為 Cross-encoder 會先把文件翻譯成英文再比對</button>
+    <div class="why">Bi-encoder 把問題與文件各自獨立編碼成一個向量，兩者在編碼過程中「沒有互相看過對方」，之後只用一次相似度比對；Cross-encoder 則是把問題與文件串接成一對，一起輸入同一個 Transformer，讓每個字詞都能互相注意，因此能捕捉到更細微的字詞交互，但也因此無法像 Bi-encoder 一樣預先算好文件向量。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>下列關於「Bi-encoder 召回 + Cross-encoder 精排」兩階段檢索的敘述，何者最正確？</b></p>
+    <button class="opt">A. 候選池抓愈少愈好，這樣 Cross-encoder 才會跑得快</button>
+    <button class="opt">B. 應該把 Cross-encoder 直接用來搜尋整個資料庫，準確度才會最高</button>
+    <button class="opt">C. Bi-encoder 先快速抓出一個較大的候選池，Cross-encoder 只對這一小批候選重新排序，兼顧速度與準確度</button>
+    <div class="why">Cross-encoder 沒辦法預先算好文件向量，也不能用 ANN 索引加速，直接對整庫重排會讓查詢延遲大到無法接受；候選池也不能抓太少，否則正解一開始就被排除在外，重排也救不回來。業界常見做法是先用 Bi-encoder 或混合檢索抓出足夠大的候選池，再用 Cross-encoder 只精排這一小批。</div>
+  </div>
+
+  <nav class="pager" data-slug="reranking"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a></div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8500, steps:[
+  { title:'問題起點：候選池抓對了，順序卻不夠準', text:'技師輸入「葉片旋角馬達故障」，向量索引（<b>Bi-encoder</b>）用一次 ANN 查詢從整本手冊抓出前 5 篇候選；但真正對題的<b>PT-203 旋角馬達過溫</b>只排第 3 名，前面兩名只是語意相近、卻不是最對題的段落。' },
+  { title:'Bi-encoder 是怎麼算分數的', text:'問題與每個片段各自獨立通過<b>嵌入模型</b>壓成一個向量，之後只用一次<b>餘弦相似度</b>比較兩個向量。文件向量可以<b>事先算好存起來</b>，查詢來的時候只需再算一次，所以能瞬間從幾百萬篇裡挑出候選。' },
+  { title:'快，但也丟失了細節', text:'問題和文件<b>從沒有互相看過對方</b>——各自被壓成一個向量後才比對，字詞之間的細微交互、代碼與限定語氣容易被平均掉，這正是 Bi-encoder 排序不夠精準的根本原因。' },
+  { title:'候選池：先求有，不求準', text:'Bi-encoder 抓出的<b>Top-N 候選</b>（例如前幾十篇）通常已經涵蓋正解，只是名次還不夠精準；下一步交給更精細的模型，只需要對這一小批候選重新排序。' },
+  { title:'Cross-encoder 登場：把問題與文件綁在一起看', text:'<b>Cross-encoder</b>把「問題」與「每一篇候選文件」串接成一對，一起送進同一個 Transformer，讓每個字詞都能互相注意（full attention），直接輸出一個相關分數。' },
+  { title:'逐篇打分，無法預先算好', text:'Cross-encoder 必須對候選池<b>逐篇重新跑一次完整模型</b>，沒辦法像 Bi-encoder 一樣事先存好文件向量，所以速度慢很多——這正是為什麼它只能重排一小批候選，而不是搜尋整個資料庫。' },
+  { title:'依 Cross-encoder 分數重新排序', text:'重新打分後，精準對上問題字面與語意的<b>PT-203 旋角馬達過溫</b>被排到第 1 名，原本排在前面、只是語意相近的概述段落被排到後面。' },
+  { title:'兩階段檢索：兼顧速度與精準', text:'<b>Bi-encoder 召回 + Cross-encoder 精排</b>是業界常見做法：先用快速的向量或混合檢索抓出候選池，再用較慢但更精準的 Cross-encoder 只對這一小批重新排序，技師第一眼就看到最相關的排除步驟。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+
+  const WIND = [
+    '旋角系統控制流程說明：OW-8 每支葉片各自搭載旋角馬達、旋角齒輪箱與絕對值編碼器，由輪轂內的旋角控制櫃統一驅動與監控三支葉片角度。',
+    '告警 PT-203 旋角馬達過溫：常見原因為馬達煞車未完全釋放而持續拖磨，其次為散熱風扇故障或環境通風不良，請先檢查煞車間隙與風扇運轉。',
+    '告警 PT-205 旋角馬達煞車異常：需量測煞車線圈電壓，並檢查電磁煞車間隙是否超出手冊限值，磨耗超標時更換煞車片。',
+    '告警 PT-211 三支葉片角度偏差過大：比對各葉片絕對值編碼器讀值，確認是否有單一旋角馬達出力不足或編碼器訊號異常。',
+    '告警 PT-230 旋角備援電源測試失敗：備援電池或超級電容測試失敗時不得重新啟動風機，需先更換備援電源模組再測試。',
+    '告警 PT-240 旋角驅動器通訊中斷：檢查輪轂滑環與通訊線路是否鬆脫或磨損，必要時清潔滑環接點。',
+    '葉片旋角馬達故障排除指引：現場人員回報葉片轉到一半卡住不動、控制櫃聞到焦味時，應先切斷旋角控制櫃電源，再檢查馬達繞組與煞車。',
+    '偏航馬達故障排除：告警 YW-042 偏航誤差過大，檢查風向計訊號與偏航馬達運轉狀況，必要時由遠端監控中心手動對風。',
+    '齒輪箱軸承故障診斷：告警 GB-117 齒輪箱高速軸軸承溫度過高，檢查齒輪油油位與冷卻器運轉狀況，並調閱振動頻譜。',
+    '備援電源模組更換前置作業：進入輪轂前必須先將葉片順槳並鎖上轉子鎖，對旋角控制櫃執行上鎖掛牌（LOTO）。',
+    '旋角齒輪箱保養週期：每半年檢查一次油位與漏油狀況，油位不足時補充指定型號齒輪油，避免齒面乾摩擦。',
+    '旋角驅動器韌體更新紀錄：v2.3 韌體修正馬達溫度感測器讀值偏移問題，需由原廠工程師遠端更新，更新前須記錄現行版本。',
+    '旋角系統年度大修項目：包含旋角馬達軸承更換、煞車片檢查、編碼器校正與備援電源容量測試，需排入年度歲修排程。'
+  ];
+  const CORPUS = WIND.map((text, i) => ({ id: 'd' + (i + 1), text }));
+  const index = rt.buildIndex(CORPUS);
+  const QUERIES = ['葉片旋角馬達故障', 'PT-203 是什麼告警？', '馬達過溫要檢查什麼', '三支葉片角度不一致', '偏航對不準風向'];
+  let mode = 'bi', currentQ = QUERIES[0];
+
+  function lcsLen(a, b){
+    let best = 0;
+    const dp = new Array(b.length + 1).fill(0);
+    for(let i = 1; i <= a.length; i++){
+      let prev = 0;
+      for(let j = 1; j <= b.length; j++){
+        const tmp = dp[j];
+        dp[j] = a[i-1] === b[j-1] ? prev + 1 : 0;
+        if(dp[j] > best) best = dp[j];
+        prev = tmp;
+      }
+    }
+    return best;
+  }
+
+  function run(){
+    const n = +$('#n').value; $('#nv').textContent = n;
+    const biFull = rt.searchVector(index, currentQ, n);
+    const maxBi = Math.max(biFull[0]?.score || 0, 1e-6);
+    const scored = biFull.map(h => {
+      const biNorm = h.score / maxBi;
+      const lcs = lcsLen(currentQ, h.doc.text);
+      const phraseRatio = Math.min(1, lcs / Math.max(4, currentQ.length * 0.6));
+      const crossScore = 0.35 * biNorm + 0.65 * phraseRatio;
+      return { ...h, biNorm, crossScore };
+    });
+    const biRankOf = new Map(scored.map((h, i) => [h.i, i]));
+    const crossOrder = [...scored].sort((a, b) => b.crossScore - a.crossScore);
+    const crossRankOf = new Map(crossOrder.map((h, i) => [h.i, i]));
+
+    const list = mode === 'bi' ? scored : crossOrder;
+
+    $('#hits').innerHTML = list.map((h, r) => {
+      const biRank = biRankOf.get(h.i), crossRank = crossRankOf.get(h.i);
+      const moved = crossRank - biRank;
+      const badge = mode === 'rerank'
+        ? (moved < 0 ? `<span style="color:var(--good)">▲ 原本 Bi-encoder 第 ${biRank+1} 名</span>`
+          : moved > 0 ? `<span style="color:var(--bad)">▼ 原本 Bi-encoder 第 ${biRank+1} 名</span>`
+          : `<span class="muted">– 名次不變</span>`)
+        : '';
+      return `<div class="hit ${r === 0 ? 'top' : ''}">
+        <div class="meta"><span>${h.doc.id}</span><span>Bi-encoder ${h.biNorm.toFixed(2)}　Cross-encoder(模擬) ${h.crossScore.toFixed(2)}</span></div>
+        <div>${rt.highlight(h.doc.text, currentQ)}</div>
+        <div class="muted" style="font-size:12px;margin-top:4px">${badge}</div>
+      </div>`;
+    }).join('');
+
+    $('#stat').textContent = mode === 'rerank'
+      ? `以 Cross-encoder（模擬）分數重新排序候選池中的 ${n} 篇；上面標示每一篇原本在 Bi-encoder 排序中的名次。`
+      : `僅用 Bi-encoder（TF-IDF 向量餘弦，模擬嵌入模型）排序，候選池共 ${n} 篇。`;
+  }
+
+  $('#qchips').innerHTML = QUERIES.map(q => `<button type="button">${q}</button>`).join('');
+  $('#qchips').querySelectorAll('button').forEach((b, i) => b.onclick = () => {
+    currentQ = QUERIES[i];
+    $('#qchips').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    run();
+  });
+  $('#qchips').querySelector('button').classList.add('on');
+
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    run();
+  });
+
+  $('#n').oninput = run;
+  run();
+})();
+</script>
+</body>
+</html>

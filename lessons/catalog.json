@@ -43,6 +43,17 @@
       "summary": "BM25 關鍵字檢索抓得到型號與代碼，卻聽不懂換句話說；向量檢索理解語意，卻對罕見字串不夠敏感。混合檢索用倒數排名融合（RRF）把兩份排序清單公平合併成一份結果。",
       "tags": ["進階", "混合檢索"],
       "date": "2026-09-26"
+    },
+    {
+      "no": 5,
+      "slug": "reranking",
+      "file": "lessons/005-reranking.html",
+      "title": "重排序：Bi-encoder 召回、Cross-encoder 精排",
+      "en": "Reranking",
+      "level": 2,
+      "summary": "向量檢索抓出的候選排序不一定精準：Bi-encoder 把問題與文件各自壓成向量再比對，容易漏掉細節。Cross-encoder 把兩者綁在一起聯合評分，只精排候選池就能大幅提升排序準確度。",
+      "tags": ["進階", "重排序"],
+      "date": "2026-09-27"
     }
   ]
 }
