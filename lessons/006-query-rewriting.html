@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>查詢改寫與多重查詢 Multi-Query｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂查詢改寫（Query Rewriting）與多重查詢（Multi-Query）：為什麼一句模糊的口語問題，需要先由 LLM 改寫、展開成好幾個精確查詢，再各自檢索、合併，才能涵蓋問題背後多種可能的原因。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 006 堂</span><span class="tag lv2">進階</span><span class="tag">約 13 分鐘</span></p>
+  <h1>查詢改寫與多重查詢：一個模糊問題，展開成好幾個精確查詢</h1>
+  <p class="lead">使用者的問題常常很模糊、口語化，或者背後其實對應好幾種不同的原因，但手冊裡的段落用的是精確的技術詞彙。<b>查詢改寫（Query Rewriting）</b>先讓 LLM 讀懂意圖、換成手冊慣用的說法；<b>多重查詢（Multi-Query）</b>則更進一步，把一個問題展開成好幾個不同角度的查詢，各自檢索後再合併，涵蓋單一查詢用詞找不到的段落。</p>
+
+  <h2>🎬 動畫：從一句模糊的話，到涵蓋多種原因的診斷</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="查詢改寫與多重查詢動畫：模糊的口語問題如何被改寫、展開成多個精確查詢，各自檢索後合併成更完整的診斷建議">
+  <defs>
+    <marker id="ah6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" style="fill:var(--muted)"/></marker>
+  </defs>
+
+  <!-- 使用者問題（全程顯示） -->
+  <rect x="310" y="14" width="300" height="48" rx="10" style="fill:var(--panel);stroke:var(--query);stroke-width:2"/>
+  <text x="460" y="33" text-anchor="middle" font-size="11.5" class="t-muted">👤 值班人員回報</text>
+  <text x="460" y="52" text-anchor="middle" font-size="13" font-weight="700">「風機一直自己停機」</text>
+
+  <!-- 手冊範圍外框（全程顯示） -->
+  <rect x="8" y="76" width="904" height="336" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+
+  <!-- 場景標籤：每一步各自的標題 -->
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--muted)" data-to="0">① 值班人員的模糊反映</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="1" data-to="1">② 直接用原句做向量檢索</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="2" data-to="2">③ 查詢改寫 Query Rewriting</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="3" data-to="3">④ 多重查詢 Multi-Query：展開成 4 個角度</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="4" data-to="4">⑤ 各自檢索，命中不同章節</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="5" data-to="5">⑥ 聯集去重 Union</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="6" data-to="6">⑦ 組合完整上下文</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 完整的診斷建議</text>
+
+  <!-- Step 0：只知道症狀，不知道對應子系統（預告 4 個可能方向） -->
+  <g data-to="0">
+    <text x="460" y="140" text-anchor="middle" font-size="13" font-weight="700" class="t-muted">❓ 值班人員只知道症狀，不知道對應哪個子系統</text>
+    <g style="opacity:.4">
+      <rect x="40"  y="162" width="194" height="34" rx="6" style="fill:none;stroke:var(--line);stroke-dasharray:3 4"/>
+      <rect x="250" y="162" width="194" height="34" rx="6" style="fill:none;stroke:var(--line);stroke-dasharray:3 4"/>
+      <rect x="460" y="162" width="194" height="34" rx="6" style="fill:none;stroke:var(--line);stroke-dasharray:3 4"/>
+      <rect x="670" y="162" width="194" height="34" rx="6" style="fill:none;stroke:var(--line);stroke-dasharray:3 4"/>
+      <text x="137" y="183" text-anchor="middle" font-size="12" class="t-muted">變流器？</text>
+      <text x="347" y="183" text-anchor="middle" font-size="12" class="t-muted">電網？</text>
+      <text x="557" y="183" text-anchor="middle" font-size="12" class="t-muted">齒輪箱？</text>
+      <text x="767" y="183" text-anchor="middle" font-size="12" class="t-muted">旋角備援？</text>
+    </g>
+  </g>
+
+  <!-- Step 1：直接拿原句做向量檢索，結果偏弱 -->
+  <g data-from="1" data-to="1">
+    <path d="M460 62 V104" class="arrow" marker-end="url(#ah6)"/>
+    <rect x="370" y="104" width="180" height="56" rx="12" style="fill:var(--panel);stroke:var(--vec);stroke-width:2"/>
+    <text x="460" y="126" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--vec)">🔎 向量索引</text>
+    <text x="460" y="144" text-anchor="middle" font-size="11" class="t-muted">直接用原句查詢</text>
+    <path d="M460 160 V188" class="flow" style="stroke:var(--query)"/>
+    <rect x="310" y="192" width="300" height="28" rx="6" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.5"/>
+    <text x="322" y="210" font-size="11.5">旋角系統概述……</text>
+    <text x="596" y="210" text-anchor="end" font-size="11" class="t-mono t-muted">.34</text>
+    <rect x="310" y="224" width="300" height="28" rx="6" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.5"/>
+    <text x="322" y="242" font-size="11.5">旋角齒輪箱保養週期……</text>
+    <text x="596" y="242" text-anchor="end" font-size="11" class="t-mono t-muted">.29</text>
+    <text x="460" y="280" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)">⚠️ 都只是語意鬆散的段落，不是真正的跳機原因</text>
+  </g>
+
+  <!-- Step 2+：查詢改寫 LLM -->
+  <g data-from="2">
+    <path d="M460 62 V104" class="arrow" marker-end="url(#ah6)"/>
+    <rect x="370" y="104" width="180" height="56" rx="12" data-hot="2" style="fill:var(--panel);stroke:var(--accent);stroke-width:2.5"/>
+    <text x="460" y="126" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--accent)">🧠 查詢改寫 LLM</text>
+    <text x="460" y="144" text-anchor="middle" font-size="10.5" class="t-muted">Rewrite → Retrieve → Read</text>
+  </g>
+
+  <!-- Step 3+：展開成 4 個改寫查詢 -->
+  <g data-from="3">
+    <path d="M420 160 C 300 182, 220 178, 137 162" class="flow" style="stroke:var(--accent)"/>
+    <path d="M445 160 C 400 182, 370 178, 347 162" class="flow" style="stroke:var(--accent)"/>
+    <path d="M475 160 C 520 182, 540 178, 557 162" class="flow" style="stroke:var(--accent)"/>
+    <path d="M500 160 C 620 182, 700 178, 767 162" class="flow" style="stroke:var(--accent)"/>
+    <g data-hot="3">
+      <rect x="40"  y="162" width="194" height="34" rx="6" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.5"/>
+      <rect x="250" y="162" width="194" height="34" rx="6" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.5"/>
+      <rect x="460" y="162" width="194" height="34" rx="6" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.5"/>
+      <rect x="670" y="162" width="194" height="34" rx="6" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.5"/>
+      <text x="137" y="183" text-anchor="middle" font-size="11.5">變流器過溫保護跳機</text>
+      <text x="347" y="183" text-anchor="middle" font-size="11.5">電網電壓異常跳機</text>
+      <text x="557" y="183" text-anchor="middle" font-size="11.5">齒輪箱軸承溫度過高</text>
+      <text x="767" y="183" text-anchor="middle" font-size="11.5">旋角備援電源異常</text>
+    </g>
+  </g>
+
+  <!-- Step 4+：各自檢索到不同章節 -->
+  <g data-from="4">
+    <path d="M137 196 V208" class="flow" style="stroke:var(--vec)"/>
+    <path d="M347 196 V208" class="flow" style="stroke:var(--vec)"/>
+    <path d="M557 196 V208" class="flow" style="stroke:var(--vec)"/>
+    <path d="M767 196 V208" class="flow" style="stroke:var(--vec)"/>
+    <g data-hot="4">
+      <rect x="40"  y="208" width="194" height="40" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+      <rect x="250" y="208" width="194" height="40" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+      <rect x="460" y="208" width="194" height="40" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+      <rect x="670" y="208" width="194" height="40" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+      <text x="137" y="224" text-anchor="middle" font-size="11.5" font-weight="700">CV-310 變流器過溫</text>
+      <text x="137" y="240" text-anchor="middle" font-size="10.5" class="t-muted">相關度 .88</text>
+      <text x="347" y="224" text-anchor="middle" font-size="11.5" font-weight="700">GR-050 電網保護跳機</text>
+      <text x="347" y="240" text-anchor="middle" font-size="10.5" class="t-muted">相關度 .81</text>
+      <text x="557" y="224" text-anchor="middle" font-size="11.5" font-weight="700">GB-117 齒輪箱高溫</text>
+      <text x="557" y="240" text-anchor="middle" font-size="10.5" class="t-muted">相關度 .85</text>
+      <text x="767" y="224" text-anchor="middle" font-size="11.5" font-weight="700">PT-230 旋角備援異常</text>
+      <text x="767" y="240" text-anchor="middle" font-size="10.5" class="t-muted">相關度 .79</text>
+    </g>
+  </g>
+
+  <!-- Step 5+：聯集去重 -->
+  <g data-from="5">
+    <path d="M137 248 C 200 260, 300 262, 400 268" class="flow" style="stroke:var(--accent)"/>
+    <path d="M347 248 C 380 258, 410 262, 435 268" class="flow" style="stroke:var(--accent)"/>
+    <path d="M557 248 C 530 258, 500 262, 485 268" class="flow" style="stroke:var(--accent)"/>
+    <path d="M767 248 C 680 260, 580 262, 520 268" class="flow" style="stroke:var(--accent)"/>
+    <rect x="310" y="262" width="300" height="38" rx="8" data-hot="5" style="fill:var(--panel);stroke:var(--accent);stroke-width:2.5"/>
+    <text x="460" y="277" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)">🔗 聯集 Union（同一片段取最高分）</text>
+    <text x="460" y="294" text-anchor="middle" font-size="10.5" class="t-muted">4 筆、涵蓋 4 個不同子系統，無重複</text>
+  </g>
+
+  <!-- Step 6：組合完整上下文 -->
+  <g data-from="6" data-to="6">
+    <path d="M460 300 V312" class="arrow" marker-end="url(#ah6)"/>
+    <rect x="40" y="312" width="840" height="92" rx="10" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="460" y="336" text-anchor="middle" font-size="13" font-weight="700" class="t-muted">📄 組合後的完整上下文 → 交給 LLM</text>
+    <text x="460" y="358" text-anchor="middle" font-size="11.5">[1] CV-310 變流器過溫保護跳機　｜　[2] GR-050 電網電壓異常跳機</text>
+    <text x="460" y="378" text-anchor="middle" font-size="11.5">[3] GB-117 齒輪箱軸承溫度過高　｜　[4] PT-230 旋角備援電源測試失敗</text>
+    <text x="460" y="398" text-anchor="middle" font-size="11" class="t-muted">問題：「風機一直自己停機」</text>
+  </g>
+
+  <!-- Step 7：完整的診斷建議 -->
+  <g data-from="7" class="pulse">
+    <path d="M460 300 V312" class="arrow" marker-end="url(#ah6)"/>
+    <rect x="40" y="312" width="840" height="92" rx="10" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+    <text x="460" y="336" text-anchor="middle" font-size="14" font-weight="700" style="fill:var(--good)">✅ 完整診斷建議</text>
+    <text x="460" y="357" text-anchor="middle" font-size="12">可能原因：① 變流器過溫（CV-310）　② 電網保護動作（GR-050）</text>
+    <text x="460" y="376" text-anchor="middle" font-size="12">③ 齒輪箱溫度過高（GB-117）　④ 旋角備援電源異常（PT-230）</text>
+    <text x="460" y="397" text-anchor="middle" font-size="11" class="t-muted">請依序檢查、逐一排除——不再只鎖定單一子系統</text>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>問題不只一種原因</b>模糊、口語化的問題背後常對應好幾個不同子系統，只送一次原始查詢等於只賭一種可能，命中率全憑運氣。</div>
+    <div class="card"><b>先寫，再查，再讀</b>Rewrite-Retrieve-Read 框架讓 LLM 先把問題改寫成手冊慣用的技術詞彙，取代直接把使用者的原句拿去檢索。</div>
+    <div class="card"><b>多重查詢展開涵蓋面</b>Multi-Query 讓 LLM 生成好幾個不同角度的查詢，各自獨立檢索，涵蓋單一查詢用詞永遠找不到的段落。</div>
+    <div class="card"><b>聯集只是起點</b>合併去重後的候選清單還沒有跨查詢的統一排序；後續的「RAG-Fusion」會改用 RRF（倒數排名融合）取代單純聯集，排序更有依據。</div>
+  </div>
+
+  <h2>🧪 互動範例：單一查詢 vs. 查詢改寫 + 多重查詢</h2>
+  <div class="prose"><p>下面是《OW-8 運維手冊》裡與「跳機／保護性停機」相關的 12 個段落，涵蓋變流器、電網保護、齒輪箱、主軸承、安全鏈等好幾個不同子系統。選一句值班人員常見的口語回報，切換「單一原始查詢」與「查詢改寫＋多重查詢」，比較兩種做法各自檢索到的段落——這裡的「改寫」是預先寫好的示範查詢，模擬 LLM 會生成的結果，因為本網站不會呼叫真正的語言模型。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="qchips"></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" class="on" data-mode="single">單一原始查詢</button>
+      <button type="button" data-mode="multi">查詢改寫 + 多重查詢（聯集）</button>
+    </div>
+    <div class="row"><label for="n">每個查詢各取 Top-N：<b id="nv">2</b></label><input type="range" id="n" min="1" max="4" value="2" style="flex:1;max-width:220px"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>用 <code>anthropic</code> SDK 讓 LLM 把值班人員的口語問題展開成多個改寫查詢，各自用 <code>sentence-transformers</code> 做向量檢索，再對結果聯集去重（同一片段保留最高分）。</p></div>
+<pre class="code"><code><span class="k">import</span> numpy <span class="k">as</span> np
+<span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer
+<span class="k">import</span> anthropic
+
+<span class="c"># ① 索引階段：跳機／保護性停機相關段落先算好向量</span>
+embedder = SentenceTransformer(<span class="s">"BAAI/bge-m3"</span>)
+chunks = [<span class="s">"..."</span>]  <span class="c"># 《OW-8 運維手冊》各子系統的跳機／保護動作段落</span>
+chunk_vecs = embedder.<span class="f">encode</span>(chunks, normalize_embeddings=<span class="k">True</span>)
+client = anthropic.<span class="f">Anthropic</span>()
+
+<span class="c"># ② 查詢改寫 + 多重查詢：把口語問題展開成 N 個精確角度</span>
+<span class="k">def</span> <span class="f">rewrite_queries</span>(question, n=<span class="s">4</span>):
+    prompt = (<span class="s">f"值班人員回報的問題：「{question}」\n"</span>
+              <span class="s">f"請改寫成 {n} 個更精確、涵蓋不同可能子系統原因的檢索查詢，"</span>
+              <span class="s">"只能使用風機運維手冊常見的技術詞彙，每行一個查詢，不要加編號。"</span>)
+    msg = client.messages.<span class="f">create</span>(model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">200</span>,
+                                 messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> [q.<span class="f">strip</span>() <span class="k">for</span> q <span class="k">in</span> msg.content[<span class="s">0</span>].text.<span class="f">split</span>(<span class="s">"\n"</span>) <span class="k">if</span> q.<span class="f">strip</span>()]
+
+<span class="k">def</span> <span class="f">retrieve</span>(query, top_n=<span class="s">3</span>):
+    q = embedder.<span class="f">encode</span>([query], normalize_embeddings=<span class="k">True</span>)[<span class="s">0</span>]
+    scores = chunk_vecs @ q                        <span class="c"># 已正規化 → 內積即餘弦相似度</span>
+    top = np.<span class="f">argsort</span>(-scores)[:top_n]
+    <span class="k">return</span> [(chunks[i], scores[i]) <span class="k">for</span> i <span class="k">in</span> top]
+
+<span class="k">def</span> <span class="f">multi_query_retrieve</span>(question, top_n=<span class="s">3</span>):
+    merged = {}  <span class="c"># chunk -> 最高分數（聯集去重）</span>
+    <span class="k">for</span> q <span class="k">in</span> <span class="f">rewrite_queries</span>(question):
+        <span class="k">for</span> chunk, score <span class="k">in</span> <span class="f">retrieve</span>(q, top_n):
+            <span class="k">if</span> chunk <span class="k">not</span> <span class="k">in</span> merged <span class="k">or</span> score > merged[chunk]:
+                merged[chunk] = score
+    <span class="k">return</span> <span class="f">sorted</span>(merged.items(), key=<span class="k">lambda</span> x: -x[<span class="s">1</span>])
+
+<span class="k">def</span> <span class="f">answer</span>(question):
+    hits = <span class="f">multi_query_retrieve</span>(question)
+    context = <span class="s">"\n"</span>.<span class="f">join</span>(<span class="s">f"[{i+1}] {c}"</span> <span class="k">for</span> i, (c, _) <span class="k">in</span> <span class="f">enumerate</span>(hits))
+    prompt = (<span class="s">f"參考資料：\n{context}\n\n問題：{question}\n"</span>
+              <span class="s">"請列出可能原因與對應排除步驟；資料中沒有就說不知道。"</span>)
+    msg = client.messages.<span class="f">create</span>(model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">512</span>,
+                                 messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text
+
+<span class="f">print</span>(<span class="f">answer</span>(<span class="s">"風機一直自己停機"</span>))</code></pre>
+
+  <h2>⚖️ 四種做法比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>原始查詢直接檢索</th><th>單一查詢改寫（Rewrite）</th><th>多重查詢 Multi-Query（本堂）</th><th>RAG-Fusion（後續課程）</th></tr>
+    <tr><th>檢索次數</th><td>1 次</td><td>1 次改寫 + 1 次檢索</td><td>1 次改寫 + N 次檢索</td><td>1 次改寫 + N 次檢索</td></tr>
+    <tr><th>結果合併方式</th><td>不需要</td><td>不需要（仍是一組結果）</td><td>聯集去重，取最高分</td><td>倒數排名融合（RRF），依名次加權</td></tr>
+    <tr><th>適合情境</th><td>問題本身已經很精確，例如直接輸入告警代碼</td><td>問題意圖單一，只是措辭模糊或口語化</td><td>問題背後可能有好幾種不同原因，需要涵蓋面</td><td>多查詢結果需要一個更有依據的整體排序</td></tr>
+    <tr><th>主要缺點</th><td>模糊、口語化的問題常常找不到</td><td>如果背後其實有多種原因，仍只挑一種角度</td><td>檢索次數隨 N 增加；聯集後缺乏跨查詢的排序權重</td><td>多一個融合參數（RRF 的 k 值）需要調整</td></tr>
+  </table>
+
+  <h2>⚠️ 查詢改寫與多重查詢常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>已經很精確的查詢不需要改寫</b>：像直接輸入「PT-203」這種告警代碼，語意已經非常明確，改寫或展開成多個查詢只會增加延遲與成本，效果有限。</li>
+      <li><b>改寫本身可能出錯</b>：如果 LLM 改寫時自己編造了手冊裡沒有的告警代碼或子系統名稱，反而會讓檢索走偏；提示詞裡最好限制只能使用已知的技術詞彙，或事後檢查改寫結果是否合理。</li>
+      <li><b>查詢數量與成本的取捨</b>：每多一個改寫查詢，就多一次向量運算與檢索，數量沒有上限地增加會拖慢回應時間、增加向量資料庫負載；實務上通常抓 3～5 個就足夠。</li>
+      <li><b>聯集不是排序</b>：這堂課的合併方式只是「去重後全部列出」，不同子查詢命中的片段彼此之間還沒有一個統一、可比較的分數；需要更精準的整體排序時，還要再加一層重排序，或改用 RAG-Fusion 的 RRF 融合。</li>
+      <li><b>救不了檢索品質本身的問題</b>：如果向量索引的嵌入模型或切塊策略本來就很差，再多改寫查詢也救不回離題的結果——查詢改寫解決的是「問題怎麼問」，不是「資料庫找不找得到」。</li>
+    </ul>
+    <div class="callout warn">範例中的鷗灣離岸風場、OW-8 機型、運維手冊內容、告警代碼與料號皆為虛構，僅供教學示範；互動範例中的「改寫查詢」為預先寫好的示範文字，並非真正呼叫語言模型產生；實際作業以原廠手冊與現場規範為準。</div>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>為什麼要把一個模糊問題展開成「多個」改寫查詢，而不是只改寫成一句更精確的查詢？</b></p>
+    <button class="opt">A. 因為 LLM 沒辦法一次只生成一個查詢</button>
+    <button class="opt">B. 因為模糊問題背後常常對應好幾種不同的可能原因，單一改寫只能涵蓋其中一個角度，多重查詢才能各自涵蓋不同子系統</button>
+    <button class="opt">C. 因為向量檢索一次只能接受一個字</button>
+    <div class="why">像「風機一直自己停機」這樣的問題，背後可能是變流器過溫、電網保護動作、齒輪箱溫度過高、旋角備援電源異常等好幾種不同原因。只改寫成一句更精確的查詢，仍然只能挑中其中一個角度；用多重查詢展開成好幾個不同角度的查詢、各自獨立檢索，才能涵蓋更多可能的原因。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>關於查詢改寫與多重查詢，下列敘述何者正確？</b></p>
+    <button class="opt">A. 改寫查詢的數量開越多越好，反正檢索不用成本</button>
+    <button class="opt">B. 合併多個查詢的檢索結果、去重後，就已經是最終、排序最精準的結果，不需要再處理</button>
+    <button class="opt">C. 已經很精確的查詢（例如直接輸入告警代碼）通常不需要再改寫或展開成多個查詢</button>
+    <div class="why">每多一個改寫查詢就多一次向量運算與檢索，數量沒有上限地增加會拖慢回應時間、增加成本，實務上通常抓 3～5 個就足夠；聯集去重後的結果也還沒有跨查詢的統一排序，需要更精準時還要再加一層重排序或改用 RRF 融合；而語意已經很明確的查詢（如告警代碼）再展開成多個查詢，效益有限卻多花成本。</div>
+  </div>
+
+  <nav class="pager" data-slug="query-rewriting"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a></div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8500, steps:[
+  { title:'問題起點：一句模糊的話，背後可能有好幾種原因', text:'遠端監控中心值班人員收到現場回報「風機一直自己停機」——這句話很模糊，背後可能是<b>變流器過溫</b>、<b>電網保護動作</b>、<b>齒輪箱溫度過高</b>、<b>旋角備援電源異常</b>好幾種不同子系統的問題，值班人員自己也說不出確切原因。' },
+  { title:'只送一次原句，等於只賭一種可能', text:'如果只把這句<b>口語問題</b>原封不動拿去做<b>向量檢索</b>，手冊裡通常沒有「一直自己停機」這種寫法，只有具體的保護動作描述，檢索結果相關度普遍偏低，等於只丟了<b>一次骰子</b>，命中哪個子系統全憑運氣。' },
+  { title:'查詢改寫 Query Rewriting 登場', text:'<b>查詢改寫（Query Rewriting）</b>先讓 LLM 讀懂使用者真正想問什麼，把模糊、口語的描述換成手冊裡慣用的技術詞彙，這正是「Rewrite-Retrieve-Read」框架的核心：先<b>寫</b>好查詢，再檢索、再讀取答案。' },
+  { title:'一個問題，多種可能原因 → 多重查詢', text:'但一句「一直停機」背後往往不只一種可能原因，所以不只改寫成一句，而是用 <b>Multi-Query</b> 展開成好幾個不同角度的精確查詢，涵蓋變流器、電網、齒輪箱、旋角備援等各自獨立的技術描述。' },
+  { title:'每個改寫查詢各自獨立檢索', text:'每一個改寫後的查詢<b>各自獨立</b>送進向量索引檢索，命中手冊裡分散在不同章節、原本不會被單一模糊查詢找到的段落——每個子查詢都撈到了自己最相關的那一塊。' },
+  { title:'聯集去重 Union', text:'四組檢索結果先做<b>聯集去重（Union）</b>：同一個片段如果被多個子查詢命中，只保留最高分數的一筆，最後得到一份涵蓋多種可能原因、且沒有重複的候選清單。' },
+  { title:'組合更完整的上下文', text:'把這份更完整的候選清單組成 Prompt 交給 LLM，讓它一次看到<b>變流器、電網保護、齒輪箱、旋角備援</b>四種角度的段落，而不是只咬定單一子系統。' },
+  { title:'改善後的結果：涵蓋多種可能原因', text:'值班人員看到的不再是「查無資料」或只鎖定一種原因，而是一份列出<b>多種可能跳機原因</b>與對應排除步驟的完整診斷建議，可以依現場狀況逐一排除，大幅縮短判斷時間。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+
+  const WIND = [
+    '告警 CV-310 變流器功率模組過溫：常見於環境溫度過高或散熱風扇堵塞，模組溫度超過保護門檻時變流器會自動降載或跳機停機，需檢查散熱風扇與濾網。',
+    '告警 GR-050 電網電壓異常保護動作跳機：電網電壓驟降或頻率超出範圍時，保護迴路會依電網規範動作使風機跳機停止併網，需調閱電網電壓與頻率歷史紀錄，確認是否為低電壓穿越（LVRT）事件。',
+    '告警 GB-117 齒輪箱高速軸軸承溫度過高：溫度超過保護門檻會觸發保護性停機，需檢查齒輪油油位與冷卻器運轉，並調閱狀態監測系統振動頻譜確認軸承是否有早期損傷。',
+    '告警 PT-230 旋角備援電源測試失敗：備援電池或超級電容定期自我測試失敗時，控制系統會判定緊急順槳能力不足並停機，不得重新啟動風機，需先更換備援電源模組。',
+    '風速超過切出風速自動停機：為保護結構安全，機組在風速持續超過設計切出風速時會自動順槳並停機，待風速回落至切入風速以下才可能重新併網，屬正常保護動作而非故障。',
+    '安全鏈迴路斷路跳脫：任一安全鏈感測點（超速、急停按鈕、艙門聯鎖）動作時會直接切斷主接觸器使風機停機，需依故障紀錄逐一排查是哪個感測點觸發。',
+    '主軸承溫度過高保護性停機：主軸承溫度超過門檻會觸發保護性停機，需檢查潤滑系統油位與油質，並比對歷史溫度趨勢判斷是否為軸承早期劣化。',
+    '偏航系統告警 YW-042 偏航誤差過大：機艙方向與風向持續偏離超出容許範圍，多半不會直接造成保護性停機，但長期偏航誤差會降低發電量並增加疲勞負載。',
+    'SCADA 通訊逾時自動停機：遠端監控系統與風機控制器通訊中斷超過設定時間時，控制系統會依預設安全邏輯自動停機，待通訊恢復後才能由值班人員遠端重新啟動。',
+    '定期歲修排程停機：依年度維護計畫排定的停機作業，非故障導致，停機期間會在 SCADA 上標示為計畫性停機。',
+    '電網頻率異常保護跳機：電網頻率超出保護迴路設定範圍時，為避免機組與電網解列造成損害，保護迴路會使風機跳機停止併網。',
+    '變流器直流匯流排電壓異常跳機：直流匯流排電壓超出正常範圍時，變流器保護動作會使機組跳機停止輸出，需檢查電容模組與電壓感測迴路。'
+  ];
+  const CORPUS = WIND.map((text, i) => ({ id: 'd' + (i + 1), text }));
+  const index = rt.buildIndex(CORPUS);
+
+  const SAMPLES = [
+    { q: '風機一直自己停機', rewrites: ['變流器過溫保護跳機', '電網電壓異常保護跳機', '齒輪箱軸承溫度過高', '旋角備援電源測試失敗'] },
+    { q: '監控畫面顯示跳機，好像跟電有關', rewrites: ['電網電壓異常保護動作跳機', '電網頻率異常保護跳機', '變流器直流匯流排電壓異常'] },
+    { q: '風太大的時候風機會自己停下來', rewrites: ['風速超過切出風速自動停機', '安全鏈斷路跳脫'] },
+    { q: '值班室看不到訊號，然後它就顯示停機了', rewrites: ['SCADA 通訊逾時自動停機', '安全鏈斷路跳脫'] }
+  ];
+  let cur = SAMPLES[0], mode = 'single';
+
+  const CODE_RE = /[A-Z]{2}-\d{3}/g;
+
+  function run(){
+    const n = +$('#n').value; $('#nv').textContent = n;
+
+    if(mode === 'single'){
+      const hits = rt.searchVector(index, cur.q, n);
+      const max = Math.max(hits[0]?.score || 0, 1e-6);
+      $('#hits').innerHTML = hits.map(h => `
+        <div class="hit ${h.score/max > .6 ? 'top' : 'low'}">
+          <div class="meta"><span>片段 ${h.doc.id}</span><span>相似度 ${h.score.toFixed(3)}</span></div>
+          <div>${rt.highlight(h.doc.text, cur.q)}</div>
+          <div class="score-bar"><b style="width:${(h.score/max*100).toFixed(1)}%"></b></div>
+        </div>`).join('');
+      const codes = new Set(hits.flatMap(h => h.doc.text.match(CODE_RE) || []));
+      $('#stat').textContent = `僅用原始問題「${cur.q}」檢索 Top-${n}，最高相似度只有 ${max.toFixed(2)}，涵蓋 ${codes.size} 個不同告警代碼。`;
+      return;
+    }
+
+    const merged = new Map();
+    cur.rewrites.forEach(rw => {
+      rt.searchVector(index, rw, n).forEach(h => {
+        const prev = merged.get(h.i);
+        if(!prev || h.score > prev.score) merged.set(h.i, { ...h, fromQuery: rw });
+      });
+    });
+    const list = [...merged.values()].sort((a, b) => b.score - a.score);
+    const max = Math.max(list[0]?.score || 0, 1e-6);
+    $('#hits').innerHTML = list.map(h => `
+      <div class="hit ${h.score/max > .6 ? 'top' : 'low'}">
+        <div class="meta"><span>片段 ${h.doc.id}</span><span>相似度 ${h.score.toFixed(3)}</span></div>
+        <div>${rt.highlight(h.doc.text, h.fromQuery)}</div>
+        <div class="muted" style="font-size:12px;margin-top:4px">改寫查詢：${RagTutor.escapeHtml(h.fromQuery)}</div>
+        <div class="score-bar"><b style="width:${(h.score/max*100).toFixed(1)}%"></b></div>
+      </div>`).join('');
+    const codes = new Set(list.flatMap(h => h.doc.text.match(CODE_RE) || []));
+    $('#stat').textContent = `展開成 ${cur.rewrites.length} 個改寫查詢，各自取 Top-${n}，聯集去重後共 ${list.length} 筆，涵蓋 ${codes.size} 個不同告警代碼。`;
+  }
+
+  $('#qchips').innerHTML = SAMPLES.map(s => `<button type="button">${s.q}</button>`).join('');
+  $('#qchips').querySelectorAll('button').forEach((b, i) => b.onclick = () => {
+    cur = SAMPLES[i];
+    $('#qchips').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    run();
+  });
+  $('#qchips').querySelector('button').classList.add('on');
+
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    run();
+  });
+
+  $('#n').oninput = run;
+  run();
+})();
+</script>
+</body>
+</html>

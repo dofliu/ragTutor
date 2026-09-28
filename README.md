@@ -11,6 +11,7 @@
 | 003 | [嵌入與向量檢索：餘弦相似度、ANN 與 HNSW](https://dofliu.github.io/ragTutor/lessons/003-embeddings.html) |
 | 004 | [混合檢索：BM25 關鍵字 + 向量 + RRF 融合](https://dofliu.github.io/ragTutor/lessons/004-hybrid-search.html) |
 | 005 | [重排序：Bi-encoder 召回、Cross-encoder 精排](https://dofliu.github.io/ragTutor/lessons/005-reranking.html) |
+| 006 | [查詢改寫與多重查詢 Multi-Query](https://dofliu.github.io/ragTutor/lessons/006-query-rewriting.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 

@@ -54,6 +54,17 @@
       "summary": "向量檢索抓出的候選排序不一定精準：Bi-encoder 把問題與文件各自壓成向量再比對，容易漏掉細節。Cross-encoder 把兩者綁在一起聯合評分，只精排候選池就能大幅提升排序準確度。",
       "tags": ["進階", "重排序"],
       "date": "2026-09-27"
+    },
+    {
+      "no": 6,
+      "slug": "query-rewriting",
+      "file": "lessons/006-query-rewriting.html",
+      "title": "查詢改寫與多重查詢 Multi-Query",
+      "en": "Query Rewriting / Multi-Query",
+      "level": 2,
+      "summary": "使用者的問題常常模糊、口語化，背後又可能對應好幾種不同原因。查詢改寫先讓 LLM 換成手冊慣用詞彙，多重查詢再展開成好幾個不同角度分別檢索、合併，涵蓋單一查詢找不到的段落。",
+      "tags": ["進階", "查詢改寫"],
+      "date": "2026-09-28"
     }
   ]
 }
