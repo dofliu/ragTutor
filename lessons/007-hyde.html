@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HyDE：先生成假設答案再檢索｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂 HyDE（Hypothetical Document Embeddings）：技師的口語問句和手冊用詞差很遠時，先讓 LLM 寫一段假設的答案，再用它的向量去檢索真實手冊段落。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 007 堂</span><span class="tag lv2">進階</span><span class="tag">約 12 分鐘</span></p>
+  <h1>HyDE：先生成假設答案，再用它去檢索真實文件</h1>
+  <p class="lead">現場技師的問句常是口語描述症狀（「馬達好像很燙」），手冊寫的卻是技術術語（「旋角馬達過溫」），兩邊幾乎沒有共同詞彙，檢索容易落空。<b>HyDE（Hypothetical Document Embeddings，假設文件嵌入）</b>先讓 LLM 憑印象寫一段「假設的答案」，再拿這段話的向量去找真實文件——用「答案找答案」，取代「問題找答案」。</p>
+
+  <h2>🎬 動畫：從口語問句，到用假設答案找到真實手冊段落</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="HyDE 動畫：技師的口語問句先由 LLM 寫成假設文件，嵌入後檢索真實手冊段落，假設文件用完即丟，最終依真實段落回答">
+  <defs>
+    <marker id="ah7" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" style="fill:var(--muted)"/></marker>
+  </defs>
+
+  <!-- 問題（全程顯示） -->
+  <rect x="310" y="14" width="300" height="48" rx="10" style="fill:var(--panel);stroke:var(--query);stroke-width:2"/>
+  <text x="460" y="33" text-anchor="middle" font-size="11.5" class="t-muted">👤 現場技師輸入</text>
+  <text x="460" y="52" text-anchor="middle" font-size="13" font-weight="700">「葉片轉不動，馬達好像很燙」</text>
+
+  <rect x="8" y="76" width="904" height="336" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+
+  <!-- 場景標籤 -->
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--muted)" data-to="0">① 問句和手冊，用的是不同的語言</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="1" data-to="1">② 直接用問句做向量檢索</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="2" data-to="2">③ LLM 寫一段假設的答案</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="3" data-to="3">④ 假設文件補上了手冊的詞彙</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="4" data-to="4">⑤ 把假設文件轉成向量</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="5" data-to="5">⑥ 用它的向量檢索真實段落</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--muted)" data-from="6" data-to="6">⑦ 假設文件用完即丟</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 依真實手冊段落回答</text>
+
+  <!-- Step 0：用詞落差 -->
+  <g data-to="0">
+    <rect x="60" y="120" width="330" height="170" rx="10" style="fill:var(--panel);stroke:var(--query);stroke-width:1.5"/>
+    <text x="225" y="146" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--query)">🗣️ 技師的說法</text>
+    <text x="225" y="184" text-anchor="middle" font-size="13">「轉不動」</text>
+    <text x="225" y="216" text-anchor="middle" font-size="13">「很燙」</text>
+    <text x="225" y="248" text-anchor="middle" font-size="13">「好像怪怪的」</text>
+    <text x="460" y="216" text-anchor="middle" font-size="40" font-weight="700" style="fill:var(--bad)">≠</text>
+    <rect x="530" y="120" width="330" height="170" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.5"/>
+    <text x="695" y="146" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--doc)">📖 手冊的寫法</text>
+    <text x="695" y="184" text-anchor="middle" font-size="13">「旋角馬達過溫」</text>
+    <text x="695" y="216" text-anchor="middle" font-size="13">「繞組溫度超過保護門檻」</text>
+    <text x="695" y="248" text-anchor="middle" font-size="13" class="t-mono">PT-203</text>
+    <text x="460" y="330" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)">⚠️ 問句和答案段落幾乎沒有共同詞彙，語意距離被拉開</text>
+    <text x="460" y="356" text-anchor="middle" font-size="11.5" class="t-muted">（問題和答案本來就是兩種文體，直接比對很吃虧）</text>
+  </g>
+
+  <!-- Step 1：直接檢索 -->
+  <g data-from="1" data-to="1">
+    <path d="M460 62 V104" class="arrow" marker-end="url(#ah7)"/>
+    <rect x="370" y="104" width="180" height="56" rx="12" style="fill:var(--panel);stroke:var(--vec);stroke-width:2"/>
+    <text x="460" y="126" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--vec)">🔎 向量索引</text>
+    <text x="460" y="144" text-anchor="middle" font-size="11" class="t-muted">直接用問句查詢</text>
+    <path d="M460 160 V188" class="flow" style="stroke:var(--query)"/>
+    <rect x="290" y="192" width="340" height="28" rx="6" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.5"/>
+    <text x="302" y="210" font-size="11.5">旋角系統概述……</text>
+    <rect x="290" y="226" width="340" height="28" rx="6" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.5"/>
+    <text x="302" y="244" font-size="11.5">旋角減速機保養……</text>
+    <rect x="290" y="260" width="340" height="28" rx="6" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.5"/>
+    <text x="302" y="278" font-size="11.5">旋角軸承潤滑……</text>
+    <text x="460" y="330" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)">⚠️ 只撈到「旋角」相關的泛用段落，沒有故障排除</text>
+  </g>
+
+  <!-- Step 2+：LLM 與假設文件 -->
+  <g data-from="2" data-to="6">
+    <path d="M330 62 C 220 78, 150 96, 140 118" class="arrow" marker-end="url(#ah7)"/>
+    <rect x="40" y="118" width="200" height="72" rx="12" data-hot="2" style="fill:var(--panel);stroke:var(--accent);stroke-width:2.5"/>
+    <text x="140" y="144" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--accent)">🧠 LLM</text>
+    <text x="140" y="164" text-anchor="middle" font-size="11" class="t-muted">不看手冊，憑印象</text>
+    <text x="140" y="180" text-anchor="middle" font-size="11" class="t-muted">寫一段假設的答案</text>
+    <path d="M240 154 H290" class="flow" style="stroke:var(--accent)"/>
+  </g>
+  <g data-from="2" data-to="6">
+    <rect x="292" y="108" width="590" height="98" rx="10" data-hot="2 3" data-dim="6" style="fill:var(--panel);stroke:var(--accent);stroke-width:2;stroke-dasharray:6 4"/>
+    <g data-dim="6">
+      <text x="306" y="128" font-size="11.5" font-weight="700" style="fill:var(--accent)">📝 假設文件 Hypothetical Document（虛構，細節可能有誤）</text>
+      <text x="306" y="150" font-size="12">告警 PT-203 旋角馬達過溫：馬達繞組溫度超過保護門檻時，</text>
+      <text x="306" y="169" font-size="12">控制器限制電流並觸發保護。常見原因為散熱不良、負載過大</text>
+      <text x="306" y="188" font-size="12">或溫度感測器異常。排除步驟：上鎖掛牌後檢查散熱風道。</text>
+    </g>
+  </g>
+
+  <!-- Step 3：補上詞彙，也可能編造細節 -->
+  <g data-from="3" data-to="3">
+    <text x="60" y="246" font-size="13" font-weight="700" style="fill:var(--good)">✔ 補上了問句缺少的手冊詞彙：旋角馬達過溫、繞組溫度、散熱風道</text>
+    <text x="60" y="280" font-size="13" font-weight="700" style="fill:var(--warn)">✘ 但代碼、門檻等細節都可能是模型編的，所以只拿來「找文件」</text>
+    <text x="60" y="314" font-size="12" class="t-muted">重點不在答案對不對，而在它「長得像」手冊裡的答案段落</text>
+  </g>
+
+  <!-- Step 4+：嵌入 -->
+  <g data-from="4" data-to="6">
+    <path d="M400 206 V226" class="arrow" marker-end="url(#ah7)"/>
+    <rect x="300" y="228" width="200" height="40" rx="8" data-hot="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:2"/>
+    <text x="400" y="253" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--vec)">🧮 嵌入模型 Encoder</text>
+    <path d="M500 248 H560" class="flow" style="stroke:var(--vec)"/>
+    <rect x="562" y="228" width="320" height="40" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.5"/>
+    <text x="722" y="253" text-anchor="middle" font-size="12" class="t-mono">[ 0.12, −0.03, 0.41, … ]</text>
+  </g>
+  <g data-from="4" data-to="4">
+    <text x="460" y="304" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--vec)">壓成向量時只留語意，逐字編造的細節會被大幅淡化</text>
+    <text x="460" y="330" text-anchor="middle" font-size="11.5" class="t-muted">（論文稱這是編碼器的「資訊瓶頸」，不代表錯誤細節一定不影響結果）</text>
+  </g>
+
+  <!-- Step 5+：檢索真實段落 -->
+  <path d="M722 268 V290" class="flow" style="stroke:var(--vec)" data-from="5" data-to="5"/>
+  <g data-from="5" data-to="6">
+    <rect x="40" y="296" width="230" height="100" rx="10" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="155" y="322" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--vec)">🔎 真實手冊索引</text>
+    <text x="155" y="346" text-anchor="middle" font-size="11" class="t-muted">用假設文件的向量</text>
+    <text x="155" y="364" text-anchor="middle" font-size="11" class="t-muted">找最相近的真實段落</text>
+    <g data-hot="5">
+      <rect x="300" y="292" width="580" height="30" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+      <text x="312" y="312" font-size="12" font-weight="700">PT-203 旋角馬達過溫（OW-8 手冊）</text>
+      <text x="866" y="312" text-anchor="end" font-size="11" style="fill:var(--good)">✔ 最相近</text>
+    </g>
+    <rect x="300" y="328" width="580" height="30" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="312" y="348" font-size="12">PT-205 旋角馬達煞車異常</text>
+    <rect x="300" y="364" width="580" height="30" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="312" y="384" font-size="12">旋角系統概述</text>
+  </g>
+  <g data-from="6" data-to="6">
+    <text x="722" y="284" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--muted)">🗑️ 假設文件到此為止，不會進入最終答案</text>
+  </g>
+
+  <!-- Step 7：真實段落 → 回答 -->
+  <g data-from="7">
+    <rect x="40" y="120" width="390" height="250" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:2"/>
+    <text x="235" y="148" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--doc)">📖 命中的真實段落：PT-203</text>
+    <text x="62" y="190" font-size="12">馬達繞組溫度超過保護門檻時，</text>
+    <text x="62" y="216" font-size="12">控制器限制電流並可能觸發停機。</text>
+    <text x="62" y="242" font-size="12">常見原因：散熱風道堵塞、</text>
+    <text x="62" y="268" font-size="12">長時間高負載、溫度感測器異常。</text>
+    <text x="62" y="330" font-size="11" class="t-muted">出處：《OW-8 運維手冊》旋角系統章</text>
+    <path d="M430 245 H488" class="arrow" marker-end="url(#ah7)"/>
+    <g class="pulse">
+      <rect x="490" y="120" width="390" height="250" rx="10" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+      <text x="685" y="148" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--good)">✅ 依手冊回答（附出處）</text>
+      <text x="512" y="190" font-size="12">可能是旋角馬達過溫（PT-203）：</text>
+      <text x="512" y="216" font-size="12">① 先完成上鎖掛牌（LOTO）</text>
+      <text x="512" y="242" font-size="12">② 檢查散熱風道與感測器接線</text>
+      <text x="512" y="268" font-size="12">③ 量測繞組電阻，確認後才可復歸</text>
+      <text x="512" y="330" font-size="11" class="t-muted">答案來自真實手冊，不是假設文件</text>
+    </g>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>問句和答案是兩種文體</b>技師用症狀描述提問，手冊用技術術語作答；直接拿問句的向量去比，容易比到語意鬆散的泛用段落。</div>
+    <div class="card"><b>用「答案找答案」</b>HyDE 先讓 LLM 寫出假設文件（原論文為 Gao 等人 2022），再用這份假設文件的向量檢索，讓查詢向量落在真實答案段落附近。</div>
+    <div class="card"><b>編造的細節不是致命傷</b>假設文件只用來產生查詢向量，不會出現在最終答案；編碼器只保留語意的特性，會淡化部分錯誤細節。</div>
+    <div class="card"><b>多寫幾份更穩</b>論文的做法是生成多份假設文件，把它們的向量（連同原問句）取平均，降低單次生成走偏的風險。</div>
+  </div>
+
+  <h2>🧪 互動範例：問句 vs. 假設文件</h2>
+  <div class="prose"><p>下面是《OW-8 運維手冊》旋角系統與相鄰章節共 13 個段落。選一句技師的口語問句，比較三種查詢方式的檢索結果；「假設文件」是預先寫好的示範文字，模擬 LLM 會生成的內容（本網站不會呼叫真正的語言模型），你也可以<b>直接改寫它</b>，看看寫偏了會發生什麼事。第 4 個範例刻意讓假設文件猜錯方向。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="qchips"></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" data-mode="query">原始問句</button>
+      <button type="button" class="on" data-mode="hyde">假設文件（HyDE）</button>
+      <button type="button" data-mode="both">問句 + 假設文件（向量平均）</button>
+    </div>
+    <div class="row"><label for="hyp" style="flex:0 0 100%">LLM 生成的假設文件（可編輯）：</label></div>
+    <textarea id="hyp" rows="4" style="width:100%;font:inherit;font-size:13px;padding:8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--text)"></textarea>
+    <div class="row"><label for="n">顯示 Top-N：<b id="nv">3</b></label><input type="range" id="n" min="1" max="5" value="3" style="flex:1;max-width:220px"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>用 <code>anthropic</code> SDK 為技師的問句生成 3 份假設文件，以 <code>sentence-transformers</code> 編碼後與原問句的向量取平均，再檢索真實手冊段落。生成的假設文件只用來檢索，最後回答仍以真實段落為依據。</p></div>
+<pre class="code"><code><span class="k">import</span> numpy <span class="k">as</span> np
+<span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer
+<span class="k">import</span> anthropic
+
+<span class="c"># ① 索引階段：手冊段落先算好向量（範例文件為虛構）</span>
+embedder = SentenceTransformer(<span class="s">"BAAI/bge-m3"</span>)
+chunks = [
+    <span class="s">"告警 PT-203 旋角馬達過溫：馬達繞組溫度超過保護門檻時，控制器限制電流……"</span>,
+    <span class="s">"告警 PT-205 旋角馬達煞車異常：煞車釋放或吸合訊號與指令不符時觸發……"</span>,
+    <span class="s">"旋角減速機保養：每年檢查減速機油位與油色……"</span>,
+]
+chunk_vecs = embedder.<span class="f">encode</span>(chunks, normalize_embeddings=<span class="k">True</span>)
+client = anthropic.<span class="f">Anthropic</span>()
+
+<span class="c"># ② HyDE：讓 LLM 寫「假設的手冊段落」，不需要正確，只要長得像</span>
+<span class="k">def</span> <span class="f">hypothetical_docs</span>(question, n=<span class="s">3</span>):
+    prompt = (<span class="s">f"你是風機運維手冊的作者。針對技師的問題：「{question}」\n"</span>
+              <span class="s">"請寫一段手冊風格的故障排除說明（約 100 字），"</span>
+              <span class="s">"使用手冊常見術語；細節不確定也沒關係。只輸出說明本文。"</span>)
+    docs = []
+    <span class="k">for</span> _ <span class="k">in</span> <span class="f">range</span>(n):                      <span class="c"># 每次取樣結果不同</span>
+        msg = client.messages.<span class="f">create</span>(model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">300</span>,
+                                     messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+        docs.<span class="f">append</span>(msg.content[<span class="s">0</span>].text)
+    <span class="k">return</span> docs
+
+<span class="c"># ③ 檢索：假設文件的向量（連同原問句）取平均，再找真實段落</span>
+<span class="k">def</span> <span class="f">hyde_retrieve</span>(question, top_n=<span class="s">3</span>):
+    texts = [question] + <span class="f">hypothetical_docs</span>(question)
+    vecs = embedder.<span class="f">encode</span>(texts, normalize_embeddings=<span class="k">True</span>)
+    q = vecs.<span class="f">mean</span>(axis=<span class="s">0</span>)
+    q /= np.linalg.<span class="f">norm</span>(q)
+    scores = chunk_vecs @ q
+    top = np.<span class="f">argsort</span>(-scores)[:top_n]
+    <span class="k">return</span> [chunks[i] <span class="k">for</span> i <span class="k">in</span> top]              <span class="c"># 只回傳真實段落</span>
+
+<span class="c"># ④ 生成：依真實段落回答，假設文件不進入 prompt</span>
+<span class="k">def</span> <span class="f">answer</span>(question):
+    context = <span class="s">"\n"</span>.<span class="f">join</span>(<span class="s">f"[{i+1}] {c}"</span> <span class="k">for</span> i, c <span class="k">in</span> <span class="f">enumerate</span>(<span class="f">hyde_retrieve</span>(question)))
+    prompt = <span class="s">f"參考資料：\n{context}\n\n問題：{question}\n請只依參考資料回答；資料中沒有就說不知道。"</span>
+    msg = client.messages.<span class="f">create</span>(model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">512</span>,
+                                 messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text
+
+<span class="f">print</span>(<span class="f">answer</span>(<span class="s">"葉片轉不動，馬達好像很燙"</span>))</code></pre>
+
+  <h2>⚖️ 四種做法比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>原始問句直接檢索</th><th>查詢改寫 / Multi-Query（第 006 堂）</th><th>HyDE（本堂）</th><th>重排序（第 005 堂）</th></tr>
+    <tr><th>額外 LLM 呼叫</th><td>無</td><td>1 次（生成改寫查詢）</td><td>1 次或多次（生成假設文件）</td><td>無 LLM，但多一次 cross-encoder 運算</td></tr>
+    <tr><th>解決什麼</th><td>—</td><td>問句模糊、原因不只一種</td><td>問句與答案段落的用詞、文體落差</td><td>候選段落的排序不夠準</td></tr>
+    <tr><th>適合情境</th><td>問句已含精確術語或代碼</td><td>要涵蓋多個子系統的可能原因</td><td>口語描述症狀、想找的是說明性段落</td><td>召回已含正解、只差排序</td></tr>
+    <tr><th>主要風險</th><td>口語問句容易落空</td><td>改寫可能編造不存在的術語</td><td>模型不懂該領域時，假設文件可能整段偏題</td><td>不能找回召回階段漏掉的段落</td></tr>
+  </table>
+
+  <h2>⚠️ HyDE 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>LLM 不熟悉的領域容易寫偏</b>：模型沒看過你的手冊，只能憑一般常識猜。猜對方向（過溫）就有效；猜錯方向（例如把「很燙」寫成煞車問題），檢索反而被帶偏——互動範例的第 4 題就是這種情況。</li>
+      <li><b>每次查詢多一次生成，延遲與成本上升</b>：多生成幾份假設文件更穩，但成本也線性增加；即時性要求高的場景要評估。</li>
+      <li><b>精確代碼、料號查詢不需要</b>：使用者直接輸入「PT-203」時，關鍵字檢索（BM25）就能精準命中，先生成假設文件只是多花時間，還可能被編造的內容干擾。</li>
+      <li><b>假設文件不能當答案或證據</b>：它可能含編造的代碼與門檻值。最終回答必須依檢索到的真實段落，並附出處。</li>
+      <li><b>問句本來就精確時效益有限</b>：原論文的實驗也顯示，對已在大量有標註資料上微調過的檢索器，HyDE 的優勢會縮小；先用第 001–006 堂的方法把基礎打好，再評估是否值得加。</li>
+    </ul>
+    <div class="callout warn">範例中的鷗灣離岸風場、OW-8 機型、運維手冊內容、告警代碼皆為虛構，僅供教學示範；互動範例中的「假設文件」為預先寫好的示範文字，並非真正呼叫語言模型產生，檢索使用的是簡化的 TF-IDF 模擬；實際作業以原廠手冊與現場規範為準。</div>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>HyDE 生成的假設文件可能含有編造的細節，為什麼這種做法仍然有用？</b></p>
+    <button class="opt">A. 因為假設文件的內容一定正確，可以直接當最終答案</button>
+    <button class="opt">B. 因為假設文件只用來產生查詢向量：它補上了手冊慣用的詞彙與文體，找到的是真實段落，最終答案仍依真實段落產生</button>
+    <button class="opt">C. 因為向量檢索不在乎內容，只看文字長度</button>
+    <div class="why">HyDE 的價值不在假設文件「對不對」，而在它「長得像」手冊裡的答案段落，讓查詢向量更靠近真實答案。編造的細節會被嵌入模型淡化，而且假設文件不會進入最終答案，回答仍以真實檢索到的段落為依據。</div>
+  </div>
+  <div class="quiz card" data-answer="0">
+    <p><b>下列哪種情況最不適合使用 HyDE？</b></p>
+    <button class="opt">A. 技師直接輸入告警代碼「PT-203」，要查對應的手冊段落</button>
+    <button class="opt">B. 技師用口語描述「馬達好像很燙」，想找相關的故障排除說明</button>
+    <button class="opt">C. 問句與手冊用詞差異很大，但 LLM 對風機領域有一定的了解</button>
+    <div class="why">代碼是精確的關鍵字，用 BM25 就能直接命中，先生成假設文件只會增加延遲，還可能被編造內容干擾。B、C 則是 HyDE 最能發揮的情境：問句與答案用詞落差大，且模型能猜到大致方向。</div>
+  </div>
+
+  <nav class="pager" data-slug="hyde"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8500, steps:[
+  { title:'問句和手冊，說的是不同的語言', text:'現場技師輸入「<b>葉片轉不動，馬達好像很燙</b>」，手冊寫的卻是「<b>旋角馬達過溫</b>」「<b>繞組溫度超過保護門檻</b>」。問句與答案段落幾乎沒有共同詞彙，語意上的距離被拉得很遠。' },
+  { title:'直接用問句檢索，撈到的是泛用段落', text:'把問句原封不動做<b>向量檢索</b>，容易撈到只沾到「旋角」二字的<b>泛用段落</b>，像系統概述、減速機保養、軸承潤滑，真正的故障排除段落反而排不上來。' },
+  { title:'HyDE：先讓 LLM 寫一段假設的答案', text:'<b>HyDE（Hypothetical Document Embeddings）</b>先請 LLM <b>不看手冊</b>，憑一般知識寫一段「假設的手冊段落」。它不需要正確，只需要看起來像手冊裡的答案段落。' },
+  { title:'假設文件補上了手冊的詞彙', text:'假設文件帶來了問句缺少的<b>手冊詞彙</b>與文體：旋角馬達過溫、繞組溫度、散熱風道。裡面的代碼與門檻值可能是模型編的，所以它<b>只拿來找文件</b>，不當答案。' },
+  { title:'把假設文件轉成向量', text:'假設文件交給<b>嵌入模型</b>轉成向量。壓縮成向量的過程只保留語意，逐字編造的細節會被大幅淡化，這也是原論文所說編碼器的「資訊瓶頸」作用。' },
+  { title:'用它的向量檢索真實段落', text:'拿這個向量去比對<b>真實手冊索引</b>。因為查詢向量現在長得像答案段落，「<b>PT-203 旋角馬達過溫</b>」成為最相近的段落，取代原本只比到「旋角」二字的泛用結果。' },
+  { title:'假設文件用完即丟', text:'到這裡假設文件的任務就結束了：它<b>不會</b>進入最終答案，也不會被當成證據。留下來的只有從手冊索引檢索出的<b>真實段落</b>，可以追溯出處。' },
+  { title:'改善後的結果：依真實段落回答', text:'LLM 依照真實的 PT-203 段落，回答可能是旋角馬達過溫，並列出<b>上鎖掛牌、檢查散熱風道、量測繞組電阻</b>等排除步驟與出處。技師的口語問句，成功對上手冊的專業寫法。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+
+  const WIND = [
+    '旋角系統概述：每支葉片各由一組電動旋角馬達與減速機驅動，控制器依風速與功率指令調整葉片角度，以控制轉速與輸出功率；遇緊急停機時，各葉片會獨立順槳至安全位置。',
+    '告警 PT-203 旋角馬達過溫：馬達繞組溫度超過保護門檻時，控制器會限制電流並可能觸發停機。常見原因為散熱風道堵塞、長時間高負載或溫度感測器異常。排除步驟：完成上鎖掛牌後，檢查馬達散熱風道與溫度感測器接線，量測繞組電阻，確認無誤後才可復歸。',
+    '告警 PT-205 旋角馬達煞車異常：馬達煞車釋放或吸合訊號與指令不符時觸發。常見原因為煞車線圈斷線、摩擦片磨耗或回授開關位移。排除步驟：確認葉片已鎖定，檢查煞車線圈電阻與回授開關間隙，必要時更換煞車組。',
+    '告警 PT-211 三支葉片角度偏差過大：任兩支葉片的角度回授差超過容許值時觸發，可能造成轉子不平衡。常見原因為角度編碼器故障、聯軸器鬆動或旋角驅動器異常，需比對三支葉片的角度回授紀錄。',
+    '告警 PT-230 旋角備援電源測試失敗：備援電池或超級電容的定期測試未通過時，控制系統判定緊急順槳能力不足而停機，需先更換備援電源模組，不得強行復歸。',
+    '旋角減速機保養：每年檢查減速機油位與油色，並依廠商建議週期更換潤滑油；發現金屬粉末或異音時需送油品分析。',
+    '旋角軸承潤滑：葉片根部旋角軸承需依週期補充潤滑脂，補脂時應確認排脂口暢通，避免油脂過量擠壓密封。',
+    '偏航系統告警 YW-042 偏航誤差過大：機艙方向與風向持續偏離超出容許範圍，會降低發電量並增加疲勞負載，需檢查風向計校正與偏航馬達。',
+    '齒輪箱告警 GB-117 高速軸軸承溫度過高：溫度超過門檻會觸發保護性停機，需檢查油位、冷卻器運轉，並調閱狀態監測振動頻譜。',
+    '變流器告警 CV-310 功率模組過溫：環境溫度過高或散熱風扇堵塞時，模組溫度超過門檻會降載或跳機，需檢查散熱風扇與濾網。',
+    '塔架螺栓巡檢：依巡檢計畫以扭力扳手抽檢法蘭螺栓，並記錄防鬆標記是否位移。',
+    '葉片前緣侵蝕巡檢：以無人機拍攝葉片前緣，判讀侵蝕、裂紋與雷擊痕跡，並依嚴重度排定修補。',
+    '高處作業安全規範：進入機艙與輪轂前須完成上鎖掛牌（LOTO），確認葉片鎖定與主電源隔離，並穿戴全身式安全帶。'
+  ];
+  const CORPUS = WIND.map((text, i) => ({ id: 'd' + (i + 1), text }));
+  const index = rt.buildIndex(CORPUS);
+
+  const SAMPLES = [
+    { q: '葉片轉不動，馬達好像很燙', want: 1,
+      hyp: '告警 PT-203 旋角馬達過溫：馬達繞組溫度超過保護門檻時，控制器限制電流並觸發保護。常見原因為散熱不良、負載過大或溫度感測器異常。排除步驟：完成上鎖掛牌後，檢查馬達散熱風道與感測器接線。' },
+    { q: '三片葉片好像沒轉到同樣的位置', want: 3,
+      hyp: '告警 PT-211 三支葉片角度偏差過大：葉片角度回授差超過容許值時觸發。常見原因為角度編碼器故障、聯軸器鬆動或驅動器異常，需比對三支葉片的角度回授紀錄。' },
+    { q: '停電之後風機不肯再啟動，說緊急收葉片的電有問題', want: 4,
+      hyp: '告警 PT-230 旋角備援電源測試失敗：備援電池或超級電容測試未通過，控制系統判定緊急順槳能力不足而停機，需更換備援電源模組。' },
+    { q: '葉片轉不動，馬達好像很燙（假設文件猜錯）', qtext: '葉片轉不動，馬達好像很燙', want: 1,
+      hyp: '告警 PT-205 旋角馬達煞車異常：馬達煞車釋放或吸合訊號與指令不符時觸發。常見原因為煞車線圈斷線或摩擦片磨耗。排除步驟：檢查煞車線圈電阻與回授開關間隙，必要時更換煞車組。' }
+  ];
+  let cur = SAMPLES[0], mode = 'hyde';
+  const qOf = s => s.qtext || s.q;
+
+  const unit = m => { let n = 0; m.forEach(v => n += v*v); n = Math.sqrt(n) || 1; const o = new Map(); m.forEach((v,k) => o.set(k, v/n)); return o; };
+  function avg(maps){
+    const o = new Map();
+    maps.forEach(m => m.forEach((v,k) => o.set(k, (o.get(k)||0) + v/maps.length)));
+    return o;
+  }
+  function rank(qvec){
+    return index.docs.map((d,i) => ({ i, doc:d, score: rt.cosine(qvec, index.vecs[i]) }))
+      .sort((a,b) => b.score - a.score);
+  }
+
+  function run(){
+    const n = +$('#n').value; $('#nv').textContent = n;
+    const q = qOf(cur), hyp = $('#hyp').value;
+    const vq = index.vec(rt.tokenize(q)), vh = index.vec(rt.tokenize(hyp));
+    let list, textForMark;
+    if(mode === 'query'){ list = rank(vq); textForMark = q; }
+    else if(mode === 'hyde'){ list = rank(vh); textForMark = hyp; }
+    else { list = rank(avg([unit(vq), unit(vh)])); textForMark = q + hyp; }
+    const wantPos = list.findIndex(h => h.i === cur.want) + 1;
+    const max = Math.max(list[0]?.score || 0, 1e-6);
+    $('#hits').innerHTML = list.slice(0, n).map(h => `
+      <div class="hit ${h.score/max > .6 ? 'top' : 'low'}">
+        <div class="meta"><span>片段 ${h.doc.id}${h.i === cur.want ? '　✔ 正解段落' : ''}</span><span>相似度 ${h.score.toFixed(3)}</span></div>
+        <div>${rt.highlight(h.doc.text, textForMark)}</div>
+        <div class="score-bar"><b style="width:${(h.score/max*100).toFixed(1)}%"></b></div>
+      </div>`).join('');
+    const label = { query:'原始問句', hyde:'假設文件', both:'問句 + 假設文件' }[mode];
+    $('#stat').textContent = `以「${label}」檢索：正解段落（片段 d${cur.want + 1}）排名第 ${wantPos}，最高相似度 ${max.toFixed(2)}。${wantPos > n ? '（不在目前顯示的 Top-' + n + ' 內）' : ''}`;
+  }
+
+  function pick(i){
+    cur = SAMPLES[i];
+    $('#hyp').value = cur.hyp;
+    $('#qchips').querySelectorAll('button').forEach((x, k) => x.classList.toggle('on', k === i));
+    run();
+  }
+  $('#qchips').innerHTML = SAMPLES.map(s => `<button type="button">${RagTutor.escapeHtml(s.q)}</button>`).join('');
+  $('#qchips').querySelectorAll('button').forEach((b, i) => b.onclick = () => pick(i));
+
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    run();
+  });
+  $('#hyp').oninput = run;
+  $('#n').oninput = run;
+  pick(0);
+})();
+</script>
+</body>
+</html>
