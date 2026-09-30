@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>父子文件檢索：小塊檢索、大塊回傳｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂父子文件檢索（Parent-Document / Small-to-Big）：用小塊精準命中，再回傳它所屬的整節內容，兼顧檢索精準度與上下文完整。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 008 堂</span><span class="tag lv2">進階</span><span class="tag">約 12 分鐘</span></p>
+  <h1>父子文件檢索：用小塊命中，回傳整節大塊</h1>
+  <p class="lead">切塊大小是兩難：<b>塊切小</b>，向量語意集中、命中精準，卻常缺少前後文（少了安全措施、少了復歸步驟）；<b>塊切大</b>，內容完整，向量卻被一整節的雜訊稀釋，反而不容易命中。<b>父子文件檢索（Parent-Document / Small-to-Big）</b>把兩者拆開：用「小塊」建索引負責找，命中後回傳它所屬的「父段落」負責讀。</p>
+
+  <h2>🎬 動畫：小塊命中「安裝」，回傳整節《旋角馬達更換程序》</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="父子文件檢索動畫：整節當一塊檢索會稀釋語意，只回小塊又缺前後文；改為切小塊建索引、命中後依父 ID 從文件庫取回整節，回答同時包含安全措施、扭力與復歸測試">
+  <defs>
+    <marker id="ah8" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" style="fill:var(--muted)"/></marker>
+  </defs>
+
+  <!-- 問題（全程顯示） -->
+  <rect x="290" y="14" width="340" height="48" rx="10" style="fill:var(--panel);stroke:var(--query);stroke-width:2"/>
+  <text x="460" y="33" text-anchor="middle" font-size="11.5" class="t-muted">👤 現場技師輸入</text>
+  <text x="460" y="52" text-anchor="middle" font-size="13" font-weight="700">「新的旋角馬達怎麼裝回去？」</text>
+
+  <rect x="8" y="76" width="904" height="336" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+
+  <!-- 場景標籤 -->
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--muted)" data-to="0">① 切塊大小的兩難</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="1" data-to="1">② 整節當一塊：向量被稀釋</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="2" data-to="2">③ 把每一節切成小塊（子）</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="3" data-to="3">④ 小塊進向量索引，整節進文件庫</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="4" data-to="4">⑤ 用小塊精準命中</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="5" data-to="5">⑥ 依父 ID 取回整節原文</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="6" data-to="6">⑦ 把父段落交給 LLM</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 精準命中 + 上下文完整</text>
+
+  <!-- Step 0：兩難 -->
+  <g data-to="0">
+    <rect x="60" y="116" width="370" height="200" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.5"/>
+    <text x="245" y="142" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--doc)">📄 塊切大：整節一起</text>
+    <text x="80" y="176" font-size="12">適用範圍、料號、工單</text>
+    <text x="80" y="200" font-size="12">安全前置、上鎖掛牌</text>
+    <text x="80" y="224" font-size="12">拆卸馬達與線纜</text>
+    <text x="80" y="248" font-size="12">安裝與扭力</text>
+    <text x="80" y="272" font-size="12">復歸測試與記錄</text>
+    <text x="245" y="302" text-anchor="middle" font-size="11.5" style="fill:var(--warn)">內容完整，但一個向量要代表 5 件事</text>
+    <rect x="490" y="116" width="370" height="200" rx="10" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.5"/>
+    <text x="675" y="142" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--vec)">✂️ 塊切小：只有一句</text>
+    <text x="675" y="196" text-anchor="middle" font-size="12">「依原廠扭力表分次對角</text>
+    <text x="675" y="218" text-anchor="middle" font-size="12">鎖緊固定螺栓……」</text>
+    <text x="675" y="258" text-anchor="middle" font-size="12" style="fill:var(--bad)">❓ 要先鎖定葉片嗎？裝完怎麼測試？</text>
+    <text x="675" y="302" text-anchor="middle" font-size="11.5" style="fill:var(--warn)">命中精準，但缺前後文</text>
+    <text x="460" y="352" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)">⚠️ 用同一種塊，只能在「精準」和「完整」之間二選一</text>
+  </g>
+
+  <!-- Step 1：大塊稀釋 -->
+  <g data-from="1" data-to="1">
+    <rect x="50" y="116" width="270" height="130" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:2"/>
+    <text x="185" y="140" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">6.3 旋角馬達更換程序</text>
+    <text x="70" y="168" font-size="11.5" class="t-muted">料號、工單、LOTO、拆卸、</text>
+    <text x="70" y="188" font-size="11.5" class="t-muted">安裝、扭力、復歸測試……</text>
+    <text x="70" y="220" font-size="11.5" class="t-muted">（整節壓成一個向量）</text>
+    <path d="M320 181 H372" class="flow" style="stroke:var(--vec)"/>
+    <rect x="374" y="156" width="140" height="50" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:2"/>
+    <text x="444" y="177" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">🧮 一個向量</text>
+    <text x="444" y="195" text-anchor="middle" font-size="11" class="t-muted">語意被平均</text>
+    <path d="M514 181 H556" class="flow" style="stroke:var(--vec)"/>
+    <rect x="558" y="116" width="310" height="34" rx="6" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.5"/>
+    <text x="572" y="138" font-size="12">6.3 旋角馬達更換程序</text>
+    <rect x="558" y="158" width="310" height="34" rx="6" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.5"/>
+    <text x="572" y="180" font-size="12">7.2 偏航馬達更換程序</text>
+    <rect x="558" y="200" width="310" height="34" rx="6" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.5"/>
+    <text x="572" y="222" font-size="12">5.4 旋角減速機保養</text>
+    <text x="460" y="290" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)">⚠️ 幾節的詞彙都很像，各節分數接近，正解容易排不上來</text>
+    <text x="460" y="316" text-anchor="middle" font-size="11.5" class="t-muted">（都有「馬達」「上鎖掛牌」「扭力」；具體的「怎麼裝」被其他內容蓋過）</text>
+  </g>
+
+  <!-- Step 2~6：子塊清單 -->
+  <g data-from="2" data-to="6">
+    <rect x="40" y="110" width="420" height="40" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="54" y="135" font-size="12">① 適用範圍與料號</text>
+    <rect x="40" y="158" width="420" height="40" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="54" y="183" font-size="12">② 安全前置：上鎖掛牌</text>
+    <rect x="40" y="206" width="420" height="40" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="54" y="231" font-size="12">③ 拆卸馬達與線纜</text>
+    <rect x="40" y="254" width="420" height="40" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="54" y="279" font-size="12">④ 安裝：依扭力表鎖緊螺栓</text>
+    <g data-from="4" data-hot="4 5 6">
+      <rect x="40" y="254" width="420" height="40" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+      <text x="54" y="279" font-size="12" font-weight="700">④ 安裝：依扭力表鎖緊螺栓</text>
+    </g>
+    <rect x="40" y="302" width="420" height="40" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="54" y="327" font-size="12">⑤ 復歸測試與記錄</text>
+    <text x="250" y="366" text-anchor="middle" font-size="11.5" class="t-muted">同屬父段落「6.3 旋角馬達更換程序」</text>
+  </g>
+
+  <!-- Step 2：父 ID -->
+  <g data-from="2" data-to="2">
+    <rect x="520" y="150" width="360" height="130" rx="10" data-hot="2" style="fill:var(--panel);stroke:var(--accent);stroke-width:2.5;stroke-dasharray:6 4"/>
+    <text x="700" y="178" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--accent)">📦 父段落 Parent</text>
+    <text x="700" y="204" text-anchor="middle" font-size="12">6.3 旋角馬達更換程序</text>
+    <text x="700" y="230" text-anchor="middle" font-size="11.5" class="t-mono">parent_id = sec-6.3</text>
+    <text x="700" y="256" text-anchor="middle" font-size="11.5" class="t-muted">每個小塊都記住自己的父 ID</text>
+  </g>
+
+  <!-- Step 3~6：兩個儲存區 -->
+  <g data-from="3" data-to="5">
+    <path d="M462 130 H520" class="flow" style="stroke:var(--vec)" data-to="3"/>
+    <rect x="520" y="110" width="360" height="80" rx="10" data-hot="3" style="fill:var(--panel);stroke:var(--vec);stroke-width:2"/>
+    <text x="700" y="136" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--vec)">🔎 向量索引</text>
+    <text x="700" y="158" text-anchor="middle" font-size="11.5" class="t-muted">只存「小塊」的向量與父 ID</text>
+    <text x="700" y="176" text-anchor="middle" font-size="11.5" class="t-muted">用來比對問題</text>
+    <rect x="520" y="220" width="360" height="80" rx="10" data-hot="3 5" style="fill:var(--panel);stroke:var(--doc);stroke-width:2"/>
+    <text x="700" y="246" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--doc)">🗄️ 文件庫 Docstore</text>
+    <text x="700" y="268" text-anchor="middle" font-size="11.5" class="t-muted">以父 ID 存「整節」原文</text>
+    <text x="700" y="286" text-anchor="middle" font-size="11.5" class="t-muted">不建向量，只負責被取回</text>
+  </g>
+  <g data-from="3" data-to="3">
+    <text x="700" y="336" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">兩個儲存區分工：一個負責「找」，一個負責「讀」</text>
+  </g>
+
+  <!-- Step 4：問題 → 向量索引 → 命中 ④ -->
+  <g data-from="4" data-to="4">
+    <path d="M630 38 C 760 38, 720 84, 700 108" class="flow" style="stroke:var(--query)"/>
+    <path d="M540 190 C 500 220, 490 258, 462 272" class="flow" style="stroke:var(--good)"/>
+    <text x="700" y="336" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">小塊只談「安裝」，向量集中，命中第 ④ 塊</text>
+  </g>
+
+  <!-- Step 5：查父 ID -->
+  <g data-from="5" data-to="5">
+    <path d="M462 274 H518" class="arrow" marker-end="url(#ah8)" style="stroke:var(--doc)"/>
+    <text x="700" y="330" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">用小塊記的 parent_id = sec-6.3，取回整節原文</text>
+  </g>
+
+  <!-- Step 6：父段落 -->
+  <g data-from="6" data-to="6">
+    <path d="M462 226 H518" class="arrow" marker-end="url(#ah8)" style="stroke:var(--doc)"/>
+    <rect x="520" y="150" width="360" height="130" rx="10" class="pulse" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+    <text x="700" y="178" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--good)">📖 整節 6.3 交給 LLM</text>
+    <text x="700" y="204" text-anchor="middle" font-size="12">含 ② 上鎖掛牌、④ 安裝扭力、</text>
+    <text x="700" y="226" text-anchor="middle" font-size="12">⑤ 復歸測試，共 5 個小塊</text>
+    <text x="700" y="258" text-anchor="middle" font-size="11.5" class="t-muted">檢索用小塊，閱讀用大塊</text>
+  </g>
+
+  <!-- Step 7：比較 -->
+  <g data-from="7">
+    <rect x="40" y="116" width="400" height="250" rx="10" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+    <text x="240" y="144" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--bad)">✘ 只回傳命中的小塊</text>
+    <text x="62" y="184" font-size="12">「依原廠扭力表分次對角</text>
+    <text x="62" y="208" font-size="12">鎖緊固定螺栓……」</text>
+    <text x="62" y="252" font-size="12" style="fill:var(--bad)">沒提到要先上鎖掛牌</text>
+    <text x="62" y="276" font-size="12" style="fill:var(--bad)">沒提到裝完要做復歸測試</text>
+    <text x="62" y="330" font-size="11" class="t-muted">回答只講扭力，漏掉安全與驗證</text>
+    <path d="M440 241 H478" class="arrow" marker-end="url(#ah8)"/>
+    <g class="pulse">
+      <rect x="480" y="116" width="400" height="250" rx="10" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+      <text x="680" y="144" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--good)">✅ 回傳整節（父段落）</text>
+      <text x="502" y="184" font-size="12">① 完成上鎖掛牌，鎖定葉片</text>
+      <text x="502" y="210" font-size="12">② 清潔接合面，裝入新馬達</text>
+      <text x="502" y="236" font-size="12">③ 依扭力表分次對角鎖緊</text>
+      <text x="502" y="262" font-size="12">④ 低速手動測試，確認回授</text>
+      <text x="502" y="330" font-size="11" class="t-muted">出處：《OW-8 運維手冊》6.3 節</text>
+    </g>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>檢索單位 ≠ 閱讀單位</b>小塊向量語意集中、好命中；大塊內容完整、好理解。父子檢索讓「拿去比對的」和「交給 LLM 的」使用不同大小的塊。</div>
+    <div class="card"><b>兩個儲存區</b>向量索引只存小塊（子）與父 ID；文件庫（docstore）以父 ID 存整節原文。命中後用 ID 查表，不必再做一次向量檢索。</div>
+    <div class="card"><b>常見實作</b>LangChain 的 <code>ParentDocumentRetriever</code> 以 child_splitter 切子塊；未設 parent_splitter 時，父就是原始整份文件。LlamaIndex 的 auto-merging retriever 預設建立 2048／512／128 token 三層。</div>
+    <div class="card"><b>自動合併更省</b>LlamaIndex 版本的做法是：同一個父節點底下被命中的子塊夠多（超過門檻）才換成父節點，只命中零星一兩塊就維持原樣，避免把整節塞進上下文。</div>
+  </div>
+
+  <h2>🧪 互動範例：小塊直接回傳 vs. 回傳父段落 vs. 整節直接檢索</h2>
+  <div class="prose"><p>下面是《OW-8 運維手冊》5 個章節、共 22 個小塊（虛構）。選一個技師的問題，切換三種做法：<b>小塊直接回傳</b>、<b>小塊命中→回傳父段落</b>、<b>整節當一塊檢索</b>。拉動「檢索單位數」看看結果的變化；「關鍵句」是回答這題必須看到的小塊。下方統計會告訴你：<b>涵蓋了幾個關鍵句、回傳多少字、關鍵句占多少比例</b>。檢索使用簡化的 TF-IDF 模擬，不是真正的嵌入模型。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="qchips"></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" data-mode="small">小塊直接回傳</button>
+      <button type="button" class="on" data-mode="p2b">小塊命中 → 回傳父段落</button>
+      <button type="button" data-mode="big">整節當一塊檢索</button>
+    </div>
+    <div class="row"><label for="n">檢索單位數 Top-N：<b id="nv">1</b></label><input type="range" id="n" min="1" max="5" value="1" style="flex:1;max-width:220px"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>手動實作父子檢索：先把每一節切成小塊並記下父 ID，只對小塊做嵌入；查詢時找出最相近的小塊，依父 ID 從字典（相當於 docstore）取回整節，依排名去重後交給 <code>claude-sonnet-5</code> 回答。範例文件為虛構。</p></div>
+<pre class="code"><code><span class="k">import</span> numpy <span class="k">as</span> np
+<span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer
+<span class="k">import</span> anthropic
+
+<span class="c"># ① 原始文件：以「節」為父段落（虛構的 OW-8 手冊）</span>
+sections = {
+    <span class="s">"sec-6.3"</span>: [
+        <span class="s">"適用範圍：OW-8 旋角馬達更換，備品料號 PT-MTR-02，須開立工單。"</span>,
+        <span class="s">"安全前置：完成上鎖掛牌（LOTO），鎖定葉片並隔離驅動器電源。"</span>,
+        <span class="s">"拆卸：標示並拆下電源線與編碼器線，以吊具支撐後抽出馬達。"</span>,
+        <span class="s">"安裝：清潔接合面，依原廠扭力表分次對角鎖緊固定螺栓。"</span>,
+        <span class="s">"復歸測試：解除掛牌後低速手動旋角，確認回授與煞車正常再記錄。"</span>,
+    ],
+    <span class="s">"sec-7.2"</span>: [<span class="s">"適用範圍：OW-8 偏航馬達更換……"</span>, <span class="s">"安裝：依原廠扭力表鎖緊固定螺栓……"</span>],
+}
+
+<span class="c"># ② 索引階段：只對「小塊」嵌入，並記住父 ID；整節原文放進 docstore</span>
+embedder = SentenceTransformer(<span class="s">"BAAI/bge-m3"</span>)
+docstore = {pid: <span class="s">"\n"</span>.<span class="f">join</span>(kids) <span class="k">for</span> pid, kids <span class="k">in</span> sections.<span class="f">items</span>()}
+children = [(pid, kid) <span class="k">for</span> pid, kids <span class="k">in</span> sections.<span class="f">items</span>() <span class="k">for</span> kid <span class="k">in</span> kids]
+child_vecs = embedder.<span class="f">encode</span>([k <span class="k">for</span> _, k <span class="k">in</span> children], normalize_embeddings=<span class="k">True</span>)
+
+<span class="c"># ③ 檢索：找最相近的小塊，依父 ID 取回整節（依排名去重）</span>
+<span class="k">def</span> <span class="f">retrieve_parents</span>(question, top_n=<span class="s">3</span>):
+    q = embedder.<span class="f">encode</span>([question], normalize_embeddings=<span class="k">True</span>)[<span class="s">0</span>]
+    order = np.<span class="f">argsort</span>(-(child_vecs @ q))[:top_n]
+    parent_ids = <span class="f">list</span>(dict.<span class="f">fromkeys</span>(children[i][<span class="s">0</span>] <span class="k">for</span> i <span class="k">in</span> order))
+    <span class="k">return</span> [(pid, docstore[pid]) <span class="k">for</span> pid <span class="k">in</span> parent_ids]
+
+<span class="c"># ④ 生成：把父段落放進 prompt，並附上出處</span>
+client = anthropic.<span class="f">Anthropic</span>()
+<span class="k">def</span> <span class="f">answer</span>(question):
+    context = <span class="s">"\n\n"</span>.<span class="f">join</span>(<span class="s">f"[{pid}]\n{text}"</span> <span class="k">for</span> pid, text <span class="k">in</span> <span class="f">retrieve_parents</span>(question, top_n=<span class="s">3</span>))
+    prompt = <span class="s">f"參考資料：\n{context}\n\n問題：{question}\n請只依參考資料回答，並標明出處；資料中沒有就說不知道。"</span>
+    msg = client.messages.<span class="f">create</span>(model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">512</span>,
+                                 messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text
+
+<span class="f">print</span>(<span class="f">answer</span>(<span class="s">"新的旋角馬達怎麼裝回去？"</span>))</code></pre>
+
+  <h2>⚖️ 四種做法比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>大塊直接檢索</th><th>小塊直接檢索（第 002 堂）</th><th>父子檢索（本堂）</th><th>重排序（第 005 堂）</th></tr>
+    <tr><th>索引與回傳</th><td>索引與回傳同一種大塊</td><td>索引與回傳同一種小塊</td><td>索引小塊、回傳父段落</td><td>不改塊大小，重排候選</td></tr>
+    <tr><th>解決什麼</th><td>內容完整</td><td>命中精準</td><td>命中精準又內容完整</td><td>候選排序不夠準</td></tr>
+    <tr><th>額外成本</th><td>無</td><td>無</td><td>多一個 docstore；LLM 讀入的字數變多</td><td>多一次 cross-encoder 運算</td></tr>
+    <tr><th>主要風險</th><td>向量被稀釋，難命中</td><td>缺前後文，答案不完整</td><td>父段落夾帶不相關內容，稀釋 LLM 注意力</td><td>不能找回漏掉的段落</td></tr>
+  </table>
+
+  <h2>⚠️ 父子檢索常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>父段落太大反而有害</b>：問題只需要一個料號，卻回傳整節數千字，會增加成本與雜訊。父塊要對齊「有意義的完整單位」（一個程序、一個告警），而不是越大越好。</li>
+      <li><b>多個小塊命中同一父段落要去重</b>：否則同一節被重複塞進 prompt。範例程式用 <code>dict.fromkeys</code> 依排名去重；LlamaIndex 則用門檻決定是否合併。</li>
+      <li><b>小塊也要能單獨看懂</b>：若小塊只寫「依上節步驟拆下馬達」，向量本身缺少語意，父子檢索也救不了；下一堂的<b>情境化檢索</b>會處理這個問題。</li>
+      <li><b>跨父段落的問題仍要多路召回</b>：「旋角與偏航馬達更換有何不同」需要兩節內容，Top-N 要夠大，或搭配第 006 堂的多重查詢。</li>
+      <li><b>短文件、精確查詢不需要</b>：文件本來就短、或使用者直接查料號 <code>PT-MTR-02</code> 時，小塊命中就已足夠，多一層 docstore 只是增加複雜度。</li>
+    </ul>
+    <div class="callout warn">範例中的鷗灣離岸風場、OW-8 機型、運維手冊內容、章節編號、料號與告警代碼皆為虛構，僅供教學示範；互動範例使用簡化的 TF-IDF 模擬，非真實嵌入模型；實際作業以原廠手冊與現場規範為準。</div>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>父子文件檢索為什麼要「用小塊建索引、回傳大塊」？</b></p>
+    <button class="opt">A. 因為小塊的向量比較不需要計算，可以節省儲存空間</button>
+    <button class="opt">B. 因為小塊語意集中、容易精準命中；父段落內容完整，能給 LLM 足夠的前後文</button>
+    <button class="opt">C. 因為回傳大塊就不需要再做重排序</button>
+    <div class="why">小塊與大塊各有優缺點：小塊利於「找」，大塊利於「讀」。父子檢索把兩件事拆開，各取所長。它不會省去向量計算，也和重排序解決的是不同問題，兩者可以搭配。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>技師只想查「備品料號 PT-MTR-02 是什麼」，但父段落是 5 個小塊的整節程序，此時最合理的做法是？</b></p>
+    <button class="opt">A. 一律回傳整節，讓 LLM 自己挑</button>
+    <button class="opt">B. 把所有小塊都改成更大的塊</button>
+    <button class="opt">C. 這類精確問題直接回傳命中的小塊，或用門檻決定是否合併，避免塞入不相關內容</button>
+    <div class="why">父子檢索的代價是回傳內容變多。問題只需單一事實時，小塊就夠；LlamaIndex 的自動合併就是靠「同一父節點命中夠多子塊才合併」的門檻來避免不必要的展開。</div>
+  </div>
+
+  <nav class="pager" data-slug="parent-document"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8500, steps:[
+  { title:'切塊大小的兩難', text:'塊切<b>大</b>，內容完整，但一個向量要代表安全、拆卸、安裝、測試好幾件事；塊切<b>小</b>，命中精準，卻常缺前後文，像只剩「鎖緊螺栓」一句。單用一種塊，只能<b>二選一</b>。' },
+  { title:'整節當一塊：向量被稀釋', text:'把整節《旋角馬達更換程序》壓成<b>一個向量</b>，語意被平均。旋角、偏航兩種馬達更換都有「馬達、上鎖掛牌、扭力」，各節<b>分數接近</b>，真正談「怎麼裝」的那節不一定排得上來。' },
+  { title:'把每一節切成小塊（子）', text:'<b>父子文件檢索</b>先把每一節切成小塊：適用範圍、安全前置、拆卸、安裝、復歸測試。每個<b>子塊</b>都記住自己屬於哪個<b>父段落</b>（parent_id = sec-6.3）。' },
+  { title:'小塊進向量索引，整節進文件庫', text:'只有<b>小塊</b>會被嵌入並放進<b>向量索引</b>，負責「找」；<b>整節原文</b>以父 ID 存進<b>文件庫（docstore）</b>，不建向量，只負責被取回、負責「讀」。' },
+  { title:'用小塊精準命中', text:'技師問「新的旋角馬達怎麼裝回去？」，問題與向量索引比對。第 ④ 個小塊只談<b>安裝與扭力</b>，語意集中，<b>精準命中</b>，不會被同一節的其他內容稀釋。' },
+  { title:'依父 ID 取回整節原文', text:'命中的小塊帶著它的<b>父 ID</b>，直接到文件庫<b>查表</b>取回整節原文，不需要再做一次向量檢索。若同一節有好幾個小塊被命中，只取回一次（去重）。' },
+  { title:'把父段落交給 LLM', text:'交給 LLM 的不是那一句，而是<b>整節 6.3</b>：裡面同時有<b>上鎖掛牌、安裝扭力、復歸測試</b>。<b>檢索用小塊，閱讀用大塊</b>，這就是 Small-to-Big。' },
+  { title:'改善後的結果：精準又完整', text:'只回小塊時，答案只講扭力，<b>漏掉上鎖掛牌與復歸測試</b>；回傳父段落後，答案涵蓋完整程序並附出處。代價是 LLM 要讀更多字，所以父塊要切在「有意義的完整單位」。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+
+  /* 虛構的《OW-8 運維手冊》：5 節、22 個小塊（子） */
+  const SECS = [
+    { id:'6.3', title:'6.3 旋角馬達更換程序', kids:[
+      '適用範圍：本程序適用於 OW-8 機型的旋角馬達更換，備品料號為 PT-MTR-02，更換前須開立維修工單。',
+      '安全前置：更換前須完成上鎖掛牌（LOTO），鎖定葉片位置並隔離旋角驅動器電源，確認無殘餘電壓後才可作業。',
+      '拆卸：標示並拆下馬達電源線與編碼器線，鬆開馬達與減速機的固定螺栓，以吊具支撐馬達後抽出。',
+      '安裝：清潔接合面後裝入新馬達，依原廠扭力表分次對角鎖緊固定螺栓，再接回電源線與編碼器線。',
+      '復歸測試：解除上鎖掛牌後，先以低速手動旋角，確認角度回授與煞車動作正常，再切回自動並記錄於工單。' ]},
+    { id:'7.2', title:'7.2 偏航馬達更換程序', kids:[
+      '適用範圍：本程序適用於 OW-8 機型的偏航馬達更換，備品料號為 YW-MTR-01，更換前須開立維修工單。',
+      '安全前置：更換前須完成上鎖掛牌（LOTO），鎖定偏航煞車並隔離偏航驅動器電源。',
+      '拆卸：標示並拆下偏航馬達電源線，鬆開固定螺栓，以吊具支撐後抽出。',
+      '安裝：清潔接合面後裝入新馬達，依原廠扭力表分次對角鎖緊固定螺栓，再接回電源線。',
+      '復歸測試：解除掛牌後，先以低速手動偏航，確認偏航角度與煞車動作正常，再切回自動。' ]},
+    { id:'5.4', title:'5.4 旋角減速機保養', kids:[
+      '油位檢查：每年檢查減速機油位與油色，油色明顯變深或混濁時需提前處理。',
+      '換油前置：換油前機組須停機並完成上鎖掛牌，待減速機降溫後再排油，避免燙傷。',
+      '排油與注油：排出舊油後依廠商建議油品與油量注入新油，並確認油位在標線之間。',
+      '油品分析：發現金屬粉末或異音時，取油樣送油品分析，結果記錄於保養紀錄。' ]},
+    { id:'8.1', title:'8.1 告警 PT-203 旋角馬達過溫', kids:[
+      '告警說明：馬達繞組溫度超過保護門檻時，控制器限制電流並可能觸發停機。',
+      '可能原因：散熱風道堵塞、長時間高負載或溫度感測器異常。',
+      '排除步驟：完成上鎖掛牌後，檢查散熱風道與感測器接線，量測繞組電阻，確認無誤後才可復歸。',
+      '備品與工具：必要時更換旋角馬達，備品料號為 PT-MTR-02。' ]},
+    { id:'9.1', title:'9.1 高處作業安全規範', kids:[
+      '進入前：進入機艙與輪轂前須完成上鎖掛牌（LOTO），確認葉片鎖定與主電源隔離。',
+      '個人防護：穿戴全身式安全帶與安全帽，並檢查繫繩與錨點。',
+      '作業中：工具須繫繩固定，嚴禁在吊運中的物品下方停留。',
+      '結束後：清點工具與零件，確認無遺留物品後才可解除掛牌。' ]}
+  ];
+  const CH = [];  // 小塊
+  SECS.forEach((s, si) => s.kids.forEach((t, ki) => CH.push({ id:'c' + (CH.length + 1), sec:si, k:ki, text:t })));
+  SECS.forEach((s, si) => { s.ids = CH.filter(c => c.sec === si).map(c => CH.indexOf(c)); });
+  const idxChild = rt.buildIndex(CH);
+  const idxSec = rt.buildIndex(SECS.map(s => ({ text: s.title + s.kids.join('') })));
+  const gi = (sec, k) => SECS[sec].ids[k];   // 取得小塊的全域索引
+
+  const SAMPLES = [
+    { q:'新的旋角馬達怎麼裝回去？', need:[gi(0,3), gi(0,4), gi(0,1)],
+      note:'需要「安裝」，也需要先上鎖掛牌、裝完復歸測試' },
+    { q:'旋角馬達安裝時螺栓要照什麼順序鎖緊？', need:[gi(0,3)],
+      note:'只需要單一小塊「安裝」' },
+    { q:'更換旋角馬達的完整步驟', need:[gi(0,0), gi(0,1), gi(0,2), gi(0,3), gi(0,4)],
+      note:'需要整個程序的 5 個小塊' },
+    { q:'旋角馬達的備品料號是什麼？', need:[gi(0,0)],
+      note:'單一事實：父段落幾乎都是多餘內容' }
+  ];
+  let cur = SAMPLES[0], mode = 'p2b';
+
+  function run(){
+    const n = +$('#n').value; $('#nv').textContent = n;
+    let ret = [];   // 回傳的小塊全域索引（依顯示順序）
+    let groups = [];
+    if(mode === 'small'){
+      const h = rt.searchVector(idxChild, cur.q, n);
+      groups = h.map(x => ({ label:`小塊 ${x.doc.id}（${SECS[x.doc.sec].title}）`, score:x.score, ids:[x.i] }));
+    } else if(mode === 'p2b'){
+      const h = rt.searchVector(idxChild, cur.q, n), seen = new Set();
+      h.forEach(x => { if(seen.has(x.doc.sec)) return; seen.add(x.doc.sec);
+        groups.push({ label:`父段落 ${SECS[x.doc.sec].title}（由小塊 ${x.doc.id} 命中）`, score:x.score, ids:SECS[x.doc.sec].ids }); });
+    } else {
+      const h = rt.searchVector(idxSec, cur.q, n);
+      groups = h.map(x => ({ label:`整節 ${SECS[x.i].title}`, score:x.score, ids:SECS[x.i].ids }));
+    }
+    groups.forEach(g => g.ids.forEach(i => { if(!ret.includes(i)) ret.push(i); }));
+    const got = cur.need.filter(i => ret.includes(i)).length;
+    const chars = ret.reduce((a, i) => a + CH[i].text.length, 0);
+    const pct = ret.length ? Math.round(got / ret.length * 100) : 0;
+    const max = Math.max(groups[0]?.score || 0, 1e-6);
+    $('#hits').innerHTML = groups.map(g => `
+      <div class="hit ${g.score/max > .6 ? 'top' : 'low'}">
+        <div class="meta"><span>${RagTutor.escapeHtml(g.label)}</span><span>相似度 ${g.score.toFixed(3)}</span></div>
+        ${g.ids.map(i => `<div style="${cur.need.includes(i) ? 'font-weight:700' : 'opacity:.72'}">${cur.need.includes(i) ? '✔ ' : '· '}${rt.highlight(CH[i].text, cur.q)}</div>`).join('')}
+        <div class="score-bar"><b style="width:${(g.score/max*100).toFixed(1)}%"></b></div>
+      </div>`).join('');
+    const miss = cur.need.length - got;
+    $('#stat').textContent = `${cur.note}。涵蓋關鍵句 ${got} / ${cur.need.length}${miss ? '（漏掉 ' + miss + ' 句）' : '（全部涵蓋）'}；回傳 ${ret.length} 個小塊、約 ${chars} 字；關鍵句占回傳內容 ${pct}%。（✔ 粗體為關鍵句）`;
+  }
+
+  function pick(i){
+    cur = SAMPLES[i];
+    $('#qchips').querySelectorAll('button').forEach((x, k) => x.classList.toggle('on', k === i));
+    run();
+  }
+  $('#qchips').innerHTML = SAMPLES.map(s => `<button type="button">${RagTutor.escapeHtml(s.q)}</button>`).join('');
+  $('#qchips').querySelectorAll('button').forEach((b, i) => b.onclick = () => pick(i));
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    run();
+  });
+  $('#n').oninput = run;
+  pick(0);
+})();
+</script>
+</body>
+</html>

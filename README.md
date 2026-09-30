@@ -13,6 +13,7 @@
 | 005 | [重排序：Bi-encoder 召回、Cross-encoder 精排](https://dofliu.github.io/ragTutor/lessons/005-reranking.html) |
 | 006 | [查詢改寫與多重查詢 Multi-Query](https://dofliu.github.io/ragTutor/lessons/006-query-rewriting.html) |
 | 007 | [HyDE：先生成假設答案再檢索](https://dofliu.github.io/ragTutor/lessons/007-hyde.html) |
+| 008 | [父子文件檢索：小塊檢索、大塊回傳](https://dofliu.github.io/ragTutor/lessons/008-parent-document.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 
