@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>情境化檢索：替每個片段加上文件脈絡｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂情境化檢索（Contextual Retrieval）：先為每個片段補上它在整份文件中的位置說明，再建立嵌入與 BM25 索引，讓脫離上下文的片段也找得到。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 009 堂</span><span class="tag lv2">進階</span><span class="tag">約 12 分鐘</span></p>
+  <h1>情境化檢索：替每個片段加上文件脈絡</h1>
+  <p class="lead">文件切成片段後，片段常常<b>脫離了它原本的上下文</b>：「依上節步驟拆下馬達後，依扭力表鎖緊螺栓」——哪個機型？旋角還是偏航？「上節」是哪一節？向量與關鍵字都只看得到片段本身，於是各份手冊裡長得一樣的片段分數幾乎相同。<b>情境化檢索（Contextual Retrieval）</b>在建索引前，先請 LLM 替每個片段寫一兩句「它在整份文件中的位置」，接在片段前面，再做嵌入與 BM25，讓片段自己就帶著脈絡。</p>
+
+  <h2>🎬 動畫：三個長得一樣的片段，靠「情境」分出誰是誰</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="情境化檢索動畫：切塊後各手冊的安裝片段字面相同而難以區分；由 LLM 讀整份文件為每個片段生成情境，接在片段前，再同時建立情境化嵌入與情境化 BM25，查詢時兩路排名以 RRF 融合，正確片段排到前面">
+  <defs>
+    <marker id="ah9" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" style="fill:var(--muted)"/></marker>
+  </defs>
+
+  <!-- 問題（全程顯示） -->
+  <rect x="270" y="14" width="380" height="48" rx="10" style="fill:var(--panel);stroke:var(--query);stroke-width:2"/>
+  <text x="460" y="33" text-anchor="middle" font-size="11.5" class="t-muted">👤 現場技師輸入</text>
+  <text x="460" y="52" text-anchor="middle" font-size="13" font-weight="700">「OW-8 旋角馬達更換，螺栓怎麼鎖？」</text>
+
+  <rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+
+  <!-- 場景標籤 -->
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 沒有情境：三個片段一模一樣</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="1" data-to="1">② 切塊時，脈絡被留在別的片段</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="2" data-to="2">③ LLM 讀整份文件，替片段寫情境</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="3" data-to="3">④ 情境接在片段前面</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="4" data-to="4">⑤ 建立兩份索引：嵌入 + BM25</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="5" data-to="5">⑥ 查詢時兩路各自排名</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="6" data-to="6">⑦ 用 RRF 融合兩路排名</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 找得到正確的那一個</text>
+
+  <!-- Step 0：三個一樣的片段 -->
+  <g data-to="0">
+    <rect x="40" y="116" width="260" height="130" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.5"/>
+    <text x="170" y="140" text-anchor="middle" font-size="11.5" class="t-muted">片段 A</text>
+    <text x="58" y="172" font-size="12">依上節步驟拆下馬達後，</text>
+    <text x="58" y="194" font-size="12">依扭力表分次對角鎖緊</text>
+    <text x="58" y="216" font-size="12">固定螺栓。</text>
+    <rect x="330" y="116" width="260" height="130" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.5"/>
+    <text x="460" y="140" text-anchor="middle" font-size="11.5" class="t-muted">片段 B</text>
+    <text x="348" y="172" font-size="12">依上節步驟拆下馬達後，</text>
+    <text x="348" y="194" font-size="12">依扭力表分次對角鎖緊</text>
+    <text x="348" y="216" font-size="12">固定螺栓。</text>
+    <rect x="620" y="116" width="260" height="130" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.5"/>
+    <text x="750" y="140" text-anchor="middle" font-size="11.5" class="t-muted">片段 C</text>
+    <text x="638" y="172" font-size="12">依上節步驟拆下馬達後，</text>
+    <text x="638" y="194" font-size="12">依扭力表分次對角鎖緊</text>
+    <text x="638" y="216" font-size="12">固定螺栓。</text>
+    <text x="170" y="272" text-anchor="middle" font-size="11.5" class="t-muted">其實是 OW-8 旋角</text>
+    <text x="460" y="272" text-anchor="middle" font-size="11.5" class="t-muted">其實是 OW-8 偏航</text>
+    <text x="750" y="272" text-anchor="middle" font-size="11.5" class="t-muted">其實是 OW-6 旋角</text>
+    <text x="460" y="326" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)">⚠️ 字面相同，向量與關鍵字都分不出該用哪一個</text>
+    <text x="460" y="352" text-anchor="middle" font-size="11.5" class="t-muted">（機型、子系統、章節標題都不在片段裡）</text>
+  </g>
+
+  <!-- Step 1：切塊遺失脈絡 -->
+  <g data-from="1" data-to="1">
+    <rect x="40" y="116" width="230" height="250" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.5"/>
+    <text x="155" y="142" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--doc)">📄 《OW-8 運維手冊》</text>
+    <text x="60" y="178" font-size="12" font-weight="700">6.3 旋角馬達更換程序</text>
+    <text x="72" y="206" font-size="11.5" class="t-muted">· 安全前置、拆卸</text>
+    <text x="72" y="234" font-size="11.5" font-weight="700" style="fill:var(--accent)">· 安裝（鎖緊螺栓）</text>
+    <text x="72" y="262" font-size="11.5" class="t-muted">· 復歸測試</text>
+    <text x="60" y="304" font-size="11.5" class="t-muted">7.2 偏航馬達更換程序 …</text>
+    <path d="M270 231 H326" class="flow" style="stroke:var(--doc)"/>
+    <text x="298" y="218" text-anchor="middle" font-size="11.5" class="t-muted">✂️ 切塊</text>
+    <rect x="330" y="186" width="290" height="90" rx="10" style="fill:var(--panel);stroke:var(--warn);stroke-width:2"/>
+    <text x="345" y="210" font-size="11.5" class="t-muted">切出來的片段</text>
+    <text x="345" y="236" font-size="12">依上節步驟拆下馬達後，依扭力表</text>
+    <text x="345" y="258" font-size="12">分次對角鎖緊固定螺栓。</text>
+    <rect x="650" y="166" width="230" height="130" rx="10" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5;stroke-dasharray:5 4"/>
+    <text x="765" y="192" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)">🕳️ 遺失的脈絡</text>
+    <text x="668" y="222" font-size="12">是 OW-8 還是 OW-6？</text>
+    <text x="668" y="246" font-size="12">是旋角還是偏航？</text>
+    <text x="668" y="270" font-size="12">「上節」是哪一節？</text>
+    <text x="460" y="336" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--warn)">片段離開了標題與前後文，就成了「無名氏」</text>
+  </g>
+
+  <!-- Step 2：LLM 生成情境 -->
+  <g data-from="2" data-to="2">
+    <rect x="40" y="116" width="250" height="70" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.5"/>
+    <text x="165" y="146" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--doc)">📄 整份文件</text>
+    <text x="165" y="168" text-anchor="middle" font-size="11.5" class="t-muted">給 LLM 當背景</text>
+    <rect x="40" y="216" width="250" height="90" rx="10" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.5"/>
+    <text x="165" y="242" text-anchor="middle" font-size="11.5" class="t-muted">✂️ 這個片段</text>
+    <text x="165" y="266" text-anchor="middle" font-size="12">依上節步驟拆下馬達後，</text>
+    <text x="165" y="286" text-anchor="middle" font-size="12">依扭力表分次對角鎖緊……</text>
+    <path d="M290 151 H350" class="flow" style="stroke:var(--doc)"/>
+    <path d="M290 261 H350" class="flow" style="stroke:var(--warn)"/>
+    <rect x="352" y="150" width="170" height="110" rx="10" data-hot="2" style="fill:var(--panel);stroke:var(--llm);stroke-width:2.5"/>
+    <text x="437" y="188" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--llm)">🧠 LLM</text>
+    <text x="437" y="212" text-anchor="middle" font-size="11.5" class="t-muted">小而便宜的模型</text>
+    <text x="437" y="232" text-anchor="middle" font-size="11.5" class="t-muted">即可</text>
+    <path d="M522 205 H578" class="flow" style="stroke:var(--accent)"/>
+    <rect x="580" y="150" width="300" height="110" rx="10" style="fill:var(--panel);stroke:var(--accent);stroke-width:2.5"/>
+    <text x="730" y="178" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)">✨ 生成的情境</text>
+    <text x="598" y="204" font-size="12">本片段出自《OW-8 運維手冊》</text>
+    <text x="598" y="226" font-size="12">6.3 節旋角馬達更換程序，說明</text>
+    <text x="598" y="248" font-size="12">安裝馬達並鎖緊螺栓的步驟。</text>
+    <text x="460" y="336" text-anchor="middle" font-size="12" class="t-muted">指示：用簡短情境說明此片段在整份文件的位置，以利檢索；只回答情境</text>
+  </g>
+
+  <!-- Step 3：合併 -->
+  <g data-from="3" data-to="3">
+    <rect x="140" y="122" width="640" height="62" rx="10" class="pulse" style="fill:var(--panel);stroke:var(--accent);stroke-width:2.5;stroke-dasharray:6 4"/>
+    <text x="160" y="150" font-size="11.5" font-weight="700" style="fill:var(--accent)">【情境】</text>
+    <text x="160" y="172" font-size="12">本片段出自《OW-8 運維手冊》6.3 節旋角馬達更換程序，說明安裝步驟。</text>
+    <rect x="140" y="192" width="640" height="62" rx="10" style="fill:var(--panel);stroke:var(--warn);stroke-width:2"/>
+    <text x="160" y="218" font-size="11.5" font-weight="700" style="fill:var(--warn)">【原片段】</text>
+    <text x="160" y="240" font-size="12">依上節步驟拆下馬達後，依扭力表分次對角鎖緊固定螺栓。</text>
+    <text x="460" y="292" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)">情境 + 原片段 = 情境化片段（Contextualized Chunk）</text>
+    <text x="460" y="318" text-anchor="middle" font-size="11.5" class="t-muted">索引用合併後的文字；原片段仍保留，這一步每個片段只做一次</text>
+  </g>
+
+  <!-- Step 4：兩份索引 -->
+  <g data-from="4" data-to="4">
+    <rect x="40" y="170" width="250" height="110" rx="10" style="fill:var(--panel);stroke:var(--accent);stroke-width:2"/>
+    <text x="165" y="206" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)">情境化片段 × N</text>
+    <text x="165" y="230" text-anchor="middle" font-size="11.5" class="t-muted">每個片段都帶著</text>
+    <text x="165" y="250" text-anchor="middle" font-size="11.5" class="t-muted">機型、子系統、章節</text>
+    <path d="M290 205 C 340 205, 350 165, 398 165" class="flow" style="stroke:var(--vec)"/>
+    <path d="M290 245 C 340 245, 350 285, 398 285" class="flow" style="stroke:var(--doc)"/>
+    <rect x="400" y="120" width="480" height="90" rx="10" data-hot="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:2"/>
+    <text x="640" y="150" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--vec)">🧮 情境化嵌入 Contextual Embeddings</text>
+    <text x="640" y="176" text-anchor="middle" font-size="11.5" class="t-muted">情境 + 片段一起嵌入，語意相近就找得到</text>
+    <text x="640" y="196" text-anchor="middle" font-size="11.5" class="t-muted">例：「旋角」「安裝」</text>
+    <rect x="400" y="240" width="480" height="90" rx="10" data-hot="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:2"/>
+    <text x="640" y="270" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--doc)">🔤 情境化 BM25 Contextual BM25</text>
+    <text x="640" y="296" text-anchor="middle" font-size="11.5" class="t-muted">情境 + 片段一起建關鍵字索引，抓得到</text>
+    <text x="640" y="316" text-anchor="middle" font-size="11.5" class="t-muted">「OW-8」「PT-203」這類精確詞</text>
+    <text x="460" y="372" text-anchor="middle" font-size="11.5" class="t-muted">索引階段做一次；查詢時不需要再呼叫 LLM</text>
+  </g>
+
+  <!-- Step 5：兩路排名 -->
+  <g data-from="5" data-to="5">
+    <path d="M400 62 C 330 82, 250 92, 240 114" class="flow" style="stroke:var(--query)"/>
+    <path d="M520 62 C 590 82, 670 92, 680 114" class="flow" style="stroke:var(--query)"/>
+    <rect x="40" y="116" width="400" height="190" rx="10" style="fill:var(--panel);stroke:var(--vec);stroke-width:2"/>
+    <text x="240" y="142" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--vec)">🧮 嵌入排名</text>
+    <rect x="60" y="158" width="360" height="34" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="74" y="180" font-size="12">① OW-8 旋角馬達更換．安裝</text>
+    <rect x="60" y="200" width="360" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="74" y="222" font-size="12">② OW-6 旋角馬達更換．安裝</text>
+    <rect x="60" y="242" width="360" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="74" y="264" font-size="12">③ OW-8 旋角減速機保養</text>
+    <rect x="480" y="116" width="400" height="190" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:2"/>
+    <text x="680" y="142" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--doc)">🔤 BM25 排名</text>
+    <rect x="500" y="158" width="360" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="514" y="180" font-size="12">① OW-8 偏航馬達更換．安裝</text>
+    <rect x="500" y="200" width="360" height="34" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="514" y="222" font-size="12">② OW-8 旋角馬達更換．安裝</text>
+    <rect x="500" y="242" width="360" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="514" y="264" font-size="12">③ OW-8 旋角減速機保養</text>
+    <text x="460" y="346" text-anchor="middle" font-size="11.5" class="t-muted">兩路各有各的盲點：嵌入分不清 OW-8／OW-6，BM25 分不清旋角／偏航</text>
+  </g>
+
+  <!-- Step 6：RRF -->
+  <g data-from="6" data-to="6">
+    <rect x="40" y="116" width="240" height="100" rx="10" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.5"/>
+    <text x="160" y="142" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">嵌入排名</text>
+    <text x="160" y="170" text-anchor="middle" font-size="11.5">旋角安裝：第 1 名</text>
+    <text x="160" y="192" text-anchor="middle" font-size="11.5" class="t-muted">偏航安裝：沒進前 3</text>
+    <rect x="40" y="244" width="240" height="100" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.5"/>
+    <text x="160" y="270" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">BM25 排名</text>
+    <text x="160" y="298" text-anchor="middle" font-size="11.5">旋角安裝：第 2 名</text>
+    <text x="160" y="320" text-anchor="middle" font-size="11.5" class="t-muted">偏航安裝：第 1 名</text>
+    <path d="M280 166 C 310 166, 310 215, 338 215" class="flow" style="stroke:var(--vec)"/>
+    <path d="M280 294 C 310 294, 310 245, 338 245" class="flow" style="stroke:var(--doc)"/>
+    <rect x="340" y="160" width="230" height="140" rx="10" data-hot="6" style="fill:var(--panel);stroke:var(--accent);stroke-width:2.5"/>
+    <text x="455" y="190" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--accent)">⚖️ RRF 融合</text>
+    <text x="455" y="218" text-anchor="middle" font-size="11.5" class="t-mono">Σ 1 / (k + 名次)</text>
+    <text x="455" y="246" text-anchor="middle" font-size="11.5" class="t-muted">兩路都排得前面</text>
+    <text x="455" y="266" text-anchor="middle" font-size="11.5" class="t-muted">的片段勝出</text>
+    <path d="M570 230 H618" class="arrow" marker-end="url(#ah9)" style="stroke:var(--good)"/>
+    <rect x="620" y="150" width="260" height="160" rx="10" class="pulse" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+    <text x="750" y="180" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--good)">✅ 最終候選</text>
+    <text x="640" y="212" font-size="12" font-weight="700">① OW-8 旋角馬達更換</text>
+    <text x="640" y="236" font-size="12" class="t-muted">② OW-8 偏航馬達更換</text>
+    <text x="640" y="260" font-size="12" class="t-muted">③ OW-6 旋角馬達更換</text>
+    <text x="750" y="292" text-anchor="middle" font-size="11" class="t-muted">可再接重排序（第 005 堂）</text>
+  </g>
+
+  <!-- Step 7：比較 -->
+  <g data-from="7">
+    <rect x="40" y="116" width="400" height="250" rx="10" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+    <text x="240" y="144" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--bad)">✘ 只索引原片段</text>
+    <text x="62" y="184" font-size="12">OW-8 旋角、OW-8 偏航、</text>
+    <text x="62" y="208" font-size="12">OW-6 旋角三個片段字面相同</text>
+    <text x="62" y="252" font-size="12" style="fill:var(--bad)">分數幾乎一樣，正解可能被擠出 Top-N</text>
+    <text x="62" y="276" font-size="12" style="fill:var(--bad)">答案可能引到別的機型的扭力值</text>
+    <text x="62" y="330" font-size="11" class="t-muted">機型搞錯在現場是安全問題</text>
+    <path d="M440 241 H478" class="arrow" marker-end="url(#ah9)"/>
+    <g class="pulse">
+      <rect x="480" y="116" width="400" height="250" rx="10" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+      <text x="680" y="144" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--good)">✅ 索引情境化片段</text>
+      <text x="502" y="184" font-size="12">片段自帶機型、子系統、章節</text>
+      <text x="502" y="210" font-size="12">嵌入認語意、BM25 認精確詞</text>
+      <text x="502" y="236" font-size="12">正解排到前面，出處清楚</text>
+      <text x="502" y="290" font-size="11" class="t-muted">Anthropic 自家評測（其資料集）：</text>
+      <text x="502" y="310" font-size="11" class="t-muted">Top-20 檢索失敗率 5.7% → 2.9%</text>
+      <text x="502" y="330" font-size="11" class="t-muted">（情境化嵌入 + 情境化 BM25）</text>
+    </g>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>問題出在「脫離上下文」</b>切塊後，片段常不再寫明所屬機型、子系統或章節。向量與關鍵字都只看片段本身，不同手冊裡長得像的片段就難以分辨。</div>
+    <div class="card"><b>索引時補脈絡</b>用 LLM 讀整份文件，為每個片段生成一兩句情境，接在片段前再建索引。這是 Anthropic 於 2024 年提出的做法，包含情境化嵌入與情境化 BM25 兩部分。</div>
+    <div class="card"><b>一次性成本</b>每個片段要呼叫一次 LLM，但整份文件可用提示詞快取（prompt caching）重複利用。Anthropic 在其假設下（800 token 片段、100 token 情境）估算約每百萬文件 token 1.02 美元。</div>
+    <div class="card"><b>可與其他技術疊加</b>Anthropic 的評測中，Top-20 失敗率由 5.7% 降到 3.7%（情境化嵌入）、2.9%（再加 BM25）、1.9%（再加重排序）。數字來自其資料集，換成你的資料要自己量。</div>
+  </div>
+
+  <h2>🧪 互動範例：原片段 vs. 情境化片段</h2>
+  <div class="prose"><p>下面是虛構的《OW-8 運維手冊》與舊款《OW-6 運維手冊》共 8 個片段，其中有好幾組<b>字面幾乎相同</b>的片段。選一個問題，切換三種索引方式：<b>原片段（嵌入）</b>、<b>情境化片段（嵌入）</b>、<b>情境化 + BM25 混合（RRF）</b>。每個片段前的情境是人工預先寫好的，模擬 LLM 的輸出。「正解」是技師真正需要的那一個片段，下方會顯示它排第幾名、有沒有進 Top-N。檢索用簡化的 TF-IDF 與 BM25 模擬，不是真正的嵌入模型。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="qchips"></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" data-mode="raw">原片段（嵌入）</button>
+      <button type="button" class="on" data-mode="ctx">情境化片段（嵌入）</button>
+      <button type="button" data-mode="hyb">情境化 + BM25（RRF）</button>
+    </div>
+    <div class="row"><label for="n">Top-N：<b id="nv">3</b></label><input type="range" id="n" min="1" max="5" value="3" style="flex:1;max-width:220px"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>手動實作情境化檢索：索引時對每個片段呼叫 <code>claude-sonnet-5</code> 生成情境（整份文件放在可快取的區塊），把「情境 + 片段」同時送進嵌入與 BM25；查詢時兩路各取前幾名，再用 RRF 融合。範例文件為虛構。</p></div>
+<pre class="code"><code><span class="k">import</span> numpy <span class="k">as</span> np
+<span class="k">from</span> rank_bm25 <span class="k">import</span> BM25Okapi
+<span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer
+<span class="k">import</span> anthropic
+
+client = anthropic.<span class="f">Anthropic</span>()
+embedder = SentenceTransformer(<span class="s">"BAAI/bge-m3"</span>)
+
+<span class="c"># ① 原始文件與切好的片段（虛構的 OW-8 手冊；片段本身看不出機型與子系統）</span>
+doc = <span class="s">"《OW-8 運維手冊》6.3 旋角馬達更換程序：安全前置、拆卸、安裝、復歸測試……"</span>
+chunks = [<span class="s">"依上節步驟拆下馬達後，依扭力表分次對角鎖緊固定螺栓。"</span>, <span class="s">"……"</span>]
+
+<span class="c"># ② 索引階段：請 LLM 替每個片段寫情境（整份文件放進可快取的區塊）</span>
+<span class="k">def</span> <span class="f">situate</span>(doc, chunk):
+    msg = client.messages.<span class="f">create</span>(
+        model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">200</span>,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: [
+            {<span class="s">"type"</span>: <span class="s">"text"</span>, <span class="s">"text"</span>: <span class="s">f"&lt;document&gt;\n{doc}\n&lt;/document&gt;"</span>,
+             <span class="s">"cache_control"</span>: {<span class="s">"type"</span>: <span class="s">"ephemeral"</span>}},
+            {<span class="s">"type"</span>: <span class="s">"text"</span>, <span class="s">"text"</span>: <span class="s">f"以下是要放回整份文件中的片段：\n&lt;chunk&gt;\n{chunk}\n&lt;/chunk&gt;\n"</span>
+                                <span class="s">"請用一兩句簡短的情境說明這個片段在整份文件中的位置，以利檢索。只回答情境。"</span>},
+        ]}])
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text.<span class="f">strip</span>()
+
+contextualized = [<span class="s">f"{situate(doc, c)}\n{c}"</span> <span class="k">for</span> c <span class="k">in</span> chunks]
+
+<span class="c"># ③ 兩份索引都用「情境 + 片段」：嵌入 + BM25（中文用二元組當 token）</span>
+<span class="k">def</span> <span class="f">toks</span>(t):
+    t = t.<span class="f">lower</span>()
+    <span class="k">return</span> [t[i:i+<span class="s">2</span>] <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(t) - <span class="s">1</span>)]
+
+vecs = embedder.<span class="f">encode</span>(contextualized, normalize_embeddings=<span class="k">True</span>)
+bm25 = <span class="f">BM25Okapi</span>([<span class="f">toks</span>(c) <span class="k">for</span> c <span class="k">in</span> contextualized])
+
+<span class="c"># ④ 查詢：兩路各取前 k 名，用 RRF 融合</span>
+<span class="k">def</span> <span class="f">search</span>(question, k=<span class="s">20</span>, top=<span class="s">3</span>):
+    q = embedder.<span class="f">encode</span>([question], normalize_embeddings=<span class="k">True</span>)[<span class="s">0</span>]
+    by_vec = np.<span class="f">argsort</span>(-(vecs @ q))[:k]
+    by_bm25 = np.<span class="f">argsort</span>(-bm25.<span class="f">get_scores</span>(<span class="f">toks</span>(question)))[:k]
+    score = {}
+    <span class="k">for</span> ranking <span class="k">in</span> (by_vec, by_bm25):
+        <span class="k">for</span> rank, i <span class="k">in</span> <span class="f">enumerate</span>(ranking):
+            score[i] = score.<span class="f">get</span>(i, <span class="s">0</span>) + <span class="s">1</span> / (<span class="s">60</span> + rank + <span class="s">1</span>)
+    best = <span class="f">sorted</span>(score, key=score.get, reverse=<span class="k">True</span>)[:top]
+    <span class="k">return</span> [contextualized[i] <span class="k">for</span> i <span class="k">in</span> best]
+
+<span class="k">for</span> hit <span class="k">in</span> <span class="f">search</span>(<span class="s">"OW-8 旋角馬達更換，螺栓怎麼鎖？"</span>):
+    <span class="f">print</span>(hit, <span class="s">"\n---"</span>)</code></pre>
+
+  <h2>⚖️ 四種做法比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>一般檢索（第 001 堂）</th><th>混合檢索（第 004 堂）</th><th>父子檢索（第 008 堂）</th><th>情境化檢索（本堂）</th></tr>
+    <tr><th>改動的階段</th><td>—</td><td>檢索時合併兩路排名</td><td>索引小塊、回傳大塊</td><td>索引前先改寫片段</td></tr>
+    <tr><th>解決什麼</th><td>基本的語意檢索</td><td>語意與精確詞各有盲點</td><td>精準與完整的兩難</td><td>片段脫離上下文、難以分辨</td></tr>
+    <tr><th>額外成本</th><td>無</td><td>多維護一份 BM25 索引</td><td>多一個 docstore；LLM 讀入變多</td><td>每個片段一次 LLM 呼叫；文件更新要重算</td></tr>
+    <tr><th>主要風險</th><td>相似片段難區分</td><td>仍看不到片段外的脈絡</td><td>父段落夾帶無關內容</td><td>情境寫錯會污染索引</td></tr>
+  </table>
+
+  <h2>⚠️ 情境化檢索常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>情境寫錯會污染索引</b>：LLM 可能把 OW-8 寫成 OW-6，或編出文件裡沒有的資訊。情境應只依文件內容，並抽樣檢查；風險高的領域可由程式直接把章節標題、機型欄位拼進去，不依賴 LLM。</li>
+      <li><b>索引成本與更新</b>：每個片段都要呼叫一次 LLM，文件改版時受影響的片段要重新生成。用提示詞快取可大幅降低成本，但仍要先估算文件量。</li>
+      <li><b>情境不要太長</b>：情境太長會稀釋片段本身的語意，也浪費索引空間。要求「簡短」即可，通常一兩句就夠。</li>
+      <li><b>片段本來就自足就不必做</b>：像 FAQ、單一告警代碼條目這類每段都完整寫明主角的文件，補情境的效益有限。</li>
+      <li><b>知識庫很小可以直接放進上下文</b>：Anthropic 的文章指出，知識庫小於約 20 萬 token（約 500 頁）時，可考慮直接放進提示詞，不一定要建檢索（路線圖中的「長上下文 vs RAG」會再討論）。</li>
+    </ul>
+    <div class="callout warn">範例中的鷗灣離岸風場、OW-8／OW-6 機型、運維手冊內容、章節編號與告警代碼皆為虛構，僅供教學示範；互動範例使用簡化的 TF-IDF 與 BM25 模擬，情境為人工預寫；實際作業以原廠手冊與現場規範為準。</div>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>情境化檢索的「情境」是在什麼時候、由誰產生的？</b></p>
+    <button class="opt">A. 查詢時，由使用者補充問題的背景</button>
+    <button class="opt">B. 建索引前，由 LLM 讀整份文件後為每個片段生成，並接在片段前面</button>
+    <button class="opt">C. 回答時，由 LLM 根據檢索結果補寫</button>
+    <div class="why">情境化檢索發生在索引階段：每個片段先被補上「它在整份文件中的位置」，再做嵌入與 BM25。查詢時不需要再呼叫 LLM，所以成本是一次性的、與查詢量無關。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>為什麼情境化後，BM25 也要用「情境 + 片段」來建索引？</b></p>
+    <button class="opt">A. 因為 BM25 不需要斷詞，所以多寫幾個字比較好</button>
+    <button class="opt">B. 因為 BM25 會自動理解語意，不需要情境</button>
+    <button class="opt">C. 因為情境裡的機型、子系統、告警代碼等精確詞，原本不在片段中，加進去後關鍵字比對才抓得到</button>
+    <div class="why">BM25 只比對字面。片段若沒寫「OW-8」，查詢中的「OW-8」就無法加分；把情境接上去，精確詞才會出現在索引裡。這也是 Anthropic 將情境化同時用於嵌入與 BM25 的原因。</div>
+  </div>
+
+  <nav class="pager" data-slug="contextual-retrieval"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8500, steps:[
+  { title:'沒有情境：三個片段一模一樣', text:'技師問「OW-8 旋角馬達更換，螺栓怎麼鎖？」但各份手冊的安裝片段<b>字面幾乎相同</b>：OW-8 旋角、OW-8 偏航、OW-6 旋角都寫「依扭力表鎖緊螺栓」，向量與關鍵字都<b>分不出該用哪一個</b>。' },
+  { title:'切塊時，脈絡被留在別的片段', text:'手冊切塊後，<b>章節標題、機型、子系統</b>留在別的片段裡。這個片段只剩「依上節步驟拆下馬達後……」，連「上節」是哪一節都不知道，成了<b>無名氏</b>。' },
+  { title:'LLM 讀整份文件，替片段寫情境', text:'<b>情境化檢索</b>在建索引前，把<b>整份文件</b>與<b>單一片段</b>一起交給 LLM，請它用一兩句話說明「這個片段在整份文件的哪裡」。小而便宜的模型就能勝任。' },
+  { title:'情境接在片段前面', text:'生成的<b>情境</b>接在<b>原片段</b>前面，合成<b>情境化片段</b>。現在它明確寫著「《OW-8 運維手冊》6.3 節旋角馬達更換程序的安裝步驟」，機型與子系統都在文字裡了。' },
+  { title:'建立兩份索引：嵌入 + BM25', text:'用<b>情境化片段</b>同時建立<b>嵌入索引</b>（抓語意）與 <b>BM25 索引</b>（抓「OW-8」「PT-203」這類精確詞）。這是索引階段的一次性工作，查詢時不必再呼叫 LLM。' },
+  { title:'查詢時兩路各自排名', text:'技師的問題同時進入兩路。<b>嵌入</b>認得「旋角安裝」但可能分不清 OW-8／OW-6；<b>BM25</b> 抓得到「OW-8」卻可能分不清旋角／偏航。兩路各有盲點。' },
+  { title:'用 RRF 融合兩路排名', text:'<b>倒數排名融合（RRF）</b>把每個片段在各路的名次換成 1/(k+名次) 加總。<b>兩路都排得前面</b>的 OW-8 旋角安裝片段勝出，排到第一；之後還能再接重排序。' },
+  { title:'改善後的結果：找得到正確的那一個', text:'只索引原片段時，三個相同片段<b>分數接近</b>，可能引到別的機型的扭力值；索引情境化片段後，<b>機型與子系統都進了索引</b>，正解排到前面。代價是索引階段多一輪 LLM 呼叫。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+
+  /* 虛構片段：text 為原片段，ctx 模擬 LLM 生成的情境 */
+  const CH = [
+    { id:'A', sec:'OW-8 6.3 旋角馬達更換．安裝', text:'依上節步驟拆下馬達後，清潔接合面，依扭力表分次對角鎖緊固定螺栓。',
+      ctx:'本片段出自《OW-8 運維手冊》6.3 節旋角馬達更換程序，說明安裝新馬達並鎖緊螺栓的步驟。' },
+    { id:'B', sec:'OW-8 7.2 偏航馬達更換．安裝', text:'依上節步驟拆下馬達後，清潔接合面，依扭力表分次對角鎖緊固定螺栓。',
+      ctx:'本片段出自《OW-8 運維手冊》7.2 節偏航馬達更換程序，說明安裝新馬達並鎖緊螺栓的步驟。' },
+    { id:'C', sec:'OW-6 6.3 旋角馬達更換．安裝', text:'依上節步驟拆下馬達後，清潔接合面，依扭力表分次對角鎖緊固定螺栓。',
+      ctx:'本片段出自舊款《OW-6 運維手冊》6.3 節旋角馬達更換程序，說明安裝新馬達並鎖緊螺栓的步驟。' },
+    { id:'D', sec:'OW-8 8.1 PT-203 旋角馬達過溫', text:'溫度超過門檻時，控制器會限制電流，請先檢查散熱風道與感測器接線。',
+      ctx:'本片段出自《OW-8 運維手冊》8.1 節告警 PT-203 旋角馬達過溫，說明旋角馬達過溫時的初步檢查。' },
+    { id:'E', sec:'OW-8 8.4 YW-051 偏航馬達過溫', text:'溫度超過門檻時，控制器會限制電流，請先檢查散熱風道與感測器接線。',
+      ctx:'本片段出自《OW-8 運維手冊》8.4 節告警 YW-051 偏航馬達過溫，說明偏航馬達過溫時的初步檢查。' },
+    { id:'F', sec:'OW-8 5.4 旋角減速機保養', text:'每年檢查油位與油色，油色明顯變深或混濁時需提前處理。',
+      ctx:'本片段出自《OW-8 運維手冊》5.4 節旋角減速機保養，說明減速機油位與油色的年度檢查。' },
+    { id:'G', sec:'OW-8 8.7 GB-117 齒輪箱高速軸軸承溫度過高', text:'溫度超過門檻時，請先確認潤滑油位與冷卻器運轉，再檢查感測器。',
+      ctx:'本片段出自《OW-8 運維手冊》8.7 節告警 GB-117 齒輪箱高速軸軸承溫度過高，說明初步檢查項目。' },
+    { id:'H', sec:'OW-8 9.1 高處作業安全規範', text:'進入前須完成上鎖掛牌，確認葉片鎖定與主電源隔離，再開始作業。',
+      ctx:'本片段出自《OW-8 運維手冊》9.1 節高處作業安全規範，說明進入機艙與輪轂前的準備。' }
+  ];
+  const idxRaw = rt.buildIndex(CH.map(c => ({ text:c.text })));
+  const idxCtx = rt.buildIndex(CH.map(c => ({ text:c.ctx + c.text })));
+
+  const SAMPLES = [
+    { q:'OW-8 旋角馬達更換，螺栓怎麼鎖？', want:0 },
+    { q:'OW-6 旋角馬達更換的鎖緊步驟', want:2 },
+    { q:'PT-203 旋角馬達過溫怎麼處理？', want:3 },
+    { q:'GB-117 高速軸軸承過溫先查什麼？', want:6 }
+  ];
+  let cur = SAMPLES[0], mode = 'ctx';
+
+  function ranked(){
+    const all = CH.length;
+    if(mode === 'raw') return rt.searchVector(idxRaw, cur.q, all);
+    const v = rt.searchVector(idxCtx, cur.q, all);
+    if(mode === 'ctx') return v;
+    return rt.rrf([v, rt.searchBM25(idxCtx, cur.q, all)]);
+  }
+
+  function run(){
+    const n = +$('#n').value; $('#nv').textContent = n;
+    const list = ranked();
+    const rank = list.findIndex(h => h.i === cur.want) + 1;
+    const max = Math.max(list[0]?.score || 0, 1e-6);
+    $('#hits').innerHTML = list.slice(0, n).map((h, r) => {
+      const c = CH[h.i], ok = h.i === cur.want;
+      return `<div class="hit ${ok ? 'top' : 'low'}">
+        <div class="meta"><span>#${r + 1}　${ok ? '✔ 正解　' : ''}${RagTutor.escapeHtml(c.sec)}</span><span>分數 ${h.score.toFixed(3)}</span></div>
+        ${mode !== 'raw' ? `<div class="muted" style="font-size:12.5px">【情境】${rt.highlight(c.ctx, cur.q)}</div>` : ''}
+        <div>${rt.highlight(c.text, cur.q)}</div>
+        <div class="score-bar"><b style="width:${(h.score / max * 100).toFixed(1)}%"></b></div>
+      </div>`;
+    }).join('');
+    const same = list.filter(h => Math.abs(h.score - list[rank - 1].score) < 1e-9).length;
+    $('#stat').textContent = `正解：${CH[cur.want].sec}。排名第 ${rank} / ${CH.length}，` +
+      (rank <= n ? `有進入 Top-${n}。` : `沒進 Top-${n}，會漏掉。`) +
+      (same > 1 ? `（與其他 ${same - 1} 個片段同分，排名只是平手時的順序）` : '');
+  }
+
+  function pick(i){
+    cur = SAMPLES[i];
+    $('#qchips').querySelectorAll('button').forEach((x, k) => x.classList.toggle('on', k === i));
+    run();
+  }
+  $('#qchips').innerHTML = SAMPLES.map(s => `<button type="button">${RagTutor.escapeHtml(s.q)}</button>`).join('');
+  $('#qchips').querySelectorAll('button').forEach((b, i) => b.onclick = () => pick(i));
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    run();
+  });
+  $('#n').oninput = run;
+  pick(0);
+})();
+</script>
+</body>
+</html>
