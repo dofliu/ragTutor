@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAG-Fusion：多查詢 + 倒數排名融合｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂 RAG-Fusion：讓 LLM 把一個問題改寫成多個問法，各自檢索後用倒數排名融合（RRF）合併成一份統一排序，讓多個問法都認同的段落排到前面。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 010 堂</span><span class="tag lv2">進階</span><span class="tag">約 12 分鐘</span></p>
+  <h1>RAG-Fusion：多查詢 + 倒數排名融合</h1>
+  <p class="lead">技師隨口一句「葉片轉不動」，字面上最像的是「葉片卡滯排查」，真正要查的「PT-203 旋角馬達過溫」卻排在第 6 名。上一堂的 Multi-Query 把多個問法的結果<b>聯集</b>起來，但聯集沒有統一的排序。<b>RAG-Fusion</b> 同樣先讓 LLM 把問題改寫成多個問法、各自檢索，再用<b>倒數排名融合（Reciprocal Rank Fusion, RRF）</b>把多份排名合併成<b>一份</b>：被越多問法排在前面的段落，名次越高。</p>
+
+  <h2>🎬 動畫：一個問題、多個問法、一份融合後的排名</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="RAG-Fusion 動畫：只用原問題檢索時，正確段落排第 6；由 LLM 產生多個問法，各自檢索得到多份排名，同一段落在不同問法下名次不同；用 RRF 把名次換算成分數相加，得到統一排序，取前幾名交給 LLM 回答">
+  <defs>
+    <marker id="ah10" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" style="fill:var(--muted)"/></marker>
+  </defs>
+
+  <!-- 問題（全程顯示） -->
+  <rect x="270" y="14" width="380" height="48" rx="10" style="fill:var(--panel);stroke:var(--query);stroke-width:2"/>
+  <text x="460" y="33" text-anchor="middle" font-size="11.5" class="t-muted">👤 現場技師輸入</text>
+  <text x="460" y="52" text-anchor="middle" font-size="13" font-weight="700">「葉片轉不動」</text>
+
+  <rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+
+  <!-- 場景標籤 -->
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 只檢索一次：正確段落被埋在第 6 名</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="1" data-to="1">② LLM 把問題改寫成多個問法</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="2" data-to="2">③ 每個問法各自檢索一次</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="3" data-to="3">④ 同一個段落，在不同問法下名次不同</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="4" data-to="4">⑤ RRF：把名次換成分數再相加</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="5" data-to="5">⑥ 得到一份統一的融合排名</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="6" data-to="6">⑦ 取前幾名交給 LLM 回答</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 多個問法都認同的段落排到前面</text>
+
+  <!-- Step 0：單一查詢 -->
+  <g data-to="0">
+    <rect x="190" y="116" width="540" height="232" rx="10" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="460" y="142" text-anchor="middle" font-size="12.5" font-weight="700" class="t-muted">只用原問題檢索的排名</text>
+    <rect x="212" y="156" width="496" height="32" rx="6" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/>
+    <text x="226" y="177" font-size="12">① 葉片轉不動的初步排查（卡阻、潤滑）</text>
+    <rect x="212" y="194" width="496" height="32" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="226" y="215" font-size="12">② PT-211 三支葉片角度偏差過大</text>
+    <rect x="212" y="232" width="496" height="32" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="226" y="253" font-size="12">③ 高處作業安全規範</text>
+    <text x="460" y="282" text-anchor="middle" font-size="14" class="t-muted">⋮</text>
+    <rect x="212" y="292" width="496" height="42" rx="6" class="pulse" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5;stroke-dasharray:6 4"/>
+    <text x="226" y="318" font-size="12" font-weight="700" style="fill:var(--good)">⑥ PT-203 旋角馬達過溫　← 真正要查的</text>
+    <text x="460" y="384" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)">⚠️ 原句太口語，字面最像的不是真正的原因</text>
+    <text x="460" y="406" text-anchor="middle" font-size="11.5" class="t-muted">Top-3 看不到正解；只賭一種問法，命中全憑運氣</text>
+  </g>
+
+  <!-- Step 1：產生多個問法 -->
+  <g data-from="1" data-to="1">
+    <rect x="40" y="170" width="210" height="64" rx="10" style="fill:var(--panel);stroke:var(--query);stroke-width:2"/>
+    <text x="145" y="198" text-anchor="middle" font-size="11.5" class="t-muted">原問題</text>
+    <text x="145" y="220" text-anchor="middle" font-size="13" font-weight="700">葉片轉不動</text>
+    <path d="M250 202 H318" class="flow" style="stroke:var(--query)"/>
+    <rect x="320" y="150" width="150" height="104" rx="10" data-hot="1" style="fill:var(--panel);stroke:var(--llm);stroke-width:2.5"/>
+    <text x="395" y="190" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--llm)">🧠 LLM</text>
+    <text x="395" y="214" text-anchor="middle" font-size="11.5" class="t-muted">改寫成不同</text>
+    <text x="395" y="233" text-anchor="middle" font-size="11.5" class="t-muted">角度的問法</text>
+    <path d="M470 185 C 505 185, 505 144, 552 144" class="flow" style="stroke:var(--llm)"/>
+    <path d="M470 202 H552" class="flow" style="stroke:var(--llm)"/>
+    <path d="M470 220 C 505 220, 505 262, 552 262" class="flow" style="stroke:var(--llm)"/>
+    <rect x="554" y="118" width="330" height="52" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.5"/>
+    <text x="570" y="140" font-size="11.5" class="t-muted">問法 1（原問題）</text>
+    <text x="570" y="159" font-size="12.5" font-weight="700">葉片轉不動</text>
+    <rect x="554" y="176" width="330" height="52" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.5"/>
+    <text x="570" y="198" font-size="11.5" class="t-muted">問法 2（維修用語）</text>
+    <text x="570" y="217" font-size="12.5" font-weight="700">旋角馬達跳脫</text>
+    <rect x="554" y="234" width="330" height="52" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.5"/>
+    <text x="570" y="256" font-size="11.5" class="t-muted">問法 3（告警代碼）</text>
+    <text x="570" y="275" font-size="12.5" font-weight="700">PT-203 過溫</text>
+    <text x="460" y="340" text-anchor="middle" font-size="12" class="t-muted">指示：針對使用者的問題，產生 3 個不同角度的搜尋問法，只回傳問法</text>
+    <text x="460" y="366" text-anchor="middle" font-size="11.5" class="t-muted">原問題通常也留著當其中一個問法</text>
+  </g>
+
+  <!-- Step 2：各自檢索 -->
+  <g data-from="2" data-to="2">
+    <rect x="30" y="116" width="276" height="206" rx="10" style="fill:var(--panel);stroke:var(--vec);stroke-width:2"/>
+    <text x="168" y="140" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">問法 1：葉片轉不動</text>
+    <rect x="44" y="154" width="248" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="54" y="176" font-size="11.5">① 葉片轉不動的初步排查</text>
+    <rect x="44" y="196" width="248" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="54" y="218" font-size="11.5">② PT-211 角度偏差過大</text>
+    <rect x="44" y="238" width="248" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="54" y="260" font-size="11.5">③ 高處作業安全規範</text>
+    <text x="168" y="304" text-anchor="middle" font-size="11.5" class="t-muted">PT-203 在第 6 名</text>
+
+    <rect x="322" y="116" width="276" height="206" rx="10" style="fill:var(--panel);stroke:var(--vec);stroke-width:2"/>
+    <text x="460" y="140" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">問法 2：旋角馬達跳脫</text>
+    <rect x="336" y="154" width="248" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="346" y="176" font-size="11.5">① 旋角馬達跳脫後的復歸</text>
+    <rect x="336" y="196" width="248" height="34" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="346" y="218" font-size="11.5">② PT-203 旋角馬達過溫</text>
+    <rect x="336" y="238" width="248" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="346" y="260" font-size="11.5">③ PT-205 旋角馬達煞車異常</text>
+    <text x="460" y="304" text-anchor="middle" font-size="11.5" class="t-muted">PT-203 在第 2 名</text>
+
+    <rect x="614" y="116" width="276" height="206" rx="10" style="fill:var(--panel);stroke:var(--vec);stroke-width:2"/>
+    <text x="752" y="140" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">問法 3：PT-203 過溫</text>
+    <rect x="628" y="154" width="248" height="34" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="638" y="176" font-size="11.5">① PT-203 旋角馬達過溫</text>
+    <rect x="628" y="196" width="248" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="638" y="218" font-size="11.5">② YW-051 偏航馬達過溫</text>
+    <rect x="628" y="238" width="248" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="638" y="260" font-size="11.5">③ PT-205 旋角馬達煞車異常</text>
+    <text x="752" y="304" text-anchor="middle" font-size="11.5" class="t-muted">PT-203 在第 1 名</text>
+
+    <text x="460" y="362" text-anchor="middle" font-size="12" class="t-muted">三份排名各自獨立；每份清單裡的「分數」彼此不能直接比較</text>
+  </g>
+
+  <!-- Step 3：同一段落名次不同 -->
+  <g data-from="3" data-to="3">
+    <text x="300" y="132" text-anchor="middle" font-size="12" font-weight="700" class="t-muted">問法 1</text>
+    <text x="460" y="132" text-anchor="middle" font-size="12" font-weight="700" class="t-muted">問法 2</text>
+    <text x="620" y="132" text-anchor="middle" font-size="12" font-weight="700" class="t-muted">問法 3</text>
+    <text x="40" y="196" font-size="12.5" font-weight="700" style="fill:var(--good)">PT-203 旋角馬達過溫</text>
+    <rect x="240" y="156" width="120" height="58" rx="8" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+    <text x="300" y="192" text-anchor="middle" font-size="16" font-weight="700" style="fill:var(--bad)">第 6 名</text>
+    <rect x="400" y="156" width="120" height="58" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="460" y="192" text-anchor="middle" font-size="16" font-weight="700" style="fill:var(--good)">第 2 名</text>
+    <rect x="560" y="156" width="120" height="58" rx="8" class="pulse" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+    <text x="620" y="192" text-anchor="middle" font-size="16" font-weight="700" style="fill:var(--good)">第 1 名</text>
+    <text x="40" y="276" font-size="12.5" font-weight="700" style="fill:var(--bad)">葉片轉不動的初步排查</text>
+    <rect x="240" y="236" width="120" height="58" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="300" y="272" text-anchor="middle" font-size="16" font-weight="700" style="fill:var(--good)">第 1 名</text>
+    <rect x="400" y="236" width="120" height="58" rx="8" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+    <text x="460" y="272" text-anchor="middle" font-size="16" font-weight="700" style="fill:var(--bad)">第 5 名</text>
+    <rect x="560" y="236" width="120" height="58" rx="8" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+    <text x="620" y="272" text-anchor="middle" font-size="16" font-weight="700" style="fill:var(--bad)">第 7 名</text>
+    <text x="720" y="188" font-size="11.5" class="t-muted">兩個問法都排前面</text>
+    <text x="720" y="274" font-size="11.5" class="t-muted">只有原句排前面</text>
+    <text x="460" y="352" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--warn)">只看某一份清單會被誤導；要把「各份清單的意見」合在一起看</text>
+  </g>
+
+  <!-- Step 4：RRF 計算 -->
+  <g data-from="4" data-to="4">
+    <rect x="130" y="112" width="660" height="40" rx="8" data-hot="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:2.5"/>
+    <text x="460" y="138" text-anchor="middle" font-size="14" font-weight="700" class="t-mono" style="fill:var(--accent)">RRF(d) = Σ 1 / (k + rank(d))　　k = 60</text>
+    <text x="40" y="190" font-size="12.5" font-weight="700" style="fill:var(--good)">PT-203 旋角馬達過溫</text>
+    <text x="40" y="214" font-size="12" class="t-mono">1/(60+6) + 1/(60+2) + 1/(60+1)</text>
+    <rect x="40" y="226" width="360" height="22" rx="4" class="pulse" style="fill:var(--good)"/>
+    <text x="414" y="242" font-size="13" font-weight="700" style="fill:var(--good)">≈ 0.0477</text>
+    <text x="40" y="288" font-size="12.5" font-weight="700" style="fill:var(--bad)">葉片轉不動的初步排查</text>
+    <text x="40" y="312" font-size="12" class="t-mono">1/(60+1) + 1/(60+5) + 1/(60+7)</text>
+    <rect x="40" y="324" width="352" height="22" rx="4" style="fill:var(--bad)"/>
+    <text x="406" y="340" font-size="13" font-weight="700" style="fill:var(--bad)">≈ 0.0467</text>
+    <text x="580" y="214" font-size="11.5" class="t-muted">名次越前面，貢獻越大</text>
+    <text x="580" y="236" font-size="11.5" class="t-muted">只看名次，不看原始分數</text>
+    <text x="580" y="258" font-size="11.5" class="t-muted">所以不同尺度的分數也能合併</text>
+    <text x="580" y="312" font-size="11.5" class="t-muted">k 越大，名次之間的差距越小</text>
+    <text x="580" y="334" font-size="11.5" class="t-muted">原論文使用 k = 60</text>
+    <text x="460" y="388" text-anchor="middle" font-size="12" class="t-muted">被越多份清單認同、名次越前面，總分就越高</text>
+  </g>
+
+  <!-- Step 5：融合後排名 -->
+  <g data-from="5" data-to="5">
+    <rect x="190" y="112" width="540" height="244" rx="10" class="pulse" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+    <text x="460" y="138" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--good)">⚖️ 融合後的統一排名</text>
+    <rect x="212" y="152" width="496" height="34" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="226" y="174" font-size="12" font-weight="700">① PT-203 旋角馬達過溫</text>
+    <text x="694" y="174" text-anchor="end" font-size="11.5" class="t-muted t-mono">0.0477</text>
+    <rect x="212" y="194" width="496" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="226" y="216" font-size="12">② 旋角馬達跳脫後的復歸</text>
+    <text x="694" y="216" text-anchor="end" font-size="11.5" class="t-muted t-mono">0.0472</text>
+    <rect x="212" y="236" width="496" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="226" y="258" font-size="12">③ PT-205 旋角馬達煞車異常</text>
+    <text x="694" y="258" text-anchor="end" font-size="11.5" class="t-muted t-mono">0.0471</text>
+    <rect x="212" y="278" width="496" height="34" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="226" y="300" font-size="12">④ 葉片轉不動的初步排查</text>
+    <text x="694" y="300" text-anchor="end" font-size="11.5" class="t-muted t-mono">0.0467</text>
+    <text x="460" y="338" text-anchor="middle" font-size="11.5" class="t-muted">正解從第 6 名升到第 1 名；一份清單、可以直接截取 Top-k</text>
+    <text x="460" y="392" text-anchor="middle" font-size="11.5" class="t-muted">（數值為本堂互動範例以簡化向量檢索算出的結果）</text>
+  </g>
+
+  <!-- Step 6：交給 LLM -->
+  <g data-from="6" data-to="6">
+    <rect x="40" y="130" width="280" height="150" rx="10" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="180" y="156" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)">融合後 Top-3</text>
+    <text x="58" y="186" font-size="12">① PT-203 旋角馬達過溫</text>
+    <text x="58" y="212" font-size="12">② 旋角馬達跳脫後的復歸</text>
+    <text x="58" y="238" font-size="12">③ PT-205 旋角馬達煞車異常</text>
+    <path d="M320 205 H388" class="flow" style="stroke:var(--doc)"/>
+    <rect x="390" y="150" width="130" height="110" rx="10" data-hot="6" style="fill:var(--panel);stroke:var(--llm);stroke-width:2.5"/>
+    <text x="455" y="196" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--llm)">🧠 LLM</text>
+    <text x="455" y="220" text-anchor="middle" font-size="11.5" class="t-muted">讀段落、寫答案</text>
+    <path d="M520 205 H578" class="flow" style="stroke:var(--accent)"/>
+    <rect x="580" y="130" width="300" height="150" rx="10" style="fill:var(--panel);stroke:var(--accent);stroke-width:2.5"/>
+    <text x="730" y="156" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)">✨ 回答（節錄）</text>
+    <text x="598" y="184" font-size="12">可能是旋角馬達過溫（PT-203）：</text>
+    <text x="598" y="208" font-size="12">先查散熱風道、冷卻風扇與</text>
+    <text x="598" y="232" font-size="12">溫度感測器接線；排除後依</text>
+    <text x="598" y="256" font-size="12">復歸程序解除跳脫。</text>
+    <text x="460" y="330" text-anchor="middle" font-size="12" class="t-muted">整個流程多了：一次 LLM 改寫 + 多次檢索；融合本身只是簡單的加總</text>
+  </g>
+
+  <!-- Step 7：比較 -->
+  <g data-from="7">
+    <rect x="40" y="116" width="400" height="250" rx="10" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+    <text x="240" y="144" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--bad)">✘ 只用原問題檢索</text>
+    <text x="62" y="184" font-size="12">口語問法字面最像「卡滯」</text>
+    <text x="62" y="208" font-size="12">PT-203 排第 6 名，Top-3 看不到</text>
+    <text x="62" y="252" font-size="12" style="fill:var(--bad)">答案可能只講潤滑與卡阻</text>
+    <text x="62" y="276" font-size="12" style="fill:var(--bad)">漏掉過溫這個真正原因</text>
+    <text x="62" y="330" font-size="11" class="t-muted">命中全看技師剛好怎麼問</text>
+    <path d="M440 241 H478" class="arrow" marker-end="url(#ah10)"/>
+    <g class="pulse">
+      <rect x="480" y="116" width="400" height="250" rx="10" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+      <text x="680" y="144" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--good)">✅ RAG-Fusion</text>
+      <text x="502" y="184" font-size="12">多個問法各查一次，再用 RRF 合併</text>
+      <text x="502" y="210" font-size="12">多個問法都認同的段落排到前面</text>
+      <text x="502" y="236" font-size="12">PT-203 升到第 1 名</text>
+      <text x="502" y="290" font-size="11" class="t-muted">代價：多一次 LLM 呼叫、</text>
+      <text x="502" y="310" font-size="11" class="t-muted">檢索次數變成問法數倍，延遲與成本上升；</text>
+      <text x="502" y="330" font-size="11" class="t-muted">問法若偏離原意，反而會拉進雜訊</text>
+    </g>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>一個問法不夠</b>技師的口語問句常和手冊用詞對不上。讓 LLM 把問題改寫成多個角度的問法（口語、維修用語、告警代碼），涵蓋面比單一查詢大。</div>
+    <div class="card"><b>融合的是「名次」</b>RRF 對每份清單只看名次：score(d) = Σ 1/(k+rank)。不同檢索器、不同問法的原始分數尺度不一，換成名次就能直接相加；常見預設 k = 60，出自 RRF 原論文。</div>
+    <div class="card"><b>比聯集多了排序</b>上一堂 Multi-Query 只做去重聯集，各問法的結果之間沒有統一排序。RAG-Fusion 多出的就是這一步：讓被多個問法認同的段落自然上浮。</div>
+    <div class="card"><b>有代價，也有風險</b>每次提問多一輪 LLM 改寫、多次檢索。Rackauckas 的論文也指出，產生的問法若和原問題不夠相關，答案會偏題。</div>
+  </div>
+
+  <h2>🧪 互動範例：一個問法 vs. 多問法 RRF 融合</h2>
+  <div class="prose"><p>下面是虛構的《OW-8 運維手冊》8 個段落。原問題是「葉片轉不動」，正解是「PT-203 旋角馬達過溫」。勾選要使用的<b>問法</b>（第 4 個是故意偏離原意的問法，預設不勾），再切換<b>合併方式</b>：只用原問題、聯集（依問法順序列出、去重，沒有統一排序）、或 RRF 融合。可以拖動 <b>k</b> 看名次差距如何被壓平。檢索用簡化的 TF-IDF 餘弦相似度模擬，不是真正的嵌入模型。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="vchips"></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" data-mode="single">只用原問題</button>
+      <button type="button" data-mode="union">多問法聯集（無統一排序）</button>
+      <button type="button" class="on" data-mode="rrf">RAG-Fusion（RRF）</button>
+    </div>
+    <div class="row"><label for="k">RRF 的 k：<b id="kv">60</b></label><input type="range" id="k" min="1" max="100" value="60" style="flex:1;max-width:220px"></div>
+    <div class="row"><label for="n">Top-N：<b id="nv">3</b></label><input type="range" id="n" min="1" max="5" value="3" style="flex:1;max-width:220px"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>手動實作 RAG-Fusion：用 <code>claude-sonnet-5</code> 把問題改寫成多個問法（連同原問題），每個問法用向量檢索取前幾名，再用 RRF 融合成一份排名。範例文件為虛構。</p></div>
+<pre class="code"><code><span class="k">import</span> numpy <span class="k">as</span> np
+<span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer
+<span class="k">import</span> anthropic
+
+client = anthropic.<span class="f">Anthropic</span>()
+embedder = SentenceTransformer(<span class="s">"BAAI/bge-m3"</span>)
+
+<span class="c"># ① 知識庫：虛構的 OW-8 手冊段落</span>
+chunks = [
+    <span class="s">"PT-203 旋角馬達過溫：繞組溫度超過門檻時控制器會限制電流並跳脫，請先檢查散熱風道、冷卻風扇與感測器接線。"</span>,
+    <span class="s">"旋角馬達跳脫後的復歸：確認原因排除後，於機艙控制面板解除跳脫，並手動試轉葉片。"</span>,
+    <span class="s">"葉片轉不動的初步排查：先確認旋角軸承潤滑與減速機有無異物卡阻，再檢查驅動器輸出。"</span>,
+    <span class="c"># ……</span>
+]
+vecs = embedder.<span class="f">encode</span>(chunks, normalize_embeddings=<span class="k">True</span>)
+
+<span class="c"># ② 讓 LLM 把問題改寫成多個問法</span>
+<span class="k">def</span> <span class="f">make_queries</span>(question, n=<span class="s">3</span>):
+    msg = client.messages.<span class="f">create</span>(
+        model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">200</span>,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+            <span class="s">f"你在協助檢索風機運維手冊。請針對下面的問題，產生 {n} 個不同角度的搜尋問法"</span>
+            <span class="s">"（例如維修用語、可能的告警代碼），每行一個，不要編號、不要多餘說明。\n"</span>
+            <span class="s">f"問題：{question}"</span>}])
+    variants = [l.<span class="f">strip</span>() <span class="k">for</span> l <span class="k">in</span> msg.content[<span class="s">0</span>].text.<span class="f">splitlines</span>() <span class="k">if</span> l.<span class="f">strip</span>()]
+    <span class="k">return</span> [question] + variants[:n]        <span class="c"># 原問題也保留</span>
+
+<span class="c"># ③ 每個問法各自檢索，得到一份名次清單</span>
+<span class="k">def</span> <span class="f">retrieve</span>(query, k=<span class="s">20</span>):
+    q = embedder.<span class="f">encode</span>([query], normalize_embeddings=<span class="k">True</span>)[<span class="s">0</span>]
+    <span class="k">return</span> [<span class="f">int</span>(i) <span class="k">for</span> i <span class="k">in</span> np.<span class="f">argsort</span>(-(vecs @ q))[:k]]
+
+<span class="c"># ④ RRF：score(d) = Σ 1 / (k + rank)</span>
+<span class="k">def</span> <span class="f">rrf</span>(rankings, k=<span class="s">60</span>):
+    score = {}
+    <span class="k">for</span> ranking <span class="k">in</span> rankings:
+        <span class="k">for</span> rank, i <span class="k">in</span> <span class="f">enumerate</span>(ranking, start=<span class="s">1</span>):
+            score[i] = score.<span class="f">get</span>(i, <span class="s">0</span>) + <span class="s">1</span> / (k + rank)
+    <span class="k">return</span> <span class="f">sorted</span>(score, key=score.get, reverse=<span class="k">True</span>)
+
+question = <span class="s">"葉片轉不動"</span>
+queries = <span class="f">make_queries</span>(question)
+<span class="k">for</span> i <span class="k">in</span> <span class="f">rrf</span>([<span class="f">retrieve</span>(q) <span class="k">for</span> q <span class="k">in</span> queries])[:<span class="s">3</span>]:
+    <span class="f">print</span>(chunks[i], <span class="s">"\n---"</span>)</code></pre>
+
+  <h2>⚖️ 五種做法比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>一般檢索（第 001 堂）</th><th>混合檢索（第 004 堂）</th><th>Multi-Query（第 006 堂）</th><th>RAG-Fusion（本堂）</th></tr>
+    <tr><th>用幾個查詢</th><td>1 個</td><td>1 個（兩種檢索器）</td><td>多個問法</td><td>多個問法（含原問題）</td></tr>
+    <tr><th>怎麼合併</th><td>不用合併</td><td>RRF 合併兩路排名</td><td>去重聯集</td><td>RRF 合併所有問法的排名</td></tr>
+    <tr><th>額外成本</th><td>無</td><td>多維護一份 BM25 索引</td><td>一次 LLM 改寫 + 多次檢索</td><td>同 Multi-Query；融合本身幾乎免費</td></tr>
+    <tr><th>主要風險</th><td>口語問法對不上手冊用詞</td><td>兩路都沒看到的詞仍找不到</td><td>聯集沒有排序，雜訊一起進來</td><td>問法偏離原意會拉進離題段落</td></tr>
+  </table>
+  <div class="prose"><p>兩者可以疊加：每個問法各自跑混合檢索（BM25 + 向量），把所有排名一次丟進 RRF；融合後再接重排序（第 005 堂）。</p></div>
+
+  <h2>⚠️ RAG-Fusion 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>問法偏離原意</b>：LLM 可能把「葉片轉不動」擴寫成「偏航馬達過溫」。互動範例勾選第 4 個問法就能看到：離題段落被拉進前幾名。提示詞要求問法「忠於原問題」，並限制問法數量（常見 3～4 個）。</li>
+      <li><b>RRF 不看相關程度</b>：融合只用名次，不知道某段落其實很不相關。某個問法在整份知識庫都沒有好答案時，它的第 1 名也照樣拿到最高的單路分數。需要精準時，融合後再加重排序。</li>
+      <li><b>延遲與成本</b>：多一次 LLM 呼叫，檢索次數乘上問法數。查詢量大或要求即時回應時要先估算；可平行發出各問法的檢索來壓低延遲。</li>
+      <li><b>問題本身已很精確就不必做</b>：像直接輸入「PT-203」這種明確的告警代碼，單一查詢（或混合檢索）通常已經夠用，多問法只是額外花費。</li>
+      <li><b>每份清單要夠長</b>：只取前 3 名就融合，名次資訊太少；通常每個問法取前 10～20 名再融合，最後才截取 Top-k。</li>
+      <li><b>評估要用自己的資料</b>：公開文獻多為人工評估或特定資料集，效果因知識庫而異；換成自己的語料請用評估集量測，而不是假設一定變好。</li>
+    </ul>
+    <div class="callout warn">範例中的鷗灣離岸風場、OW-8 機型、運維手冊內容、告警代碼與各數值皆為虛構，僅供教學示範；互動範例使用簡化的 TF-IDF 模擬，問法為人工預寫；實際作業以原廠手冊與現場規範為準。</div>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="2">
+    <p><b>RAG-Fusion 和第 006 堂的 Multi-Query（聯集）最主要的差別是什麼？</b></p>
+    <button class="opt">A. RAG-Fusion 不需要 LLM 改寫問題</button>
+    <button class="opt">B. RAG-Fusion 只用單一問法，但檢索得更準</button>
+    <button class="opt">C. RAG-Fusion 用 RRF 把多個問法的名次合併成一份統一排序，而不是只做去重聯集</button>
+    <div class="why">兩者都會讓 LLM 產生多個問法並各自檢索；差別在合併方式。聯集只去重，各問法的結果之間沒有統一排序；RRF 把名次換成分數相加，被多個問法排在前面的段落總分最高。</div>
+  </div>
+  <div class="quiz card" data-answer="1">
+    <p><b>RRF 為什麼只用「名次」而不直接把各路的分數相加？</b></p>
+    <button class="opt">A. 因為名次比分數更精確</button>
+    <button class="opt">B. 因為不同問法或檢索器的原始分數尺度不同、不能直接比較，名次則可以統一換算</button>
+    <button class="opt">C. 因為這樣可以不用做檢索</button>
+    <div class="why">向量相似度、BM25 分數、不同問法的分數範圍都不一樣，直接相加沒有意義。RRF 只取每份清單的名次，用 1/(k+rank) 換算後相加，因此能合併任意來源的排名。代價是它不知道「第 1 名到底有多相關」。</div>
+  </div>
+
+  <nav class="pager" data-slug="rag-fusion"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8500, steps:[
+  { title:'只檢索一次：正確段落被埋在第 6 名', text:'技師只輸入口語的「葉片轉不動」。字面最像的是<b>卡滯排查</b>，真正要查的 <b>PT-203 旋角馬達過溫</b>卻排第 6，Top-3 完全看不到。<b>只賭一種問法</b>，命中全憑運氣。' },
+  { title:'LLM 把問題改寫成多個問法', text:'<b>RAG-Fusion</b> 先請 LLM 針對原問題產生<b>多個不同角度的問法</b>：口語原句、維修用語「旋角馬達跳脫」、告警代碼「PT-203 過溫」。原問題通常也保留。' },
+  { title:'每個問法各自檢索一次', text:'每個問法<b>獨立檢索</b>，各得到一份排名。三份清單的內容不盡相同：PT-203 在問法 1 排第 6，在問法 2 排第 2，在問法 3 排第 1。各清單的分數<b>不能直接比較</b>。' },
+  { title:'同一個段落，在不同問法下名次不同', text:'把同一段落在各清單的名次並排：<b>PT-203</b> 在兩個改寫問法都靠前；<b>卡滯排查</b>只在原句排第 1，其他問法排很後面。需要一個方法把「各清單的意見」合起來。' },
+  { title:'RRF：把名次換成分數再相加', text:'<b>倒數排名融合（RRF）</b>：每份清單給名次 r 的段落 1/(k+r) 分（k 常用 60），再把各清單的分數<b>加總</b>。PT-203 約 0.0477，高於卡滯排查的 0.0467。只看名次，所以不同尺度的分數也能合併。' },
+  { title:'得到一份統一的融合排名', text:'加總後排序，得到<b>一份</b>統一的排名：PT-203 升到<b>第 1 名</b>，之後的復歸程序、煞車異常也都是和旋角馬達相關的段落。這份清單可以直接截取 Top-k，不像聯集沒有順序。' },
+  { title:'取前幾名交給 LLM 回答', text:'取融合後的 <b>Top-3</b> 交給 LLM 讀並寫出答案，回答會提到<b>過溫與散熱檢查</b>。代價是流程多了一次 LLM 改寫與多次檢索；融合本身只是簡單的加總。' },
+  { title:'改善後的結果：多個問法都認同的段落排到前面', text:'只用原問題時，正確段落<b>排第 6</b>、答案可能漏掉過溫；RAG-Fusion 讓<b>多個問法都認同</b>的段落排到前面。代價是延遲與成本上升，且問法若偏離原意會拉進雜訊。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+
+  /* 虛構的《OW-8 運維手冊》段落；正解為 0 */
+  const CH = [
+    { sec:'PT-203 旋角馬達過溫', text:'PT-203 旋角馬達過溫：繞組溫度超過門檻時控制器會限制電流並跳脫，請先檢查散熱風道、冷卻風扇與溫度感測器接線。' },
+    { sec:'PT-205 旋角馬達煞車異常', text:'PT-205 旋角馬達煞車異常：煞車線圈電流不足時，葉片可能無法保持角度，請檢查煞車間隙與供電。' },
+    { sec:'PT-211 三支葉片角度偏差過大', text:'PT-211 三支葉片角度偏差過大：比對三支葉片的角度編碼器讀值，偏差超過門檻即停機，請先檢查編碼器接線。' },
+    { sec:'旋角馬達跳脫後的復歸', text:'旋角馬達跳脫後的復歸：確認原因排除後，於機艙控制面板解除跳脫，並手動試轉葉片確認動作順暢。' },
+    { sec:'葉片轉不動的初步排查', text:'葉片轉不動的初步排查：先確認旋角軸承潤滑與減速機有無異物卡阻，再檢查驅動器輸出。' },
+    { sec:'PT-230 旋角備援電源測試失敗', text:'PT-230 旋角備援電源測試失敗：備援電池電壓低於門檻時，需更換電池模組後重新測試。' },
+    { sec:'YW-051 偏航馬達過溫', text:'YW-051 偏航馬達過溫：溫度超過門檻時控制器會限制電流，請先檢查散熱風道與感測器接線。' },
+    { sec:'高處作業安全規範', text:'高處作業安全規範：進入輪轂前須完成上鎖掛牌，確認葉片鎖定與主電源隔離。' }
+  ];
+  const WANT = 0;
+  const idx = rt.buildIndex(CH.map(c => ({ text:c.text })));
+
+  /* 問法：第 1 個為原問題；第 4 個為偏離原意的示範 */
+  const VARS = [
+    { q:'葉片轉不動', note:'原問題', on:true, lock:true },
+    { q:'旋角馬達跳脫', note:'維修用語', on:true },
+    { q:'PT-203 過溫', note:'告警代碼', on:true },
+    { q:'偏航馬達過溫', note:'偏離原意', on:false }
+  ];
+  let mode = 'rrf';
+
+  function lists(){
+    return VARS.map((v, i) => ({ i, v, hits: rt.searchVector(idx, v.q, CH.length) })).filter(x => x.v.on);
+  }
+  function ranked(){
+    const L = lists();
+    if(mode === 'single') return rt.searchVector(idx, VARS[0].q, CH.length);
+    if(mode === 'union'){
+      const seen = new Set(), out = [];
+      L.forEach(x => x.hits.slice(0, +$('#n').value).forEach(h => { if(!seen.has(h.i)){ seen.add(h.i); out.push({ i:h.i, doc:h.doc, score:NaN }); } }));
+      L.forEach(x => x.hits.forEach(h => { if(!seen.has(h.i)){ seen.add(h.i); out.push({ i:h.i, doc:h.doc, score:NaN }); } }));
+      return out;
+    }
+    return rt.rrf(L.map(x => x.hits), +$('#k').value);
+  }
+
+  function run(){
+    const n = +$('#n').value; $('#nv').textContent = n; $('#kv').textContent = $('#k').value;
+    $('#k').disabled = mode !== 'rrf';
+    const list = ranked();
+    const rank = list.findIndex(h => h.i === WANT) + 1;
+    const max = Math.max(list[0]?.score || 0, 1e-6);
+    const perQ = lists().map(x => x.hits.findIndex(h => h.i === WANT) + 1);
+    $('#hits').innerHTML = list.slice(0, n).map((h, r) => {
+      const c = CH[h.i], ok = h.i === WANT;
+      const ranks = lists().map(x => x.hits.findIndex(y => y.i === h.i) + 1);
+      const sc = isNaN(h.score) ? '' : `<span>${mode === 'rrf' ? 'RRF' : '分數'} ${h.score.toFixed(4)}</span>`;
+      return `<div class="hit ${ok ? 'top' : 'low'}">
+        <div class="meta"><span>#${r + 1}　${ok ? '✔ 正解　' : ''}${RagTutor.escapeHtml(c.sec)}</span>${sc}</div>
+        <div>${rt.highlight(c.text, VARS[0].q)}</div>
+        ${mode === 'single' ? '' : `<div class="muted" style="font-size:12.5px">在各問法的名次：${ranks.join(' / ')}</div>`}
+        ${isNaN(h.score) ? '' : `<div class="score-bar"><b style="width:${(h.score / max * 100).toFixed(1)}%"></b></div>`}
+      </div>`;
+    }).join('');
+    $('#stat').textContent = `正解：${CH[WANT].sec}。` +
+      (mode === 'single' ? `只用原問題，排名第 ${rank} / ${CH.length}，` :
+        `各問法中的名次：${lists().map((x, k) => `「${x.v.q}」第 ${perQ[k]}`).join('、')}；合併後排名第 ${rank} / ${CH.length}，`) +
+      (rank <= n ? `有進入 Top-${n}。` : `沒進 Top-${n}，會漏掉。`) +
+      (mode === 'union' ? '（聯集依問法順序列出，沒有統一的分數）' : '');
+  }
+
+  const chips = $('#vchips');
+  chips.innerHTML = VARS.map((v, i) =>
+    `<button type="button" data-i="${i}" class="${v.on ? 'on' : ''}">${v.on ? '☑' : '☐'} ${RagTutor.escapeHtml(v.q)}（${v.note}）</button>`).join('');
+  chips.querySelectorAll('button').forEach(b => b.onclick = () => {
+    const v = VARS[+b.dataset.i];
+    if(v.lock) return;
+    v.on = !v.on;
+    b.classList.toggle('on', v.on);
+    b.textContent = `${v.on ? '☑' : '☐'} ${v.q}（${v.note}）`;
+    run();
+  });
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    run();
+  });
+  $('#n').oninput = run; $('#k').oninput = run;
+  run();
+})();
+</script>
+</body>
+</html>
