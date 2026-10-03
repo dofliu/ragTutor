@@ -109,6 +109,17 @@
       "summary": "口語問法常和手冊用詞對不上。RAG-Fusion 讓 LLM 把問題改寫成多個問法，各自檢索後用倒數排名融合（RRF）合併成一份統一排序，讓多個問法都認同的段落排到前面，代價是多一輪 LLM 呼叫與多次檢索。",
       "tags": ["進階", "RAG-Fusion"],
       "date": "2026-10-02"
+    },
+    {
+      "no": 11,
+      "slug": "metadata-filtering",
+      "file": "lessons/011-metadata-filtering.html",
+      "title": "中繼資料過濾與自我查詢檢索",
+      "en": "Metadata Filtering / Self-Query",
+      "level": 2,
+      "summary": "兩版手冊的段落字面幾乎一樣，向量檢索分不出機型。中繼資料過濾在建索引時替段落存下機型、子系統、文件類型等欄位；自我查詢讓 LLM 把問題拆成語意查詢與過濾條件，先縮小範圍再檢索，代價是多一次 LLM 解析，且解析錯誤會濾掉正解。",
+      "tags": ["進階", "中繼資料過濾"],
+      "date": "2026-10-03"
     }
   ]
 }

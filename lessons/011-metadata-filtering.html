@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>中繼資料過濾與自我查詢檢索｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂中繼資料過濾與自我查詢檢索（Self-Query）：讓 LLM 把問題拆成語意查詢與結構化過濾條件，先用機型、子系統、文件類型縮小範圍，再做向量檢索。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 011 堂</span><span class="tag lv2">進階</span><span class="tag">約 12 分鐘</span></p>
+  <h1>中繼資料過濾與自我查詢檢索</h1>
+  <p class="lead">技師問「OW-6 的旋角系統保養週期」，知識庫裡同時有 OW-8 與 OW-6 兩版手冊，兩版的保養段落<b>字面幾乎一樣</b>，向量檢索只看主題相似度，前幾名全是 OW-8 的內容，答案就會講錯版本。<b>中繼資料過濾（Metadata Filtering）</b>在建索引時替每個段落存下機型、子系統、文件類型等結構化欄位；<b>自我查詢檢索（Self-Query）</b>則讓 LLM 把問題拆成「語意查詢 + 過濾條件」，先縮小範圍再做向量檢索。</p>
+
+  <h2>🎬 動畫：把問題拆成「要找什麼」與「限定哪一類」</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="中繼資料過濾動畫：不過濾時 OW-8 的段落排在前面、OW-6 的正解排第 7；段落附上機型、子系統、文件類型等中繼資料；LLM 把問題拆成語意查詢與過濾條件；先過濾只剩 2 個候選，再向量檢索排序；若先取 Top-3 再過濾，會一筆不剩">
+  <defs>
+    <marker id="ah11" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" style="fill:var(--muted)"/></marker>
+  </defs>
+
+  <!-- 問題（全程顯示） -->
+  <rect x="270" y="14" width="380" height="48" rx="10" style="fill:var(--panel);stroke:var(--query);stroke-width:2"/>
+  <text x="460" y="33" text-anchor="middle" font-size="11.5" class="t-muted">👤 現場技師輸入</text>
+  <text x="460" y="52" text-anchor="middle" font-size="13" font-weight="700">「OW-6 的旋角系統保養週期」</text>
+
+  <rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+
+  <!-- 場景標籤 -->
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 不過濾：OW-8 的段落排前面，OW-6 的正解排第 7</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="1" data-to="1">② 兩版手冊的段落字面幾乎一樣</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="2" data-to="2">③ 建索引時，每個段落附上中繼資料</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="3" data-to="3">④ Self-Query：LLM 把問題拆成語意查詢 + 過濾條件</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="4" data-to="4">⑤ 先過濾：不符合條件的段落不進入候選</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="5" data-to="5">⑥ 只在候選內做向量檢索與排序</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="6" data-to="6">⑦ 陷阱：先取 Top-3 再過濾（後過濾），可能一筆不剩</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 條件先限定範圍，再比語意</text>
+
+  <!-- Step 0：不過濾 -->
+  <g data-to="0">
+    <rect x="190" y="116" width="540" height="232" rx="10" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="460" y="142" text-anchor="middle" font-size="12.5" font-weight="700" class="t-muted">直接向量檢索全部手冊的排名</text>
+    <rect x="212" y="156" width="496" height="32" rx="6" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/>
+    <text x="226" y="177" font-size="12">① 旋角系統保養週期總表　〔OW-8〕</text>
+    <rect x="212" y="194" width="496" height="32" rx="6" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/>
+    <text x="226" y="215" font-size="12">② 旋角系統定期保養：每 12 個月　〔OW-8〕</text>
+    <rect x="212" y="232" width="496" height="32" rx="6" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/>
+    <text x="226" y="253" font-size="12">③ WO-2026-0412 旋角潤滑保養　〔OW-8 工單〕</text>
+    <text x="460" y="282" text-anchor="middle" font-size="14" class="t-muted">⋮</text>
+    <rect x="212" y="292" width="496" height="42" rx="6" class="pulse" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5;stroke-dasharray:6 4"/>
+    <text x="226" y="318" font-size="12" font-weight="700" style="fill:var(--good)">⑦ 軸承潤滑與碳刷檢查：每 6 個月〔OW-6〕← 要查的</text>
+    <text x="460" y="384" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)">⚠️ Top-3 全是 OW-8：週期寫 12 個月，答案會講錯版本</text>
+    <text x="460" y="406" text-anchor="middle" font-size="11.5" class="t-muted">主題相近不等於版本正確；問題裡的「OW-6」並沒有被當成條件</text>
+  </g>
+
+  <!-- Step 1：字面幾乎一樣 -->
+  <g data-from="1" data-to="1">
+    <rect x="40" y="116" width="400" height="190" rx="10" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+    <text x="60" y="144" font-size="13" font-weight="700" style="fill:var(--bad)">OW-8 手冊的段落</text>
+    <text x="60" y="180" font-size="12.5">旋角系統定期保養：每 12 個月</text>
+    <text x="60" y="206" font-size="12.5">檢查旋角軸承潤滑與馬達碳刷，</text>
+    <text x="60" y="232" font-size="12.5">並記錄潤滑脂用量。</text>
+    <text x="60" y="280" font-size="11.5" class="t-muted">向量代表的主題：旋角保養</text>
+    <text x="460" y="216" text-anchor="middle" font-size="24" class="t-muted">≈</text>
+    <rect x="480" y="116" width="400" height="190" rx="10" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="500" y="144" font-size="13" font-weight="700" style="fill:var(--good)">OW-6 手冊的段落</text>
+    <text x="500" y="180" font-size="12.5">旋角軸承潤滑與馬達碳刷檢查：</text>
+    <text x="500" y="206" font-size="12.5">每 6 個月執行一次，</text>
+    <text x="500" y="232" font-size="12.5">並記錄潤滑脂用量。</text>
+    <text x="500" y="280" font-size="11.5" class="t-muted">向量代表的主題：旋角保養</text>
+    <text x="460" y="344" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--warn)">兩段講同一個主題，向量只保證「像」，不保證「是哪一版」</text>
+    <text x="460" y="370" text-anchor="middle" font-size="11.5" class="t-muted">機型寫在檔案屬性裡，不在段落文字裡</text>
+  </g>
+
+  <!-- Step 2：中繼資料 -->
+  <g data-from="2" data-to="2">
+    <rect x="40" y="130" width="360" height="150" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:2"/>
+    <text x="58" y="156" font-size="12.5" font-weight="700" style="fill:var(--doc)">段落文字</text>
+    <text x="58" y="186" font-size="12">旋角軸承潤滑與馬達碳刷檢查：</text>
+    <text x="58" y="210" font-size="12">每 6 個月執行一次，</text>
+    <text x="58" y="234" font-size="12">並記錄潤滑脂用量。</text>
+    <path d="M400 205 H468" class="flow" style="stroke:var(--doc)"/>
+    <rect x="470" y="116" width="410" height="208" rx="10" data-hot="2" style="fill:var(--panel);stroke:var(--accent);stroke-width:2.5"/>
+    <text x="490" y="142" font-size="12.5" font-weight="700" style="fill:var(--accent)">中繼資料 metadata（結構化欄位）</text>
+    <text x="490" y="176" font-size="12.5" class="t-mono">model　　：「OW-6」</text>
+    <text x="490" y="204" font-size="12.5" class="t-mono">system　　：「旋角」</text>
+    <text x="490" y="232" font-size="12.5" class="t-mono">doc_type　：「手冊」</text>
+    <text x="490" y="260" font-size="12.5" class="t-mono">section　　：「4.2 定期保養」</text>
+    <text x="490" y="288" font-size="12.5" class="t-mono">updated　　：「2025-03」</text>
+    <text x="460" y="360" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--doc)">建索引時就要把欄位補齊，之後才有東西可以過濾</text>
+    <text x="460" y="384" text-anchor="middle" font-size="11.5" class="t-muted">欄位值要正規化（統一寫成「OW-6」，不要混用 OW6、ow-6）</text>
+  </g>
+
+  <!-- Step 3：Self-Query -->
+  <g data-from="3" data-to="3">
+    <rect x="30" y="170" width="230" height="70" rx="10" style="fill:var(--panel);stroke:var(--query);stroke-width:2"/>
+    <text x="145" y="196" text-anchor="middle" font-size="11.5" class="t-muted">原問題</text>
+    <text x="145" y="220" text-anchor="middle" font-size="12.5" font-weight="700">OW-6 的旋角系統保養週期</text>
+    <path d="M260 205 H318" class="flow" style="stroke:var(--query)"/>
+    <rect x="320" y="150" width="130" height="110" rx="10" data-hot="3" style="fill:var(--panel);stroke:var(--llm);stroke-width:2.5"/>
+    <text x="385" y="194" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--llm)">🧠 LLM</text>
+    <text x="385" y="218" text-anchor="middle" font-size="11.5" class="t-muted">依欄位清單</text>
+    <text x="385" y="237" text-anchor="middle" font-size="11.5" class="t-muted">拆解問題</text>
+    <path d="M450 185 C 500 185, 500 160, 552 160" class="flow" style="stroke:var(--llm)"/>
+    <path d="M450 225 C 500 225, 500 262, 552 262" class="flow" style="stroke:var(--llm)"/>
+    <rect x="554" y="122" width="336" height="80" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:2"/>
+    <text x="572" y="146" font-size="11.5" class="t-muted">query（拿去做語意檢索）</text>
+    <text x="572" y="178" font-size="13" font-weight="700">旋角系統保養週期</text>
+    <rect x="554" y="222" width="336" height="94" rx="8" style="fill:var(--panel);stroke:var(--accent);stroke-width:2"/>
+    <text x="572" y="246" font-size="11.5" class="t-muted">filter（拿去做條件過濾）</text>
+    <text x="572" y="272" font-size="12.5" font-weight="700" class="t-mono">model = 「OW-6」</text>
+    <text x="572" y="296" font-size="12.5" font-weight="700" class="t-mono">system = 「旋角」</text>
+    <text x="460" y="356" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--llm)">LLM 輸出結構化結果：一段做語意檢索，一組做條件過濾</text>
+    <text x="460" y="380" text-anchor="middle" font-size="11.5" class="t-muted">LangChain 稱這種做法為 Self-Query Retriever</text>
+  </g>
+
+  <!-- Step 4：先過濾 -->
+  <g data-from="4" data-to="4">
+    <text x="460" y="132" text-anchor="middle" font-size="12" class="t-muted">知識庫 11 個段落（每格：機型 / 子系統 / 文件類型）</text>
+    <g class="t-muted" font-size="11" text-anchor="middle">
+      <rect x="35" y="148" width="70" height="72" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+      <text x="70" y="168">OW-8</text><text x="70" y="186">旋角</text><text x="70" y="204">手冊</text>
+      <rect x="113" y="148" width="70" height="72" rx="6" class="pulse" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+      <text x="148" y="168" style="fill:var(--good)" font-weight="700">OW-6</text><text x="148" y="186" style="fill:var(--good)" font-weight="700">旋角</text><text x="148" y="204" style="fill:var(--good)" font-weight="700">手冊</text>
+      <rect x="191" y="148" width="70" height="72" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+      <text x="226" y="168">OW-8</text><text x="226" y="186">偏航</text><text x="226" y="204">手冊</text>
+      <rect x="269" y="148" width="70" height="72" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+      <text x="304" y="168">OW-6</text><text x="304" y="186">偏航</text><text x="304" y="204">手冊</text>
+      <rect x="347" y="148" width="70" height="72" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+      <text x="382" y="168">OW-8</text><text x="382" y="186">旋角</text><text x="382" y="204">手冊</text>
+      <rect x="425" y="148" width="70" height="72" rx="6" class="pulse" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+      <text x="460" y="168" style="fill:var(--good)" font-weight="700">OW-6</text><text x="460" y="186" style="fill:var(--good)" font-weight="700">旋角</text><text x="460" y="204" style="fill:var(--good)" font-weight="700">通報</text>
+      <rect x="503" y="148" width="70" height="72" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+      <text x="538" y="168">OW-8</text><text x="538" y="186">偏航</text><text x="538" y="204">手冊</text>
+      <rect x="581" y="148" width="70" height="72" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+      <text x="616" y="168">OW-8</text><text x="616" y="186">齒輪箱</text><text x="616" y="204">手冊</text>
+      <rect x="659" y="148" width="70" height="72" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+      <text x="694" y="168">OW-8</text><text x="694" y="186">旋角</text><text x="694" y="204">工單</text>
+      <rect x="737" y="148" width="70" height="72" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+      <text x="772" y="168">OW-8</text><text x="772" y="186">旋角</text><text x="772" y="204">手冊</text>
+      <rect x="815" y="148" width="70" height="72" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+      <text x="850" y="168">OW-8</text><text x="850" y="186">旋角</text><text x="850" y="204">通報</text>
+    </g>
+    <text x="460" y="268" text-anchor="middle" font-size="13" font-weight="700" class="t-mono" style="fill:var(--accent)">filter：model = 「OW-6」且 system = 「旋角」</text>
+    <text x="460" y="304" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)">11 個段落 → 剩 2 個候選（綠框）</text>
+    <text x="460" y="342" text-anchor="middle" font-size="12" class="t-muted">不符合條件的段落（灰框）不會進入候選，也就不會擠進 Top-k</text>
+    <text x="460" y="368" text-anchor="middle" font-size="11.5" class="t-muted">條件是精確比對：符合就留、不符合就丟，沒有「有點像」</text>
+  </g>
+
+  <!-- Step 5：候選內檢索 -->
+  <g data-from="5" data-to="5">
+    <rect x="190" y="112" width="540" height="244" rx="10" style="fill:var(--panel);stroke:var(--vec);stroke-width:2.5"/>
+    <text x="460" y="138" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--vec)">🔎 只在 2 個候選內做向量檢索</text>
+    <rect x="212" y="152" width="496" height="34" rx="6" class="pulse" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="226" y="174" font-size="12" font-weight="700">① 軸承潤滑與碳刷檢查：每 6 個月〔OW-6 手冊〕</text>
+    <rect x="212" y="194" width="496" height="34" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="226" y="216" font-size="12">② TB-2026-07：改為每 4 個月〔OW-6 技術通報〕</text>
+    <text x="460" y="262" text-anchor="middle" font-size="12" class="t-muted">兩筆都是 OW-6 旋角：手冊寫 6 個月，</text>
+    <text x="460" y="284" text-anchor="middle" font-size="12" class="t-muted">後來的技術通報縮短為 4 個月</text>
+    <text x="460" y="316" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--warn)">日期也是好用的欄位：讓答案採用較新的通報</text>
+    <text x="460" y="392" text-anchor="middle" font-size="11.5" class="t-muted">（OW-8 的所有段落都已被排除，不會混進答案）</text>
+  </g>
+
+  <!-- Step 6：後過濾陷阱 -->
+  <g data-from="6" data-to="6">
+    <rect x="30" y="116" width="310" height="164" rx="10" style="fill:var(--panel);stroke:var(--line);stroke-width:2"/>
+    <text x="185" y="140" text-anchor="middle" font-size="12.5" font-weight="700" class="t-muted">先取 Top-3</text>
+    <rect x="46" y="154" width="278" height="30" rx="6" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/>
+    <text x="56" y="174" font-size="11.5">① 旋角系統保養週期總表　OW-8</text>
+    <rect x="46" y="192" width="278" height="30" rx="6" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/>
+    <text x="56" y="212" font-size="11.5">② 旋角系統定期保養　OW-8</text>
+    <rect x="46" y="230" width="278" height="30" rx="6" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/>
+    <text x="56" y="250" font-size="11.5">③ WO-2026-0412 旋角保養　OW-8</text>
+    <text x="371" y="190" text-anchor="middle" font-size="11.5" class="t-muted">再過濾</text>
+    <path d="M342 205 H400" class="flow" style="stroke:var(--bad)"/>
+    <rect x="402" y="146" width="210" height="118" rx="10" data-hot="6" style="fill:var(--panel);stroke:var(--bad);stroke-width:2.5"/>
+    <text x="507" y="198" text-anchor="middle" font-size="22" font-weight="700" style="fill:var(--bad)">剩 0 筆</text>
+    <text x="507" y="228" text-anchor="middle" font-size="11.5" class="t-muted">3 筆全是 OW-8</text>
+    <text x="507" y="248" text-anchor="middle" font-size="11.5" class="t-muted">全被條件丟掉</text>
+    <text x="640" y="170" font-size="11.5" class="t-muted">K 取大一點能緩解，</text>
+    <text x="640" y="192" font-size="11.5" class="t-muted">但沒有保證。</text>
+    <text x="640" y="226" font-size="11.5" style="fill:var(--good)">先過濾再檢索，</text>
+    <text x="640" y="248" font-size="11.5" style="fill:var(--good)">才能在符合條件的</text>
+    <text x="640" y="270" font-size="11.5" style="fill:var(--good)">段落裡取滿 N 筆。</text>
+    <text x="460" y="330" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)">後過濾：先檢索再丟掉不符合的 → 可能一筆不剩</text>
+    <text x="460" y="356" text-anchor="middle" font-size="11.5" class="t-muted">實際行為取決於向量資料庫與索引的過濾實作，請查你所用產品的文件</text>
+  </g>
+
+  <!-- Step 7：比較 -->
+  <g data-from="7">
+    <rect x="40" y="116" width="400" height="250" rx="10" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+    <text x="240" y="144" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--bad)">✘ 只靠向量相似度</text>
+    <text x="62" y="184" font-size="12">兩版手冊字面幾乎相同</text>
+    <text x="62" y="208" font-size="12">Top-3 全是 OW-8，OW-6 排第 7</text>
+    <text x="62" y="252" font-size="12" style="fill:var(--bad)">答案講「每 12 個月」</text>
+    <text x="62" y="276" font-size="12" style="fill:var(--bad)">版本錯了，技師照做會出問題</text>
+    <text x="62" y="330" font-size="11" class="t-muted">問題裡的條件被當成普通文字</text>
+    <path d="M440 241 H478" class="arrow" marker-end="url(#ah11)"/>
+    <g class="pulse">
+      <rect x="480" y="116" width="400" height="250" rx="10" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+      <text x="680" y="144" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--good)">✅ Self-Query + 中繼資料過濾</text>
+      <text x="502" y="184" font-size="12">LLM 拆出 query 與 filter</text>
+      <text x="502" y="210" font-size="12">先限定 OW-6 旋角，再比語意</text>
+      <text x="502" y="236" font-size="12">候選只剩手冊與技術通報</text>
+      <text x="502" y="290" font-size="11" class="t-muted">代價：多一次 LLM 呼叫、</text>
+      <text x="502" y="310" font-size="11" class="t-muted">段落要有乾淨的中繼資料；</text>
+      <text x="502" y="330" font-size="11" class="t-muted">條件解析錯了，會直接過濾掉正解</text>
+    </g>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>條件不該交給向量猜</b>機型、子系統、文件類型、日期是明確的條件，用精確比對比用語意相似度可靠。向量負責「像不像」，過濾負責「是不是」。</div>
+    <div class="card"><b>欄位要在建索引時存好</b>每個段落除了文字與向量，還要附上結構化中繼資料。欄位值要正規化；缺欄位的段落在過濾時會被排除或漏掉。</div>
+    <div class="card"><b>Self-Query：讓 LLM 拆問題</b>給 LLM 欄位清單與可用值，請它輸出「語意查詢 + 過濾條件」的結構化結果，程式再拿去呼叫向量資料庫。使用者不必自己填表單。</div>
+    <div class="card"><b>先過濾比後過濾穩</b>先檢索 Top-K 再過濾，條件嚴格時可能一筆不剩。能在檢索時就帶條件（pre-filter）通常較好，實際支援程度依向量資料庫而異。</div>
+  </div>
+
+  <h2>🧪 互動範例：不過濾 vs. 後過濾 vs. 前過濾</h2>
+  <div class="prose"><p>下面是虛構的《OW-8 運維手冊》《OW-6 運維手冊》、技術通報與工單共 11 個段落，每個段落都有機型、子系統、文件類型三個欄位。輸入問題（或點範例），程式用簡單規則<b>模擬 Self-Query 解析</b>（真實系統是由 LLM 完成），抽出語意查詢與過濾條件。接著切換三種做法，並調整<b>後過濾</b>先取的候選數 K。也可以取消勾選某個條件，或模擬「LLM 把機型解析錯」，看看過濾的風險。檢索用簡化的 TF-IDF 餘弦相似度模擬，不是真正的嵌入模型。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><input type="text" id="q" value="OW-6 的旋角系統保養週期" aria-label="問題"></div>
+    <div class="muted" id="parsed" style="font-size:13px;font-family:var(--mono)"></div>
+    <div class="chips" id="fchips"></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" data-mode="none">不過濾</button>
+      <button type="button" data-mode="post">後過濾（先取 Top-K 再過濾）</button>
+      <button type="button" class="on" data-mode="pre">前過濾（先過濾再檢索）</button>
+    </div>
+    <div class="row"><label for="kk">後過濾的候選數 K：<b id="kkv">3</b></label><input type="range" id="kk" min="1" max="11" value="3" style="flex:1;max-width:220px"></div>
+    <div class="row"><label for="n">Top-N：<b id="nv">3</b></label><input type="range" id="n" min="1" max="5" value="3" style="flex:1;max-width:220px"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>手動實作 Self-Query：每個段落帶中繼資料；用 <code>claude-sonnet-5</code> 把問題拆成語意查詢與過濾條件（並用欄位白名單驗證 LLM 的輸出）；先用遮罩過濾，再在符合條件的段落裡做向量檢索。範例文件為虛構。</p></div>
+<pre class="code"><code><span class="k">import</span> json
+<span class="k">import</span> numpy <span class="k">as</span> np
+<span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer
+<span class="k">import</span> anthropic
+
+client = anthropic.<span class="f">Anthropic</span>()
+embedder = SentenceTransformer(<span class="s">"BAAI/bge-m3"</span>)
+
+<span class="c"># ① 知識庫：每個段落附上中繼資料（虛構的 OW-8 / OW-6 手冊）</span>
+docs = [
+    {<span class="s">"text"</span>: <span class="s">"旋角系統定期保養：每 12 個月檢查旋角軸承潤滑、馬達碳刷與編碼器接線。"</span>,
+     <span class="s">"model"</span>: <span class="s">"OW-8"</span>, <span class="s">"system"</span>: <span class="s">"旋角"</span>, <span class="s">"doc_type"</span>: <span class="s">"手冊"</span>},
+    {<span class="s">"text"</span>: <span class="s">"旋角軸承潤滑與馬達碳刷檢查：每 6 個月執行一次，並記錄潤滑脂用量。"</span>,
+     <span class="s">"model"</span>: <span class="s">"OW-6"</span>, <span class="s">"system"</span>: <span class="s">"旋角"</span>, <span class="s">"doc_type"</span>: <span class="s">"手冊"</span>},
+    {<span class="s">"text"</span>: <span class="s">"技術通報 TB-2026-07：旋角軸承潤滑脂在高濕環境劣化較快，檢查間隔縮短為每 4 個月。"</span>,
+     <span class="s">"model"</span>: <span class="s">"OW-6"</span>, <span class="s">"system"</span>: <span class="s">"旋角"</span>, <span class="s">"doc_type"</span>: <span class="s">"技術通報"</span>},
+    <span class="c"># ……</span>
+]
+vecs = embedder.<span class="f">encode</span>([d[<span class="s">"text"</span>] <span class="k">for</span> d <span class="k">in</span> docs], normalize_embeddings=<span class="k">True</span>)
+
+<span class="c"># ② Self-Query：LLM 只能用這些欄位與值</span>
+ALLOWED = {
+    <span class="s">"model"</span>: [<span class="s">"OW-8"</span>, <span class="s">"OW-6"</span>],
+    <span class="s">"system"</span>: [<span class="s">"旋角"</span>, <span class="s">"偏航"</span>, <span class="s">"齒輪箱"</span>],
+    <span class="s">"doc_type"</span>: [<span class="s">"手冊"</span>, <span class="s">"技術通報"</span>, <span class="s">"工單"</span>],
+}
+
+<span class="k">def</span> <span class="f">parse_query</span>(question):
+    msg = client.messages.<span class="f">create</span>(
+        model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">300</span>,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+            <span class="s">"把風機運維問題拆成 JSON：{\"query\": 語意查詢, \"filter\": {欄位: 值}}。\n"</span>
+            <span class="s">"filter 只能使用下列欄位與值；問題沒提到的欄位不要猜；只輸出 JSON。\n"</span>
+            + json.<span class="f">dumps</span>(ALLOWED, ensure_ascii=<span class="k">False</span>) + <span class="s">"\n問題："</span> + question}])
+    data = json.<span class="f">loads</span>(msg.content[<span class="s">0</span>].text)
+    <span class="c"># LLM 的輸出不可盡信：用白名單檢查欄位與值</span>
+    filt = {k: v <span class="k">for</span> k, v <span class="k">in</span> data.<span class="f">get</span>(<span class="s">"filter"</span>, {}).<span class="f">items</span>()
+            <span class="k">if</span> v <span class="k">in</span> ALLOWED.<span class="f">get</span>(k, [])}
+    <span class="k">return</span> data[<span class="s">"query"</span>], filt
+
+<span class="c"># ③ 先過濾（遮罩），再在符合條件的段落裡做向量檢索</span>
+<span class="k">def</span> <span class="f">search</span>(question, top_n=<span class="s">3</span>):
+    query, filt = <span class="f">parse_query</span>(question)
+    mask = np.<span class="f">array</span>([<span class="f">all</span>(d[k] == v <span class="k">for</span> k, v <span class="k">in</span> filt.<span class="f">items</span>()) <span class="k">for</span> d <span class="k">in</span> docs])
+    <span class="k">if</span> <span class="k">not</span> mask.<span class="f">any</span>():
+        <span class="k">return</span> []                      <span class="c"># 條件太嚴：可改成放寬條件再查一次</span>
+    q = embedder.<span class="f">encode</span>([query], normalize_embeddings=<span class="k">True</span>)[<span class="s">0</span>]
+    scores = np.<span class="f">where</span>(mask, vecs @ q, -np.inf)    <span class="c"># 不符合條件的直接排除</span>
+    order = np.<span class="f">argsort</span>(-scores)[:<span class="f">min</span>(top_n, <span class="f">int</span>(mask.<span class="f">sum</span>()))]
+    <span class="k">return</span> [docs[i] <span class="k">for</span> i <span class="k">in</span> order]
+
+<span class="k">for</span> d <span class="k">in</span> <span class="f">search</span>(<span class="s">"OW-6 的旋角系統保養週期"</span>):
+    <span class="f">print</span>(d[<span class="s">"model"</span>], d[<span class="s">"doc_type"</span>], d[<span class="s">"text"</span>], <span class="s">"\n---"</span>)</code></pre>
+
+  <h2>⚖️ 三種做法比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>一般檢索（第 001 堂）</th><th>情境化檢索（第 009 堂）</th><th>中繼資料過濾（本堂）</th></tr>
+    <tr><th>解決什麼問題</th><td>找出語意相近的段落</td><td>段落脫離文件脈絡，彼此難分辨</td><td>同主題但不同機型、文件類型或日期的段落混在一起</td></tr>
+    <tr><th>脈絡放在哪</th><td>不處理</td><td>由 LLM 寫成文字，併進段落一起嵌入</td><td>存成結構化欄位，查詢時精確比對</td></tr>
+    <tr><th>額外成本</th><td>無</td><td>索引階段每個段落一次 LLM 呼叫</td><td>建索引時補欄位；每次查詢多一次 LLM 解析</td></tr>
+    <tr><th>主要風險</th><td>同主題的不同版本分不開</td><td>索引成本高；寫入的脈絡可能不準</td><td>條件解析錯誤或欄位缺漏，會把正解直接濾掉</td></tr>
+  </table>
+  <div class="prose"><p>兩者可以疊加：用中繼資料縮小範圍，範圍內再用混合檢索（第 004 堂）與重排序（第 005 堂）。情境化檢索解決「文字缺脈絡」，中繼資料過濾解決「條件要精確」，彼此互補。</p></div>
+
+  <h2>⚠️ 中繼資料過濾常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>LLM 解析錯，正解被直接濾掉</b>：互動範例勾選「模擬 LLM 解析錯誤」就能看到，機型被寫反後，Top-N 裡一個正確段落都沒有，而且看起來還很整齊。要用欄位白名單驗證輸出、記錄解析結果，並在結果為 0 筆時放寬條件重試。</li>
+      <li><b>過度過濾</b>：把文件類型限定為「手冊」，就會漏掉後來發布、內容更新的技術通報。問題沒有明確要求的欄位，不要替使用者猜。</li>
+      <li><b>問題沒提機型怎麼辦</b>：互動範例的「偏航系統的保養週期」沒有機型，兩版手冊都會出現。可以不過濾並在答案標明版本，或由系統反問「是哪一款機型？」，不要預設其中一款。</li>
+      <li><b>欄位值不一致</b>：段落標成「OW8」、問題寫「OW-8」，精確比對就對不上。入庫時統一格式，並讓 LLM 只能從允許值清單挑選。</li>
+      <li><b>過濾不是排序</b>：條件只決定留不留，留下來的段落仍要靠檢索排序。符合條件的段落若很多，仍需要好的檢索與重排序。</li>
+      <li><b>權限不能只靠 LLM 解析</b>：像「只能看自己風場的工單」這類存取控制，必須由系統在程式端強制加上條件，不能依賴 LLM 從問題中產生，更不能讓使用者用問法繞過。</li>
+      <li><b>資料不大或沒有明確欄位就不必做</b>：知識庫只有單一機型、單一文件類型時，過濾沒有可以限定的東西，多一次 LLM 解析只是白花成本。</li>
+    </ul>
+    <div class="callout warn">範例中的鷗灣離岸風場、OW-8 / OW-6 機型、運維手冊與技術通報內容、工單與各項保養週期皆為虛構，僅供教學示範；互動範例的 Self-Query 解析為簡化規則、檢索為簡化的 TF-IDF 模擬；實際作業以原廠手冊與現場規範為準。</div>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>技師問「OW-6 的旋角系統保養週期」，為什麼只靠向量相似度可能找到 OW-8 的段落？</b></p>
+    <button class="opt">A. 因為向量資料庫不支援中文</button>
+    <button class="opt">B. 因為兩版手冊的段落主題與用詞幾乎相同，向量只反映「像不像」，機型這種精確條件不一定被反映出來</button>
+    <button class="opt">C. 因為 OW-8 的手冊比較新，向量會優先選它</button>
+    <div class="why">嵌入向量表達的是語意相近程度；機型常寫在檔案屬性而不在段落文字裡，兩版段落的向量就幾乎一樣。要精確限定機型，應該把它存成中繼資料，查詢時用條件過濾。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>「後過濾」（先取 Top-K 再過濾）相較於「前過濾」（先過濾再檢索）最主要的風險是什麼？</b></p>
+    <button class="opt">A. 過濾條件會變成模糊比對</button>
+    <button class="opt">B. 會讓 LLM 的解析次數變成兩倍</button>
+    <button class="opt">C. 前 K 筆候選如果多半不符合條件，過濾後可能不足 N 筆，甚至一筆不剩</button>
+    <div class="why">後過濾是在已取出的 K 筆候選裡丟掉不符合的。條件越嚴格、符合的段落排名越後面，剩下的越少。前過濾在檢索時就只考慮符合條件的段落，可以取滿 N 筆（前提是符合的段落夠多）。</div>
+  </div>
+
+  <nav class="pager" data-slug="metadata-filtering"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8500, steps:[
+  { title:'不過濾：OW-8 的段落排前面', text:'技師問的是 <b>OW-6</b> 的保養週期，但直接向量檢索的 Top-3 全是 <b>OW-8</b> 的內容，OW-6 的正解排第 7。答案會講成「每 12 個月」，<b>版本錯了</b>。' },
+  { title:'兩版手冊的段落字面幾乎一樣', text:'OW-8 與 OW-6 的保養段落<b>講同一個主題</b>，只差週期數字。機型寫在檔案屬性，不在段落文字裡，向量只保證「像」，<b>不保證是哪一版</b>。' },
+  { title:'建索引時，每個段落附上中繼資料', text:'在建索引時，除了文字與向量，也替每個段落存下<b>結構化欄位</b>：機型、子系統、文件類型、章節、更新日期。欄位值要<b>正規化</b>，之後才能精確比對。' },
+  { title:'Self-Query：LLM 把問題拆成語意查詢 + 過濾條件', text:'給 <b>LLM</b> 欄位清單，請它把問題拆成兩半：<b>query</b>「旋角系統保養週期」拿去做語意檢索，<b>filter</b>「機型 = OW-6 且 子系統 = 旋角」拿去做條件過濾。' },
+  { title:'先過濾：不符合條件的段落不進入候選', text:'用 filter 在檢索<b>之前</b>先縮小範圍：知識庫 11 個段落中，只有 <b>2 個</b>是 OW-6 的旋角內容，其餘都不會進入候選，更不會擠進 Top-k。' },
+  { title:'只在候選內做向量檢索與排序', text:'接著才在這 2 個候選裡比<b>語意相似度</b>：OW-6 手冊的保養段落排第 1，還有一則把檢查間隔改成 4 個月的<b>技術通報</b>。OW-8 的內容完全不會混進來。' },
+  { title:'陷阱：先取 Top-3 再過濾，可能一筆不剩', text:'若採<b>後過濾</b>：先取向量檢索 Top-3 再套條件，而這 3 筆全是 OW-8，過濾後<b>剩 0 筆</b>。條件嚴格時，K 取多大都沒有保證，所以最好在檢索時就帶條件。' },
+  { title:'條件先限定範圍，再比語意', text:'只靠向量相似度，版本與類型這類精確條件<b>容易被忽略</b>；Self-Query 加中繼資料過濾，讓條件負責「是不是」、向量負責「像不像」。代價是多一次 LLM 解析，且<b>解析錯了會濾掉正解</b>。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 虛構段落與中繼資料 */
+  const CH = [
+    { model:'OW-8', sys:'旋角',   type:'手冊',     sec:'旋角系統定期保養',        text:'旋角系統定期保養：每 12 個月檢查旋角軸承潤滑、旋角馬達碳刷與編碼器接線，並記錄潤滑脂用量。' },
+    { model:'OW-6', sys:'旋角',   type:'手冊',     sec:'軸承潤滑與碳刷檢查',      text:'旋角軸承潤滑與馬達碳刷檢查：每 6 個月執行一次，並記錄潤滑脂用量。' },
+    { model:'OW-8', sys:'偏航',   type:'手冊',     sec:'偏航系統定期保養',        text:'偏航系統定期保養：每 12 個月檢查偏航軸承潤滑、偏航煞車片磨耗與齒圈齒面，並記錄潤滑脂用量。' },
+    { model:'OW-6', sys:'偏航',   type:'手冊',     sec:'偏航系統定期保養',        text:'偏航系統定期保養：每 6 個月檢查偏航軸承潤滑與偏航煞車片磨耗。' },
+    { model:'OW-8', sys:'旋角',   type:'手冊',     sec:'PT-203 旋角馬達過溫',     text:'PT-203 旋角馬達過溫：繞組溫度超過門檻時控制器會限制電流並跳脫，請先檢查散熱風道、冷卻風扇與感測器接線。' },
+    { model:'OW-6', sys:'旋角',   type:'技術通報', sec:'TB-2026-07 潤滑脂劣化',   text:'技術通報 TB-2026-07：旋角軸承潤滑脂在高濕環境劣化較快，檢查間隔由每 6 個月縮短為每 4 個月。' },
+    { model:'OW-8', sys:'偏航',   type:'手冊',     sec:'YW-042 偏航誤差過大',     text:'YW-042 偏航誤差過大：機艙對風角度與風向偏差超過門檻時，請先檢查風向感測器校正與偏航馬達編碼器。' },
+    { model:'OW-8', sys:'齒輪箱', type:'手冊',     sec:'齒輪箱定期保養',          text:'齒輪箱定期保養：每 12 個月取油樣送檢並更換油濾芯，並記錄油溫與顆粒度。' },
+    { model:'OW-8', sys:'旋角',   type:'工單',     sec:'WO-2026-0412',            text:'WO-2026-0412：WTG-07 旋角軸承潤滑保養完成，潤滑脂用量略高於上次，下次保養日依保養週期排定。' },
+    { model:'OW-8', sys:'旋角',   type:'手冊',     sec:'旋角系統保養週期總表',    text:'旋角系統保養週期總表：依旋角軸承、馬達與備援電池分列保養週期，保養前須完成上鎖掛牌。' },
+    { model:'OW-8', sys:'旋角',   type:'技術通報', sec:'TB-2026-05 PT-203',       text:'技術通報 TB-2026-05：PT-203 旋角馬達過溫告警，建議加裝風道濾網並縮短濾網清潔週期。' }
+  ];
+  const idx = rt.buildIndex(CH.map(c => ({ text:c.text })));
+  const FIELD = { model:'機型', sys:'子系統', type:'文件類型' };
+
+  const PRESETS = ['OW-6 的旋角系統保養週期', 'PT-203 最近的技術通報', '偏航系統的保養週期'];
+
+  /* 簡化規則：模擬 Self-Query 的解析（真實系統由 LLM 完成） */
+  function parse(q){
+    const f = {};
+    const m = q.match(/OW-?(\d)/i); if(m) f.model = 'OW-' + m[1];
+    const sys = ['旋角', '偏航', '齒輪箱'].find(s => q.includes(s)); if(sys) f.sys = sys;
+    const ty = ['技術通報', '工單', '手冊'].find(s => q.includes(s)); if(ty) f.type = ty;
+    const sem = q.replace(/OW-?\d/ig, ' ').replace(/技術通報|工單/g, ' ').replace(/最近的|的/g, '').replace(/\s+/g, ' ').trim() || q;
+    return { f, sem };
+  }
+  const matches = (c, f) => Object.keys(f).every(k => c[k] === f[k]);
+
+  let mode = 'pre', wrong = false;
+  const off = {};   // 被取消勾選的欄位
+
+  function run(){
+    const q = $('#q').value;
+    const { f, sem } = parse(q);
+    const N = +$('#n').value, K = +$('#kk').value;
+    $('#nv').textContent = N; $('#kkv').textContent = K;
+    $('#kk').disabled = mode !== 'post';
+
+    /* 實際套用的條件：取消勾選的欄位不套用；模擬解析錯誤時把機型寫反 */
+    const applied = {};
+    Object.keys(f).forEach(k => { if(!off[k]) applied[k] = f[k]; });
+    if(wrong && applied.model) applied.model = applied.model === 'OW-8' ? 'OW-6' : 'OW-8';
+
+    $('#parsed').innerHTML = `query：「${esc(sem)}」<br>filter：` +
+      (Object.keys(f).length ? Object.keys(f).map(k => `${FIELD[k]} = ${esc(f[k])}`).join(' 且 ') : '（問題沒有可解析的條件，不過濾）');
+
+    const fc = $('#fchips');
+    fc.innerHTML = Object.keys(f).map(k =>
+      `<button type="button" data-k="${k}" class="${off[k] ? '' : 'on'}">${off[k] ? '☐' : '☑'} 套用 ${FIELD[k]} = ${esc(f[k])}</button>`).join('') +
+      (f.model ? `<button type="button" data-wrong="1" class="${wrong ? 'on' : ''}">${wrong ? '☑' : '☐'} 模擬 LLM 把機型解析錯</button>` : '');
+
+    const all = rt.searchVector(idx, sem, CH.length);
+    let list, note = '';
+    if(mode === 'none'){ list = all; }
+    else if(mode === 'pre'){ list = all.filter(h => matches(CH[h.i], applied)); }
+    else {
+      const pool = all.slice(0, K);
+      list = pool.filter(h => matches(CH[h.i], applied));
+      note = `先取前 ${K} 筆，過濾後剩 ${list.length} 筆。`;
+    }
+    const shown = list.slice(0, N);
+    const good = shown.filter(h => matches(CH[h.i], f)).length;
+
+    $('#hits').innerHTML = shown.length ? shown.map((h, r) => {
+      const c = CH[h.i], ok = matches(c, f);
+      return `<div class="hit ${ok ? 'top' : 'low'}">
+        <div class="meta"><span>#${r + 1}　${ok ? '✔ 符合問題條件　' : '✘ 不符合問題條件　'}${esc(c.sec)}</span><span>相似度 ${h.score.toFixed(3)}</span></div>
+        <div>${rt.highlight(c.text, sem)}</div>
+        <div class="muted" style="font-size:12.5px">機型：${c.model}　子系統：${c.sys}　文件類型：${c.type}</div>
+      </div>`;
+    }).join('') : `<div class="hit low"><div>沒有任何段落符合條件，系統只能回答「查無資料」（或放寬條件重試）。</div></div>`;
+
+    $('#stat').textContent = `${note}Top-${N} 顯示 ${shown.length} 筆，其中符合問題條件的有 ${good} 筆` +
+      (Object.keys(f).length && shown.length && good < shown.length ? `，混入 ${shown.length - good} 筆不該出現的內容。` : '。') +
+      (wrong && f.model ? '（目前模擬了解析錯誤：機型被寫反。）' : '');
+  }
+
+  $('#presets').innerHTML = PRESETS.map(p => `<button type="button" data-q="${esc(p)}">${esc(p)}</button>`).join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return; $('#q').value = b.dataset.q; wrong = false; Object.keys(off).forEach(k => delete off[k]); run(); };
+  $('#fchips').onclick = e => {
+    const b = e.target.closest('button'); if(!b) return;
+    if(b.dataset.wrong) wrong = !wrong; else off[b.dataset.k] = !off[b.dataset.k];
+    run();
+  };
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    run();
+  });
+  $('#q').oninput = run; $('#n').oninput = run; $('#kk').oninput = run;
+  run();
+})();
+</script>
+</body>
+</html>
