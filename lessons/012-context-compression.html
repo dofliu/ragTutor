@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>上下文壓縮：只留下與問題有關的句子｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂上下文壓縮（Contextual Compression）：檢索回來的文件先經過壓縮器，只留下與問題有關的句子再交給 LLM，並看相似度門檻、LLM 抽取與安全句被誤丟的取捨。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 012 堂</span><span class="tag lv2">進階</span><span class="tag">約 12 分鐘</span></p>
+  <h1>上下文壓縮：只留下與問題有關的句子</h1>
+  <p class="lead">技師問「PT-203 旋角馬達過溫怎麼處理」，檢索回來的是手冊<b>整節</b>旋角系統故障排除，裡面還有 PT-205 煞車、PT-211 角度偏差、備援電源與完工填單。整段塞給 LLM，<b>token 浪費、延遲變高，模型也更容易被無關內容分心</b>。<b>上下文壓縮（Contextual Compression）</b>在檢索與 LLM 之間加一道壓縮器，依問題只留下有關的句子；它是第 008 堂「小塊檢索、大塊回傳」的反向動作：回傳大塊之後，再把用不到的部分裁掉。</p>
+
+  <h2>🎬 動畫：檢索之後、送進 LLM 之前，先裁一刀</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="上下文壓縮動畫：整節手冊 12 句塞進 LLM 只有 5 句有用；Top-3 更多雜訊；在檢索與 LLM 之間加壓縮器；用相似度門檻挑句子；請 LLM 回傳要保留的句子編號；抽取式、摘要式、詞元修剪三種壓縮；安全注意事項被誤丟的陷阱；最後只留下與問題有關的內容">
+  <defs>
+    <marker id="ah12" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" style="fill:var(--muted)"/></marker>
+  </defs>
+
+  <!-- 問題（全程顯示） -->
+  <rect x="270" y="14" width="380" height="48" rx="10" style="fill:var(--panel);stroke:var(--query);stroke-width:2"/>
+  <text x="460" y="33" text-anchor="middle" font-size="11.5" class="t-muted">👤 現場技師輸入</text>
+  <text x="460" y="52" text-anchor="middle" font-size="13" font-weight="700">「PT-203 旋角馬達過溫怎麼處理」</text>
+
+  <rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+
+  <!-- 場景標籤 -->
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 整節手冊 12 句全部送進 LLM，只有 5 句有用</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="1" data-to="1">② 取 Top-3 份文件，無關內容更多</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="2" data-to="2">③ 在檢索與 LLM 之間加一道「壓縮器」</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="3" data-to="3">④ 做法一：逐句算相似度，高於門檻才保留</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="4" data-to="4">⑤ 做法二：請 LLM 回傳要保留的句子編號</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="5" data-to="5">⑥ 做法三：訓練專用壓縮器，或直接修剪詞元</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="6" data-to="6">⑦ 陷阱：與問題字面不相似的安全注意事項被丟掉</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 只留下與問題有關的內容，安全規則另外保底</text>
+
+  <!-- Step 0：整節塞進 LLM -->
+  <g data-to="0">
+    <rect x="30" y="106" width="500" height="306" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:2"/>
+    <text x="46" y="126" font-size="12" font-weight="700" style="fill:var(--doc)">檢索回傳：手冊 3.4 節「旋角系統故障排除」整節</text>
+    <rect x="46" y="134" width="468" height="19" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/><text x="56" y="147" font-size="11.5">PT-203 過溫：繞組超溫時限流並跳脫</text>
+    <rect x="46" y="156" width="468" height="19" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/><text x="56" y="169" font-size="11.5">讀取 24 小時旋角馬達溫度曲線</text>
+    <rect x="46" y="178" width="468" height="19" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="56" y="191" font-size="11.5" class="t-muted">PT-205 煞車異常：檢查線圈電壓</text>
+    <rect x="46" y="200" width="468" height="19" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/><text x="56" y="213" font-size="11.5">檢查散熱風道與冷卻風扇</text>
+    <rect x="46" y="222" width="468" height="19" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="56" y="235" font-size="11.5" class="t-muted">PT-211 角度偏差：校正編碼器零點</text>
+    <rect x="46" y="244" width="468" height="19" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="56" y="257" font-size="11.5" class="t-muted">作業前完成上鎖掛牌（LOTO）</text>
+    <rect x="46" y="266" width="468" height="19" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/><text x="56" y="279" font-size="11.5">量測 PT100 感測器阻值與接線</text>
+    <rect x="46" y="288" width="468" height="19" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="56" y="301" font-size="11.5" class="t-muted">備援電源每半年做放電測試</text>
+    <rect x="46" y="310" width="468" height="19" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="56" y="323" font-size="11.5" class="t-muted">進入輪轂前確認葉輪鎖已插入</text>
+    <rect x="46" y="332" width="468" height="19" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/><text x="56" y="345" font-size="11.5">更換感測器後觀察 30 分鐘</text>
+    <rect x="46" y="354" width="468" height="19" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="56" y="367" font-size="11.5" class="t-muted">完工後在工單填寫處理摘要</text>
+    <rect x="46" y="376" width="468" height="19" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="56" y="389" font-size="11.5" class="t-muted">本節適用 OW-8；OW-6 見附錄 B</text>
+    <path d="M530 259 H598" class="flow" style="stroke:var(--doc)"/>
+    <rect x="600" y="170" width="290" height="180" rx="10" data-hot="0" style="fill:var(--panel);stroke:var(--llm);stroke-width:2.5"/>
+    <text x="745" y="202" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--llm)">🧠 LLM</text>
+    <text x="745" y="232" text-anchor="middle" font-size="12">12 句全部進上下文</text>
+    <text x="745" y="256" text-anchor="middle" font-size="12" style="fill:var(--good)">綠框 5 句：真正回答問題</text>
+    <text x="745" y="280" text-anchor="middle" font-size="12" style="fill:var(--bad)">其餘 7 句：別的告警、別的流程</text>
+    <text x="745" y="320" text-anchor="middle" font-size="11.5" class="t-muted">每一句都要付 token 的錢</text>
+  </g>
+
+  <!-- Step 1：Top-3 -->
+  <g data-from="1" data-to="1">
+    <rect x="40" y="112" width="500" height="86" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="56" y="134" font-size="12" font-weight="700">第 1 名：手冊 3.4 節（本節）</text>
+    <rect x="56" y="148" width="30" height="34" rx="3" style="fill:var(--good);stroke:var(--line)"/>
+    <rect x="92" y="148" width="30" height="34" rx="3" style="fill:var(--good);stroke:var(--line)"/>
+    <rect x="128" y="148" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="164" y="148" width="30" height="34" rx="3" style="fill:var(--good);stroke:var(--line)"/>
+    <rect x="200" y="148" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="236" y="148" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="272" y="148" width="30" height="34" rx="3" style="fill:var(--good);stroke:var(--line)"/>
+    <rect x="308" y="148" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="344" y="148" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="380" y="148" width="30" height="34" rx="3" style="fill:var(--good);stroke:var(--line)"/>
+    <rect x="416" y="148" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="452" y="148" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="40" y="210" width="500" height="86" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="56" y="232" font-size="12" font-weight="700">第 2 名：手冊 3.6 節（備援電源）</text>
+    <rect x="56" y="246" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="92" y="246" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="128" y="246" width="30" height="34" rx="3" style="fill:var(--good);stroke:var(--line)"/>
+    <rect x="164" y="246" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="200" y="246" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="236" y="246" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="272" y="246" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="308" y="246" width="30" height="34" rx="3" style="fill:var(--good);stroke:var(--line)"/>
+    <rect x="344" y="246" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="380" y="246" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="416" y="246" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="452" y="246" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="40" y="308" width="500" height="86" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <text x="56" y="330" font-size="12" font-weight="700">第 3 名：歷史工單彙整</text>
+    <rect x="56" y="344" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="92" y="344" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="128" y="344" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="164" y="344" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="200" y="344" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="236" y="344" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="272" y="344" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="308" y="344" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="344" y="344" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="380" y="344" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <rect x="416" y="344" width="30" height="34" rx="3" style="fill:var(--good);stroke:var(--line)"/>
+    <rect x="452" y="344" width="30" height="34" rx="3" style="fill:var(--soft);stroke:var(--line)"/>
+    <path d="M542 256 H598" class="flow" style="stroke:var(--warn)"/>
+    <rect x="600" y="150" width="290" height="212" rx="10" data-hot="1" style="fill:var(--panel);stroke:var(--llm);stroke-width:2.5"/>
+    <text x="745" y="182" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--llm)">🧠 LLM</text>
+    <text x="745" y="212" text-anchor="middle" font-size="12">3 份 × 12 句 = 36 句</text>
+    <text x="745" y="238" text-anchor="middle" font-size="12" style="fill:var(--good)">有用的只有綠格 8 個</text>
+    <text x="745" y="274" text-anchor="middle" font-size="11.5" class="t-muted">費用與延遲上升</text>
+    <text x="745" y="296" text-anchor="middle" font-size="11.5" class="t-muted">模型容易被無關內容分心</text>
+    <text x="745" y="318" text-anchor="middle" font-size="11.5" class="t-muted">答案在長上下文中段時更易被忽略</text>
+    <text x="745" y="342" text-anchor="middle" font-size="11" class="t-muted">（Lost in the Middle）</text>
+  </g>
+
+  <!-- Step 2：壓縮器 -->
+  <g data-from="2" data-to="2">
+    <rect x="30" y="170" width="190" height="86" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:2"/>
+    <text x="125" y="204" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--doc)">📚 檢索器</text>
+    <text x="125" y="228" text-anchor="middle" font-size="11.5" class="t-muted">找出相關的文件</text>
+    <path d="M220 213 H288" class="flow" style="stroke:var(--doc)"/>
+    <rect x="290" y="150" width="270" height="126" rx="10" data-hot="2" style="fill:var(--panel);stroke:var(--accent);stroke-width:2.5"/>
+    <text x="425" y="184" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--accent)">✂️ 壓縮器（新增）</text>
+    <text x="425" y="214" text-anchor="middle" font-size="12">輸入：問題 + 檢索到的文件</text>
+    <text x="425" y="238" text-anchor="middle" font-size="12">輸出：只留與問題有關的部分</text>
+    <path d="M560 213 H628" class="flow" style="stroke:var(--accent)"/>
+    <rect x="630" y="170" width="190" height="86" rx="10" style="fill:var(--panel);stroke:var(--llm);stroke-width:2"/>
+    <text x="725" y="204" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--llm)">🧠 LLM</text>
+    <text x="725" y="228" text-anchor="middle" font-size="11.5" class="t-muted">讀較短的上下文</text>
+    <path d="M425 78 V148" class="flow" style="stroke:var(--query)"/>
+    <text x="437" y="124" font-size="11.5" class="t-muted">問題也要給壓縮器</text>
+    <text x="460" y="326" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)">不改變「找哪些文件」，只決定「文件裡留哪些內容」</text>
+    <text x="460" y="352" text-anchor="middle" font-size="11.5" class="t-muted">LangChain 稱為 ContextualCompressionRetriever：包住原本的檢索器，再接一個壓縮器</text>
+  </g>
+
+  <!-- Step 3：相似度門檻 -->
+  <g data-from="3" data-to="3">
+    <rect x="30" y="110" width="300" height="18" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/><text x="40" y="123" font-size="11.5">PT-203 過溫：繞組超溫時限流並跳脫</text>
+    <rect x="344" y="115" width="190" height="8" rx="2" style="fill:var(--vec)"/><text x="554" y="124" font-size="11" class="t-mono t-muted">0.316</text>
+    <rect x="30" y="134" width="300" height="18" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/><text x="40" y="147" font-size="11.5">讀取 24 小時旋角馬達溫度曲線</text>
+    <rect x="344" y="139" width="62" height="8" rx="2" style="fill:var(--vec)"/><text x="554" y="148" font-size="11" class="t-mono t-muted">0.104</text>
+    <rect x="30" y="158" width="300" height="18" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/><text x="40" y="171" font-size="11.5">PT-205 煞車異常：檢查線圈電壓</text>
+    <rect x="344" y="163" width="48" height="8" rx="2" style="fill:var(--vec)"/><text x="554" y="172" font-size="11" class="t-mono t-muted">0.080</text>
+    <rect x="30" y="182" width="300" height="18" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/><text x="40" y="195" font-size="11.5">檢查散熱風道與冷卻風扇</text>
+    <rect x="344" y="187" width="39" height="8" rx="2" style="fill:var(--vec)"/><text x="554" y="196" font-size="11" class="t-mono t-muted">0.065</text>
+    <rect x="30" y="206" width="300" height="18" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="40" y="219" font-size="11.5" class="t-muted">PT-211 角度偏差：校正編碼器零點</text>
+    <rect x="344" y="211" width="18" height="8" rx="2" style="fill:var(--muted)"/><text x="554" y="220" font-size="11" class="t-mono t-muted">0.030</text>
+    <rect x="30" y="230" width="300" height="18" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="40" y="243" font-size="11.5" class="t-muted">作業前完成上鎖掛牌（LOTO）</text>
+    <rect x="344" y="235" width="11" height="8" rx="2" style="fill:var(--muted)"/><text x="554" y="244" font-size="11" class="t-mono t-muted">0.018</text>
+    <rect x="30" y="254" width="300" height="18" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/><text x="40" y="267" font-size="11.5">量測 PT100 感測器阻值與接線</text>
+    <rect x="344" y="259" width="30" height="8" rx="2" style="fill:var(--vec)"/><text x="554" y="268" font-size="11" class="t-mono t-muted">0.050</text>
+    <rect x="30" y="278" width="300" height="18" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="40" y="291" font-size="11.5" class="t-muted">備援電源每半年做放電測試</text>
+    <rect x="344" y="283" width="28" height="8" rx="2" style="fill:var(--muted)"/><text x="554" y="292" font-size="11" class="t-mono t-muted">0.046</text>
+    <rect x="30" y="302" width="300" height="18" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="40" y="315" font-size="11.5" class="t-muted">進入輪轂前確認葉輪鎖已插入</text>
+    <rect x="344" y="307" width="1" height="8" rx="2" style="fill:var(--muted)"/><text x="554" y="316" font-size="11" class="t-mono t-muted">0.000</text>
+    <rect x="30" y="326" width="300" height="18" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/><text x="40" y="339" font-size="11.5">更換感測器後觀察 30 分鐘</text>
+    <rect x="344" y="331" width="31" height="8" rx="2" style="fill:var(--vec)"/><text x="554" y="340" font-size="11" class="t-mono t-muted">0.052</text>
+    <rect x="30" y="350" width="300" height="18" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/><text x="40" y="363" font-size="11.5">完工後在工單填寫處理摘要</text>
+    <rect x="344" y="355" width="40" height="8" rx="2" style="fill:var(--vec)"/><text x="554" y="364" font-size="11" class="t-mono t-muted">0.066</text>
+    <rect x="30" y="374" width="300" height="18" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="40" y="387" font-size="11.5" class="t-muted">本節適用 OW-8；OW-6 見附錄 B</text>
+    <rect x="344" y="379" width="12" height="8" rx="2" style="fill:var(--muted)"/><text x="554" y="388" font-size="11" class="t-mono t-muted">0.020</text>
+    <path d="M394 104 V398" style="stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4;fill:none"/>
+    <text x="394" y="412" text-anchor="middle" font-size="11" class="t-mono" style="fill:var(--accent)">門檻 0.05</text>
+    <rect x="660" y="150" width="230" height="170" rx="10" data-hot="3" style="fill:var(--panel);stroke:var(--vec);stroke-width:2.5"/>
+    <text x="775" y="182" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--vec)">逐句相似度（示意）</text>
+    <text x="775" y="212" text-anchor="middle" font-size="12" style="fill:var(--good)">綠框 7 句保留</text>
+    <text x="775" y="236" text-anchor="middle" font-size="12" class="t-muted">灰框 5 句丟掉</text>
+    <text x="775" y="266" text-anchor="middle" font-size="11.5" class="t-muted">PT-205、工單兩句混進來</text>
+    <text x="775" y="288" text-anchor="middle" font-size="11.5" class="t-muted">分數離門檻很近的句子易誤判</text>
+    <text x="775" y="344" text-anchor="middle" font-size="11" class="t-muted">便宜、不用 LLM</text>
+  </g>
+
+  <!-- Step 4：LLM 抽取 -->
+  <g data-from="4" data-to="4">
+    <rect x="30" y="140" width="240" height="150" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:2"/>
+    <text x="46" y="166" font-size="12" font-weight="700" style="fill:var(--doc)">給 LLM 的輸入</text>
+    <text x="46" y="194" font-size="11.5">問題：PT-203 馬達過溫</text>
+    <text x="46" y="218" font-size="11.5" class="t-mono">[0] PT-203 過溫：…</text>
+    <text x="46" y="238" font-size="11.5" class="t-mono">[1] 讀取 24 小時…</text>
+    <text x="46" y="258" font-size="11.5" class="t-mono">[2] PT-205 煞車…</text>
+    <text x="46" y="278" font-size="11.5" class="t-muted">…（共 12 句，逐句編號）</text>
+    <path d="M270 215 H318" class="flow" style="stroke:var(--doc)"/>
+    <rect x="320" y="160" width="130" height="110" rx="10" data-hot="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:2.5"/>
+    <text x="385" y="204" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--llm)">🧠 LLM</text>
+    <text x="385" y="228" text-anchor="middle" font-size="11.5" class="t-muted">判斷哪幾句</text>
+    <text x="385" y="247" text-anchor="middle" font-size="11.5" class="t-muted">有用</text>
+    <path d="M450 215 H498" class="flow" style="stroke:var(--llm)"/>
+    <rect x="500" y="124" width="390" height="182" rx="10" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="518" y="150" font-size="12" font-weight="700" style="fill:var(--good)">輸出：保留的句子編號</text>
+    <text x="518" y="180" font-size="13" font-weight="700" class="t-mono">[0, 1, 3, 6, 9]</text>
+    <text x="518" y="208" font-size="11.5">程式依編號取回原句：</text>
+    <text x="518" y="232" font-size="11.5" class="t-muted">過溫門檻、溫度曲線、散熱風道、</text>
+    <text x="518" y="252" font-size="11.5" class="t-muted">感測器接線、更換感測器後觀察</text>
+    <text x="518" y="284" font-size="11.5" style="fill:var(--good)">12 句 → 5 句，原文一字不改</text>
+    <text x="460" y="346" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--llm)">判斷較準，但每份文件多一次 LLM 呼叫</text>
+    <text x="460" y="372" text-anchor="middle" font-size="11.5" class="t-muted">只讓 LLM 回傳編號、不讓它重寫句子，可避免改錯數字與步驟</text>
+  </g>
+
+  <!-- Step 5：更狠的壓縮 -->
+  <g data-from="5" data-to="5">
+    <rect x="30" y="116" width="270" height="214" rx="10" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="165" y="146" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--good)">抽取式 Extractive</text>
+    <text x="48" y="182" font-size="12">從原文挑出句子，</text>
+    <text x="48" y="204" font-size="12">文字一字不改，</text>
+    <text x="48" y="226" font-size="12">可追溯回原段落。</text>
+    <text x="48" y="266" font-size="11.5" class="t-muted">RECOMP 訓練小模型</text>
+    <text x="48" y="286" font-size="11.5" class="t-muted">來挑句子</text>
+    <rect x="325" y="116" width="270" height="214" rx="10" style="fill:var(--panel);stroke:var(--warn);stroke-width:2"/>
+    <text x="460" y="146" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--warn)">摘要式 Abstractive</text>
+    <text x="343" y="182" font-size="12">改寫成更短的摘要，</text>
+    <text x="343" y="204" font-size="12">可以壓得更小，</text>
+    <text x="343" y="226" font-size="12">但可能改錯數字。</text>
+    <text x="343" y="266" font-size="11.5" class="t-muted">RECOMP 也有摘要式版本</text>
+    <rect x="620" y="116" width="270" height="214" rx="10" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+    <text x="755" y="146" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--bad)">詞元修剪 Token pruning</text>
+    <text x="638" y="182" font-size="12">小模型刪掉資訊量低</text>
+    <text x="638" y="204" font-size="12">的詞元，壓縮率高，</text>
+    <text x="638" y="226" font-size="12">但文字不一定通順。</text>
+    <text x="638" y="266" font-size="11.5" class="t-muted">LLMLingua（微軟研究院）</text>
+    <path d="M30 356 H890" class="arrow" marker-end="url(#ah12)"/>
+    <text x="460" y="384" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--bad)">越往右壓得越狠，風險也越高：手冊的數字與步驟順序不能出錯</text>
+  </g>
+
+  <!-- Step 6：安全陷阱 -->
+  <g data-from="6" data-to="6">
+    <rect x="30" y="112" width="420" height="270" rx="10" style="fill:var(--panel);stroke:var(--line);stroke-width:2"/>
+    <text x="46" y="136" font-size="12" font-weight="700">壓縮後送給 LLM 的內容</text>
+    <rect x="46" y="148" width="388" height="22" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/><text x="56" y="163" font-size="11.5">PT-203 過溫：繞組超溫時限流並跳脫</text>
+    <rect x="46" y="176" width="388" height="22" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/><text x="56" y="191" font-size="11.5">讀取 24 小時旋角馬達溫度曲線</text>
+    <rect x="46" y="204" width="388" height="22" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/><text x="56" y="219" font-size="11.5">檢查散熱風道與冷卻風扇</text>
+    <rect x="46" y="232" width="388" height="22" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/><text x="56" y="247" font-size="11.5">量測 PT100 感測器阻值與接線</text>
+    <rect x="46" y="260" width="388" height="22" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/><text x="56" y="275" font-size="11.5">更換感測器後觀察 30 分鐘</text>
+    <rect x="46" y="296" width="388" height="64" rx="6" class="pulse" style="fill:none;stroke:var(--bad);stroke-width:2.5;stroke-dasharray:6 4"/>
+    <text x="60" y="320" font-size="12" font-weight="700" style="fill:var(--bad)">✘ 被丟掉的安全注意事項</text>
+    <text x="60" y="344" font-size="11.5" class="t-muted">上鎖掛牌（LOTO）、確認葉輪鎖已插入</text>
+    <path d="M450 247 H488" class="arrow" marker-end="url(#ah12)"/>
+    <rect x="490" y="112" width="400" height="270" rx="10" data-hot="6" style="fill:var(--panel);stroke:var(--accent);stroke-width:2.5"/>
+    <text x="510" y="142" font-size="13" font-weight="700" style="fill:var(--accent)">為什麼會被丟？怎麼補救？</text>
+    <text x="510" y="176" font-size="12">安全句不提「過溫」「馬達」，</text>
+    <text x="510" y="198" font-size="12">相似度低，LLM 也可能判為離題。</text>
+    <text x="510" y="238" font-size="12" font-weight="700" style="fill:var(--good)">補救：規則強制保留</text>
+    <text x="510" y="262" font-size="12">段落標註 safety 中繼資料，</text>
+    <text x="510" y="284" font-size="12">壓縮後一律補回（第 011 堂）。</text>
+    <text x="510" y="332" font-size="11.5" class="t-muted">不要把「必須讀到」的內容</text>
+    <text x="510" y="352" font-size="11.5" class="t-muted">交給相似度或 LLM 臨場判斷</text>
+  </g>
+
+  <!-- Step 7：結果 -->
+  <g data-from="7">
+    <rect x="40" y="116" width="400" height="260" rx="10" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+    <text x="240" y="144" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--bad)">✘ 不壓縮</text>
+    <text x="62" y="184" font-size="12">整節 12 句全部送進 LLM</text>
+    <text x="62" y="208" font-size="12">只有 5 句直接回答問題</text>
+    <text x="62" y="248" font-size="12" style="fill:var(--bad)">token 多、延遲高、容易分心</text>
+    <text x="62" y="330" font-size="11" class="t-muted">Top-3 的話是 36 句</text>
+    <path d="M440 246 H478" class="arrow" marker-end="url(#ah12)"/>
+    <g class="pulse">
+      <rect x="480" y="116" width="400" height="260" rx="10" style="fill:var(--panel);stroke:var(--good);stroke-width:2.5"/>
+      <text x="680" y="144" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--good)">✅ 上下文壓縮</text>
+      <text x="502" y="184" font-size="12">12 句 → 7 句</text>
+      <text x="502" y="208" font-size="12">5 句回答問題 + 2 句安全注意事項</text>
+      <text x="502" y="248" font-size="12" style="fill:var(--good)">更短、更聚焦、費用更低</text>
+      <text x="502" y="292" font-size="11" class="t-muted">代價：多一道壓縮步驟；壓錯了</text>
+      <text x="502" y="312" font-size="11" class="t-muted">LLM 就看不到，要保留來源、</text>
+      <text x="502" y="332" font-size="11" class="t-muted">設好必保留規則並抽樣檢查</text>
+    </g>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>壓縮發生在檢索之後</b>檢索器決定「找哪些文件」，壓縮器決定「文件裡留哪些內容」。壓縮器同時看問題與文件，所以每次提問的壓縮結果都不同。</div>
+    <div class="card"><b>三種常見做法</b>相似度門檻（便宜、不用 LLM）、LLM 抽取（較準、每份文件多一次呼叫）、專用壓縮器或詞元修剪（RECOMP、LLMLingua，壓得更狠）。</div>
+    <div class="card"><b>抽取比改寫安全</b>只挑出原句、不改寫，數字、告警代碼與步驟順序才不會被改錯，也能追溯來源。讓 LLM 回傳句子編號，是實務上常見的穩健做法。</div>
+    <div class="card"><b>必保留的內容要用規則</b>安全注意事項與問題字面可能不像，卻絕不能丟。用中繼資料標註、壓縮後強制補回，不要賭相似度或 LLM 的臨場判斷。</div>
+  </div>
+
+  <h2>🧪 互動範例：同一節手冊，四種壓縮方式</h2>
+  <div class="prose"><p>下面是虛構《OW-8 運維手冊》3.4 節「旋角系統故障排除」的 12 個句子（原順序）。輸入問題（或點範例），選擇壓縮方式：<b>相似度門檻</b>與 <b>Top-K</b> 是真的在瀏覽器裡逐句算分（簡化的 TF-IDF 餘弦相似度，不是真正的嵌入）；<b>LLM 抽取</b>無法在網頁內執行，這裡以人工標註的「理想結果」模擬，真實 LLM 會有誤差。拖動滑桿觀察「保留多少、漏掉什麼、混進什麼」，並試試勾選「強制保留安全注意事項」。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><input type="text" id="q" value="PT-203 旋角馬達過溫怎麼處理" aria-label="問題"></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" data-mode="none">不壓縮</button>
+      <button type="button" class="on" data-mode="th">相似度門檻</button>
+      <button type="button" data-mode="topk">相似度 Top-K</button>
+      <button type="button" data-mode="llm">LLM 抽取（標註模擬）</button>
+    </div>
+    <div class="row"><label for="th">相似度門檻：<b id="thv">0.05</b></label><input type="range" id="th" min="0" max="0.4" step="0.01" value="0.05" style="flex:1;max-width:220px"></div>
+    <div class="row"><label for="kk">Top-K：<b id="kkv">5</b></label><input type="range" id="kk" min="1" max="12" value="5" style="flex:1;max-width:220px"></div>
+    <div class="chips" id="opts"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>把手冊一節切成句子，示範兩種壓縮：①用嵌入相似度加門檻；②請 <code>claude-sonnet-5</code> 只回傳要保留的句子編號，程式再取回原句。兩者都加上「安全注意事項一律保留」的規則。範例文件為虛構；相似度門檻要用自己的資料與嵌入模型校準，這裡的 0.45 只是示意。</p></div>
+<pre class="code"><code><span class="k">import</span> json, re
+<span class="k">import</span> anthropic
+<span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer
+
+client = anthropic.<span class="f">Anthropic</span>()
+embedder = SentenceTransformer(<span class="s">"BAAI/bge-m3"</span>)
+
+<span class="c"># 檢索回來的整節手冊（虛構的 OW-8 運維手冊 3.4 節）</span>
+SECTION = <span class="s">"""PT-203 旋角馬達過溫：繞組溫度超過門檻時，控制器會限制電流並使旋角馬達跳脫。
+讀取近 24 小時的旋角馬達溫度曲線，確認過溫是持續升溫還是瞬間尖峰。
+PT-205 旋角馬達煞車異常：煞車釋放時間超過設定值時，請檢查煞車線圈電壓與摩擦盤間隙。
+檢查旋角馬達的散熱風道是否被灰塵或油污堵塞，並確認冷卻風扇運轉正常。
+作業前必須完成上鎖掛牌（LOTO），確認風機已停機且旋角系統斷電。
+量測馬達溫度感測器（PT100）的阻值並檢查接線，感測器斷線也會誤報過溫。
+進入輪轂前須確認葉輪鎖已插入，並由第二人在輪轂外待命。
+完成排除後，請在工單填寫處理摘要，並記錄告警代碼與更換的零件。"""</span>
+
+<span class="c"># 規則：含這些關鍵詞的句子視為安全注意事項，一律保留（實務上建議改用中繼資料標註）</span>
+MUST_KEEP = (<span class="s">"上鎖掛牌"</span>, <span class="s">"LOTO"</span>, <span class="s">"葉輪鎖"</span>)
+
+<span class="k">def</span> <span class="f">split_sentences</span>(text):
+    <span class="k">return</span> [s.<span class="f">strip</span>() <span class="k">for</span> s <span class="k">in</span> re.<span class="f">split</span>(<span class="s">r"(?&lt;=[。！？])\s*"</span>, text) <span class="k">if</span> s.<span class="f">strip</span>()]
+
+<span class="k">def</span> <span class="f">must_keep</span>(sentence):
+    <span class="k">return</span> <span class="f">any</span>(w <span class="k">in</span> sentence <span class="k">for</span> w <span class="k">in</span> MUST_KEEP)
+
+<span class="c"># ① 相似度門檻：逐句和問題算餘弦相似度</span>
+<span class="k">def</span> <span class="f">compress_by_similarity</span>(question, sents, threshold=<span class="s">0.45</span>):
+    vecs = embedder.<span class="f">encode</span>(sents + [question], normalize_embeddings=<span class="k">True</span>)
+    scores = vecs[:-<span class="s">1</span>] @ vecs[-<span class="s">1</span>]
+    <span class="k">return</span> [s <span class="k">for</span> s, sc <span class="k">in</span> <span class="f">zip</span>(sents, scores) <span class="k">if</span> sc &gt;= threshold <span class="k">or</span> <span class="f">must_keep</span>(s)]
+
+<span class="c"># ② LLM 抽取：只回傳句子編號，不讓模型改寫原文</span>
+<span class="k">def</span> <span class="f">compress_by_llm</span>(question, sents):
+    numbered = <span class="s">"\n"</span>.<span class="f">join</span>(<span class="s">f"[{i}] {s}"</span> <span class="k">for</span> i, s <span class="k">in</span> <span class="f">enumerate</span>(sents))
+    msg = client.messages.<span class="f">create</span>(
+        model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">100</span>,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+            <span class="s">"以下是風機手冊的句子。請只回傳與問題直接相關的句子編號，"</span>
+            <span class="s">"格式為 JSON 整數陣列，例如 [0, 2]；都不相關就回傳 []。\n"</span>
+            <span class="s">f"問題：{question}\n{numbered}"</span>}])
+    ids = json.<span class="f">loads</span>(msg.content[<span class="s">0</span>].text)
+    <span class="c"># 模型輸出不可盡信：只接受合法編號，再補回必保留句，並維持原順序</span>
+    keep = {i <span class="k">for</span> i <span class="k">in</span> ids <span class="k">if</span> <span class="f">isinstance</span>(i, <span class="f">int</span>) <span class="k">and</span> <span class="s">0</span> &lt;= i &lt; <span class="f">len</span>(sents)}
+    keep |= {i <span class="k">for</span>, s <span class="k">in</span> <span class="f">enumerate</span>(sents) <span class="k">if</span> <span class="f">must_keep</span>(s)}
+    <span class="k">return</span> [sents[i] <span class="k">for</span> i <span class="k">in</span> <span class="f">sorted</span>(keep)]
+
+sents = <span class="f">split_sentences</span>(SECTION)
+question = <span class="s">"PT-203 旋角馬達過溫怎麼處理"</span>
+<span class="k">for</span> name, fn <span class="k">in</span> [(<span class="s">"相似度"</span>, compress_by_similarity), (<span class="s">"LLM"</span>, compress_by_llm)]:
+    kept = <span class="f">fn</span>(question, sents)
+    <span class="f">print</span>(<span class="s">f"【{name}】{len(sents)} 句 → {len(kept)} 句"</span>)
+    <span class="k">for</span> s <span class="k">in</span> kept:
+        <span class="f">print</span>(<span class="s">" -"</span>, s)</code></pre>
+  <div class="prose"><p>若用 LangChain，等價的做法是 <code>ContextualCompressionRetriever</code> 搭配 <code>EmbeddingsFilter</code>（相似度過濾）或 <code>LLMChainExtractor</code>（LLM 抽取）；這些類別的介面隨版本調整，請以官方文件為準。</p></div>
+
+  <h2>⚖️ 三種做法比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>重排序（第 005 堂）</th><th>父子文件檢索（第 008 堂）</th><th>上下文壓縮（本堂）</th></tr>
+    <tr><th>作用對象</th><td>決定「哪幾份文件」排前面</td><td>決定「回傳多大一塊」</td><td>決定「一份文件裡留哪些內容」</td></tr>
+    <tr><th>對上下文長度</th><td>不改變每份文件長度，只取較少份</td><td>變長：小塊命中、大塊回傳</td><td>變短：回傳之後再裁掉無關句子</td></tr>
+    <tr><th>額外成本</th><td>每個候選一次 cross-encoder 運算</td><td>多存一份父文件、無額外模型呼叫</td><td>門檻法幾乎免費；LLM 抽取每份文件一次呼叫</td></tr>
+    <tr><th>主要風險</th><td>候選沒召回就救不回來</td><td>大塊帶入較多雜訊</td><td>壓錯就看不到，必保留的內容可能被丟</td></tr>
+  </table>
+  <div class="prose"><p>三者可以串接：先召回、重排序取前幾名，用父子文件撈回完整章節，最後壓縮成與問題有關的句子。壓縮和「重排序後只取 Top-3」並不衝突，一個管份數，一個管每份的長度。</p></div>
+
+  <h2>⚠️ 上下文壓縮常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>安全注意事項被當成雜訊丟掉</b>：互動範例用「相似度門檻」，LOTO 與葉輪鎖兩句會消失，看起來答案反而更精簡。必須保留的內容要用規則（中繼資料標註、關鍵詞白名單）強制補回。</li>
+      <li><b>讓 LLM 改寫會改錯內容</b>：摘要式壓縮可能把「每 6 個月」寫成「每半年左右」，也可能漏掉告警代碼。手冊這類精確內容，優先用抽取式，並讓 LLM 回傳編號、由程式取回原句。</li>
+      <li><b>壓縮本身有成本</b>：LLM 抽取每份文件多一次呼叫，延遲與費用可能抵銷省下的 token。先量測「壓縮前後的總成本與答案品質」再決定。</li>
+      <li><b>句子脫離上下文</b>：切成單句後，「依上節步驟」「同上」這類指代會失去意義（第 009 堂的問題）。可以保留相鄰句，或把句子所屬的章節標題一起帶上。</li>
+      <li><b>門檻不能一勞永逸</b>：不同問題、不同嵌入模型的相似度分布不同。互動範例中門檻稍高就開始漏掉正解；要用評估集校準，並追蹤「必要句召回率」。</li>
+      <li><b>要保留來源</b>：壓縮後仍要記得每一句來自哪一節、哪個版本，答案才能附上引用，技師也才能回頭查原文。</li>
+      <li><b>文件本來就短，或模型上下文夠大時不必做</b>：段落只有幾句、或總長度遠低於上下文限制且成本可接受時，多一道壓縮只增加複雜度與出錯機會。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的檢索為簡化的 TF-IDF 模擬，「LLM 抽取」以人工標註模擬；範例中的告警代碼、步驟、天數與門檻僅供教學示範。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：RECOMP（Xu、Shi、Choi，2023）提出抽取式與摘要式壓縮器；LLMLingua（Jiang 等人，EMNLP 2023）以小型語言模型修剪提示詞；Lost in the Middle（Liu 等人，2023）討論長上下文中資訊位置對表現的影響。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>上下文壓縮與重排序（第 005 堂）最主要的差別是什麼？</b></p>
+    <button class="opt">A. 重排序用 LLM，壓縮不用</button>
+    <button class="opt">B. 重排序決定哪幾份文件排前面；壓縮是在一份文件裡只留下與問題有關的內容</button>
+    <button class="opt">C. 壓縮會讓檢索召回更多文件</button>
+    <div class="why">重排序調整的是文件的順序與取捨，不改變每份文件本身；壓縮則縮短每份文件，讓送進 LLM 的上下文更短、更聚焦。兩者作用對象不同，可以一起使用。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>用相似度門檻壓縮手冊時，為什麼「上鎖掛牌（LOTO）」那句容易被丟掉？該怎麼處理？</b></p>
+    <button class="opt">A. 因為它太長；把門檻調到 0 就好</button>
+    <button class="opt">B. 因為向量資料庫不支援安全相關的句子；改用別的資料庫</button>
+    <button class="opt">C. 因為它與問題字面不相似、分數低；應該用規則（例如中繼資料標註）強制保留安全注意事項</button>
+    <div class="why">相似度只反映「和問題像不像」，安全注意事項卻是「無論如何都要讀到」的內容。把門檻調到 0 等於不壓縮；正確做法是以規則保底，不把必保留的內容交給相似度或 LLM 臨場判斷。</div>
+  </div>
+
+  <nav class="pager" data-slug="context-compression"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8500, steps:[
+  { title:'整節手冊塞給 LLM：多半是雜訊', text:'技師問「PT-203 旋角馬達過溫怎麼處理」，檢索回傳<b>整節 12 句</b>，只有 <b>5 句</b>直接回答問題，其餘是別的告警與別的流程。這些句子全都要佔用 <b>token</b>。' },
+  { title:'再乘上 Top-3，雜訊更多', text:'通常不只取一份文件。Top-3 加起來有 <b>36 句</b>，有用的只剩零星幾句。上下文越長，費用與延遲越高，模型也更容易被<b>分心</b>；研究發現答案落在長上下文中段時，表現會變差。' },
+  { title:'在檢索與 LLM 之間加一道壓縮器', text:'壓縮器拿<b>問題</b>與檢索到的文件，只輸出與問題有關的部分再交給 LLM。它不改變「找哪些文件」，只決定「文件裡留什麼」。LangChain 稱為 <b>ContextualCompressionRetriever</b>。' },
+  { title:'做法一：用相似度挑句子', text:'把文件切成句子，逐句和問題算相似度，<b>高於門檻才保留</b>。便宜、快、不需 LLM；但門檻要<b>自己校準</b>，分數靠近門檻的句子容易誤判，用詞不同的相關句也可能被丟掉。' },
+  { title:'做法二：請 LLM 逐份文件抽取', text:'請 <b>LLM</b> 讀問題與逐句編號的文件，只回傳要保留的<b>句子編號</b>，程式再取回原句。判斷較準、原文不被改寫，但<b>每份文件多一次 LLM 呼叫</b>，延遲與費用都會增加。' },
+  { title:'做法三：更狠的壓縮', text:'研究上還有訓練專用壓縮器：<b>抽取式</b>挑原句、<b>摘要式</b>改寫更短（RECOMP）；或用小模型刪掉低資訊詞元（<b>LLMLingua</b>）。壓得越狠，改錯數字與步驟的風險越高。' },
+  { title:'陷阱：安全注意事項被壓掉', text:'「上鎖掛牌」與「確認葉輪鎖」跟問題字面相似度很低，會被壓縮器當成雜訊丟掉；答案看似精簡，卻<b>少了最重要的安全步驟</b>。需用規則強制保留。' },
+  { title:'只留下與問題有關的內容', text:'12 句壓成 <b>7 句</b>：5 句直接回答、2 句強制保留的安全注意事項。上下文更短、更聚焦；代價是多一道壓縮步驟，而且<b>壓錯就回不來</b>，所以要保留來源並抽樣檢查。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 虛構的《OW-8 運維手冊》3.4 節，12 句。topic：句子回答哪個告警；safety：安全注意事項 */
+  const S = [
+    { topic:'203', text:'PT-203 旋角馬達過溫：繞組溫度超過門檻時，控制器會限制電流並使旋角馬達跳脫。' },
+    { topic:'203', text:'讀取近 24 小時的旋角馬達溫度曲線，確認過溫是持續升溫還是瞬間尖峰。' },
+    { topic:'205', text:'PT-205 旋角馬達煞車異常：煞車釋放時間超過設定值時，請檢查煞車線圈電壓與摩擦盤間隙。' },
+    { topic:'203', text:'檢查旋角馬達的散熱風道是否被灰塵或油污堵塞，並確認冷卻風扇運轉正常。' },
+    { topic:'211', text:'PT-211 三支葉片角度偏差過大：請比對三組編碼器讀值，並校正零點位置。' },
+    { safety:true, text:'作業前必須完成上鎖掛牌（LOTO），確認風機已停機且旋角系統斷電。' },
+    { topic:'203', text:'量測馬達溫度感測器（PT100）的阻值並檢查接線，感測器斷線也會誤報過溫。' },
+    { topic:'230', text:'旋角備援電源每半年需進行一次放電測試，測試失敗會出現 PT-230 告警。' },
+    { safety:true, text:'進入輪轂前須確認葉輪鎖已插入，並由第二人在輪轂外待命。' },
+    { topic:'203', text:'若馬達溫度曲線正常卻仍過溫告警，請更換感測器後重新啟動，並觀察 30 分鐘。' },
+    { topic:null,  text:'完成排除後，請在工單填寫處理摘要，並記錄告警代碼與更換的零件。' },
+    { topic:null,  text:'本節適用 OW-8 機型；OW-6 的旋角系統請參閱附錄 B。' }
+  ];
+  const TOTAL = S.reduce((a, s) => a + s.text.length, 0);
+  const idx = rt.buildIndex(S.map(s => ({ text:s.text })));
+  const PRESETS = ['PT-203 旋角馬達過溫怎麼處理', 'PT-205 旋角馬達煞車異常怎麼查', 'PT-211 葉片角度偏差怎麼校正'];
+
+  let mode = 'th', force = false;
+
+  function run(){
+    const q = $('#q').value;
+    const th = +$('#th').value, K = +$('#kk').value;
+    $('#thv').textContent = th.toFixed(2); $('#kkv').textContent = K;
+    $('#th').disabled = mode !== 'th'; $('#kk').disabled = mode !== 'topk';
+
+    const m = q.match(/PT-?\s?(\d{3})/i), topic = m ? m[1] : null;
+    const score = new Array(S.length).fill(0);
+    rt.searchVector(idx, q, S.length).forEach(h => score[h.i] = h.score);
+    const rank = score.map((s, i) => i).sort((a, b) => score[b] - score[a]);
+
+    const need = i => !!S[i].safety || (topic && S[i].topic === topic);
+    let keep = new Set(), note = '';
+    if(mode === 'none') S.forEach((s, i) => keep.add(i));
+    else if(mode === 'th') S.forEach((s, i) => { if(score[i] >= th && score[i] > 0) keep.add(i); });
+    else if(mode === 'topk') rank.slice(0, K).forEach(i => keep.add(i));
+    else if(topic) S.forEach((s, i) => { if(S[i].topic === topic) keep.add(i); });
+    else { rank.slice(0, 4).forEach(i => keep.add(i)); note = '（問題沒有對應的標註，改用相似度 Top-4 示意。）'; }
+    if(force) S.forEach((s, i) => { if(s.safety) keep.add(i); });
+
+    $('#opts').innerHTML = `<button type="button" data-force="1" class="${force ? 'on' : ''}">${force ? '☑' : '☐'} 強制保留安全注意事項</button>`;
+
+    const chars = [...keep].reduce((a, i) => a + S[i].text.length, 0);
+    const ratio = Math.round((1 - chars / TOTAL) * 100);
+    const needIdx = S.map((s, i) => i).filter(need), needKept = needIdx.filter(i => keep.has(i)).length;
+    const noise = [...keep].filter(i => !need(i)).length;
+    const safetyLost = S.some((s, i) => s.safety && !keep.has(i));
+
+    let st = `保留 ${keep.size} / ${S.length} 句，字數 ${chars} / ${TOTAL}（壓縮率 ${ratio}%）。`;
+    if(topic) st += `必要句（回答問題＋安全注意事項）保留 ${needKept} / ${needIdx.length}，混入無關句 ${noise} 句。`;
+    else st += `（問題沒有告警代碼，無標準答案，只能目視判斷。）`;
+    if(safetyLost && mode !== 'none') st += ' ⚠️ 安全注意事項被壓掉了！';
+    $('#stat').textContent = st + note;
+
+    $('#hits').innerHTML = S.map((s, i) => {
+      const k = keep.has(i);
+      const tag = s.safety ? '　🦺 安全注意事項' : (topic && s.topic === topic ? '　★ 回答問題' : '');
+      return `<div class="hit ${k ? 'top' : 'low'}">
+        <div class="meta"><span>#${i + 1}　${k ? '✔ 保留' : '✘ 丟掉'}${tag}</span><span>相似度 ${score[i].toFixed(3)}</span></div>
+        <div>${rt.highlight(s.text, q)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  $('#presets').innerHTML = PRESETS.map(p => `<button type="button" data-q="${esc(p)}">${esc(p)}</button>`).join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return; $('#q').value = b.dataset.q; run(); };
+  $('#opts').onclick = e => { if(e.target.closest('button')){ force = !force; run(); } };
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+    mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    run();
+  });
+  $('#q').oninput = run; $('#th').oninput = run; $('#kk').oninput = run;
+  run();
+})();
+</script>
+</body>
+</html>
