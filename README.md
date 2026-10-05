@@ -18,6 +18,7 @@
 | 010 | [RAG-Fusion：多查詢 + 倒數排名融合](https://dofliu.github.io/ragTutor/lessons/010-rag-fusion.html) |
 | 011 | [中繼資料過濾與自我查詢檢索](https://dofliu.github.io/ragTutor/lessons/011-metadata-filtering.html) |
 | 012 | [上下文壓縮：只留下與問題有關的句子](https://dofliu.github.io/ragTutor/lessons/012-context-compression.html) |
+| 013 | [Self-RAG：模型自己判斷何時檢索、是否可信](https://dofliu.github.io/ragTutor/lessons/013-self-rag.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 

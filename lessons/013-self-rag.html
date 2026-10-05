@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Self-RAG：模型自己判斷何時檢索、是否可信｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂 Self-RAG：模型輸出 Retrieve、IsRel、IsSup、IsUse 反思詞元，自己決定要不要檢索、段落是否相關、答案是否有依據，並看支持度門檻的取捨。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 013 堂</span><span class="tag lv3">高階</span><span class="tag">約 14 分鐘</span></p>
+  <h1>Self-RAG：模型自己判斷何時檢索、是否可信</h1>
+  <p class="lead">一般 RAG 是固定流程：<b>每個問題都檢索、檢索到什麼就全塞給模型</b>。技師問「旋角系統是做什麼用的」其實不必查手冊；問「PT-203 怎麼處理」卻可能撈到舊款 OW-6 的段落，模型照單全收。<b>Self-RAG（Self-Reflective RAG）</b>訓練模型在生成時順便輸出特殊的<b>反思詞元（reflection tokens）</b>，自己決定「要不要檢索」、「這段相關嗎」、「我寫的句子有依據嗎」，最後只採用有依據的內容。</p>
+
+  <h2>🎬 動畫：讓模型自己當檢查員</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="Self-RAG 動畫：一般 RAG 不論需不需要都檢索並把所有段落塞給模型；Self-RAG 讓模型輸出反思詞元，先決定要不要檢索，再逐段判斷相關性、答案是否被支持、整體是否有用，最後只採用有依據的內容">
+  <defs>
+    <marker id="ah13" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" style="fill:var(--muted)"/></marker>
+  </defs>
+
+  <rect x="270" y="14" width="380" height="48" rx="10" style="fill:var(--panel);stroke:var(--query);stroke-width:2"/>
+  <text x="460" y="33" text-anchor="middle" font-size="11.5" class="t-muted">👤 現場技師輸入</text>
+  <text x="460" y="52" text-anchor="middle" font-size="13" font-weight="700">「PT-203 旋角馬達過溫怎麼處理」</text>
+
+  <rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 一般 RAG：不管需不需要，檢索到什麼就全部塞進去</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="1" data-to="1">② Self-RAG：訓練模型邊生成邊輸出「反思詞元」</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="2" data-to="2">③ [Retrieve]：這題需要查手冊嗎？</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="3" data-to="3">④ 需要時才檢索，取回多個候選段落</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="4" data-to="4">⑤ [IsRel]：逐段判斷這段與問題相關嗎？</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="5" data-to="5">⑥ [IsSup]：模型寫的句子，段落有支持嗎？</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="6" data-to="6">⑦ [IsUse]＋加權打分，挑出最好的片段</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 只採用有依據的內容，查無依據就明講</text>
+
+  <!-- 模型方塊：step 1 起 -->
+  <g data-from="1">
+    <rect x="20" y="112" width="190" height="226" rx="10" style="fill:var(--panel);stroke:var(--llm);stroke-width:2"/>
+    <text x="115" y="136" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--llm)">Self-RAG 模型</text>
+    <g data-to="1">
+      <text x="115" y="170" text-anchor="middle" font-size="11.5">一個微調過的 LLM，</text>
+      <text x="115" y="190" text-anchor="middle" font-size="11.5">生成文字時順便輸出</text>
+      <text x="115" y="210" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent-ink)">反思詞元</text>
+      <text x="115" y="230" text-anchor="middle" font-size="11.5" class="t-muted">用來自我批判</text>
+    </g>
+    <g data-from="2" data-to="3">
+      <text x="115" y="170" text-anchor="middle" font-size="11.5">問「PT-203 怎麼處理」</text>
+      <text x="115" y="192" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">[Retrieve] = Yes</text>
+      <text x="115" y="226" text-anchor="middle" font-size="11.5">問「旋角是什麼」</text>
+      <text x="115" y="248" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--muted)">[Retrieve] = No</text>
+      <text x="115" y="270" text-anchor="middle" font-size="11.5" class="t-muted">直接回答，不查手冊</text>
+    </g>
+    <g data-from="4">
+      <text x="115" y="170" text-anchor="middle" font-size="11.5">逐段、逐句自我評分</text>
+      <text x="115" y="192" text-anchor="middle" font-size="11.5" class="t-muted">相關？有支持？有用？</text>
+    </g>
+  </g>
+
+  <!-- 候選段落（全程顯示） -->
+  <g>
+    <g data-dim="1 2">
+      <rect x="230" y="112" width="470" height="70" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+      <text x="244" y="140" font-size="12.5" font-weight="700">OW-8 手冊 3.4：PT-203 過溫排除</text>
+      <text x="244" y="162" font-size="11.5" class="t-muted">先查溫度曲線、風道、PT100</text>
+    </g>
+    <g data-from="4"><rect x="578" y="116" width="114" height="19" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.5"/><text x="635" y="130" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">IsRel 相關 ✔</text></g>
+    <g data-from="5"><rect x="578" y="137" width="114" height="19" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.5"/><text x="635" y="151" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">IsSup 完全支持</text></g>
+    <g data-from="6"><rect x="578" y="158" width="114" height="19" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.5"/><text x="635" y="172" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">IsUse 5 分</text></g>
+    <g data-dim="1 2 6 7">
+      <rect x="230" y="190" width="470" height="70" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+      <text x="244" y="218" font-size="12.5" font-weight="700">OW-6 手冊（舊款）：過溫代碼 PT-103</text>
+      <text x="244" y="240" font-size="11.5" class="t-muted">流程與 OW-8 不同，機型不符</text>
+    </g>
+    <g data-from="4"><rect x="578" y="194" width="114" height="19" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/><text x="635" y="208" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">IsRel 無關 ✘</text></g>
+    <g data-from="5"><rect x="578" y="215" width="114" height="19" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/><text x="635" y="229" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">IsSup 無支持 ✘</text></g>
+    <g data-from="6"><rect x="578" y="236" width="114" height="19" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/><text x="635" y="250" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">IsUse 2 分</text></g>
+    <g data-dim="1 2">
+      <rect x="230" y="268" width="470" height="70" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+      <text x="244" y="296" font-size="12.5" font-weight="700">工單 WO-2026-0412：WTG-17 個案</text>
+      <text x="244" y="318" font-size="11.5" class="t-muted">更換 PT100 感測器後恢復</text>
+    </g>
+    <g data-from="4"><rect x="578" y="272" width="114" height="19" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.5"/><text x="635" y="286" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">IsRel 相關 ✔</text></g>
+    <g data-from="5"><rect x="578" y="293" width="114" height="19" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.5"/><text x="635" y="307" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--warn)">IsSup 部分支持</text></g>
+    <g data-from="6"><rect x="578" y="314" width="114" height="19" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.5"/><text x="635" y="328" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">IsUse 4 分</text></g>
+  </g>
+
+  <!-- 一般 RAG：全部塞進去的箭頭 -->
+  <g data-to="0">
+    <path d="M702 147 H726" class="arrow" marker-end="url(#ah13)"/><path d="M702 225 H726" class="arrow" marker-end="url(#ah13)"/><path d="M702 303 H726" class="arrow" marker-end="url(#ah13)"/>
+  </g>
+  <g data-from="3" data-to="3"><path d="M212 225 H228" class="flow" style="stroke:var(--doc)" marker-end="url(#ah13)"/></g>
+
+  <!-- 答案方塊 -->
+  <g data-to="0">
+    <rect x="730" y="112" width="176" height="226" rx="10" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+    <text x="818" y="136" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--bad)">答案</text>
+    <text x="818" y="170" text-anchor="middle" font-size="11.5">混入 OW-6 的</text>
+    <text x="818" y="190" text-anchor="middle" font-size="11.5">PT-103 處理流程</text>
+    <text x="818" y="222" text-anchor="middle" font-size="11.5" class="t-muted">全部段落一視同仁，</text>
+    <text x="818" y="242" text-anchor="middle" font-size="11.5" class="t-muted">錯的也一起進來</text>
+    <text x="818" y="290" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">技師可能照錯版本做</text>
+  </g>
+  <g data-from="6" data-to="6">
+    <rect x="730" y="112" width="176" height="226" rx="10" style="fill:var(--panel);stroke:var(--warn);stroke-width:2"/>
+    <text x="818" y="136" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--warn)">加權打分</text>
+    <text x="818" y="170" text-anchor="middle" font-size="11.5">相關＋支持＋有用</text>
+    <text x="818" y="190" text-anchor="middle" font-size="11.5">各自乘上權重加總</text>
+    <text x="818" y="226" text-anchor="middle" font-size="11.5" style="fill:var(--good)">A：高分，採用</text>
+    <text x="818" y="248" text-anchor="middle" font-size="11.5" style="fill:var(--good)">C：高分，採用</text>
+    <text x="818" y="270" text-anchor="middle" font-size="11.5" style="fill:var(--bad)">B：低分，淘汰</text>
+    <text x="818" y="306" text-anchor="middle" font-size="11.5" class="t-muted">權重推論時可調</text>
+  </g>
+  <g data-from="7">
+    <rect x="730" y="112" width="176" height="226" rx="10" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="818" y="136" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--good)">最終答案</text>
+    <text x="818" y="170" text-anchor="middle" font-size="11.5">依 OW-8 手冊步驟</text>
+    <text x="818" y="190" text-anchor="middle" font-size="11.5">處理過溫，並引用</text>
+    <text x="818" y="210" text-anchor="middle" font-size="11.5">WO-2026-0412</text>
+    <text x="818" y="246" text-anchor="middle" font-size="11.5" class="t-muted">OW-6 的段落不採用</text>
+    <text x="818" y="290" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">查無依據時會明講</text>
+  </g>
+  <g data-from="6"><path d="M702 147 H726" class="flow" style="stroke:var(--good)" marker-end="url(#ah13)"/><path d="M702 303 H726" class="flow" style="stroke:var(--good)" marker-end="url(#ah13)"/></g>
+
+  <!-- 底部：反思詞元圖例 -->
+  <g data-from="1">
+    <g data-hot="2"><rect x="20" y="352" width="206" height="56" rx="8" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.5"/><text x="34" y="375" font-size="12.5" font-weight="700" class="t-mono">[Retrieve]</text><text x="34" y="395" font-size="11.5" class="t-muted">要不要檢索？</text></g>
+    <g data-hot="4"><rect x="240" y="352" width="206" height="56" rx="8" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.5"/><text x="254" y="375" font-size="12.5" font-weight="700" class="t-mono">[IsRel]</text><text x="254" y="395" font-size="11.5" class="t-muted">這段與問題相關嗎？</text></g>
+    <g data-hot="5"><rect x="460" y="352" width="206" height="56" rx="8" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.5"/><text x="474" y="375" font-size="12.5" font-weight="700" class="t-mono">[IsSup]</text><text x="474" y="395" font-size="11.5" class="t-muted">句子有被段落支持嗎？</text></g>
+    <g data-hot="6"><rect x="680" y="352" width="226" height="56" rx="8" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.5"/><text x="694" y="375" font-size="12.5" font-weight="700" class="t-mono">[IsUse]</text><text x="694" y="395" font-size="11.5" class="t-muted">整體回答有用嗎？1–5 分</text></g>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>檢索變成「按需」</b>模型先輸出 [Retrieve]（Yes／No／Continue）。不需要查手冊的問題直接回答，省下檢索與長上下文的成本。</div>
+    <div class="card"><b>三種批判詞元</b>[IsRel] 段落是否相關、[IsSup] 句子被段落支持到什麼程度（完全／部分／無）、[IsUse] 整體回答是否有用（1–5 分）。</div>
+    <div class="card"><b>推論時可調行為</b>論文在解碼時以分段束搜尋（segment-level beam search），用批判詞元機率加權選片段；調權重或檢索門檻，就能偏向「更嚴謹」或「更完整」，不必重新訓練。</div>
+    <div class="card"><b>代價在訓練</b>原始做法要先訓練批判模型標註資料，再微調生成模型。若只想要類似效果，常見的折衷是用提示詞讓 LLM 當裁判（近似做法，不等於原論文）。</div>
+  </div>
+
+  <h2>🧪 互動範例：一般 RAG vs Self-RAG</h2>
+  <div class="prose"><p>下面用虛構的 7 段文件模擬四種問題。<b>檢索</b>是真的在瀏覽器裡算（簡化的 TF-IDF 餘弦相似度，取前 3 名）；<b>[IsSup] 支持度</b>也是真的算：模型草稿句的詞元有多少比例出現在來源段落裡。但 <b>[Retrieve] 與 [IsRel] 無法在網頁內由真的微調模型判斷</b>，這裡以人工標註的「理想批判」模擬，真實模型會有誤差。切換「一般 RAG」與「Self-RAG」，並試試把支持度要求調嚴，觀察「錯誤句混入」與「漏掉有用資訊」的取捨。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" data-mode="naive">一般 RAG（全部採用）</button>
+      <button type="button" class="on" data-mode="self">Self-RAG</button>
+    </div>
+    <div class="row seg" id="supSeg">
+      <span class="muted" style="font-size:13px">[IsSup] 要求：</span>
+      <button type="button" class="on" data-sup="0.35">部分支持以上</button>
+      <button type="button" data-sup="0.8">僅完全支持</button>
+    </div>
+    <div class="chips" id="opts"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+    <div class="prompt-box" id="answer"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>原論文需要微調出會輸出反思詞元的模型；一般 API 無法輸出這些詞元，所以這裡用 <code>claude-sonnet-5</code> 以提示詞做「Self-RAG 風格」的<b>近似</b>：先判斷要不要檢索，再逐段判斷相關性，生成後檢查是否被段落支持，最後只採用有依據的草稿。範例文件為虛構，函式 <code>retrieve</code> 請換成你自己的檢索器。</p></div>
+<pre class="code"><code><span class="k">import</span> json
+<span class="k">import</span> anthropic
+
+client = anthropic.<span class="f">Anthropic</span>()
+MODEL = <span class="s">"claude-sonnet-5"</span>
+
+<span class="k">def</span> <span class="f">ask_json</span>(prompt, max_tokens=<span class="s">300</span>):
+    msg = client.messages.<span class="f">create</span>(model=MODEL, max_tokens=max_tokens,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt + <span class="s">"\n只輸出 JSON，不要其他文字。"</span>}])
+    <span class="k">return</span> json.<span class="f">loads</span>(msg.content[<span class="s">0</span>].text)
+
+<span class="c"># 假設的檢索器：回傳 [{"id": "...", "text": "..."}]，例如虛構的 OW-8 運維手冊、工單、通報</span>
+<span class="k">def</span> <span class="f">retrieve</span>(question, k=<span class="s">3</span>): ...
+
+<span class="k">def</span> <span class="f">self_rag</span>(question):
+    <span class="c"># ① [Retrieve]：需要查手冊嗎？（問告警代碼、料號、步驟 → yes；問一般概念 → no）</span>
+    need = ask_json(<span class="s">f'問題：{question}\n這題需要查《OW-8 運維手冊》或工單才能可靠回答嗎？'</span>
+                    <span class="s">'輸出 {"retrieve": true 或 false}'</span>)[<span class="s">"retrieve"</span>]
+    <span class="k">if</span> <span class="k">not</span> need:
+        <span class="k">return</span> client.messages.<span class="f">create</span>(model=MODEL, max_tokens=<span class="s">400</span>,
+            messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: question}]).content[<span class="s">0</span>].text
+
+    kept = []
+    <span class="k">for</span> p <span class="k">in</span> <span class="f">retrieve</span>(question):
+        <span class="c"># ② [IsRel]：段落和問題相關嗎？（機型、告警代碼要對得上）</span>
+        rel = ask_json(<span class="s">f'問題：{question}\n段落：{p["text"]}\n'</span>
+                       <span class="s">'這段是否可用來回答問題（機型與告警代碼需相符）？輸出 {"relevant": true 或 false}'</span>)
+        <span class="k">if</span> <span class="k">not</span> rel[<span class="s">"relevant"</span>]:
+            <span class="k">continue</span>
+        <span class="c"># ③ 只根據這一段寫一句草稿</span>
+        draft = client.messages.<span class="f">create</span>(model=MODEL, max_tokens=<span class="s">200</span>,
+            messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+                <span class="s">f'只根據下列段落，用一兩句回答問題。段落沒寫的不要補。\n問題：{question}\n段落：{p["text"]}'</span>}]
+        ).content[<span class="s">0</span>].text
+        <span class="c"># ④ [IsSup]：草稿是否被段落完全支持？</span>
+        sup = ask_json(<span class="s">f'段落：{p["text"]}\n草稿：{draft}\n'</span>
+                       <span class="s">'草稿的每個主張是否都能在段落找到依據？輸出 {"support": "full" 或 "partial" 或 "none"}'</span>)
+        <span class="k">if</span> sup[<span class="s">"support"</span>] == <span class="s">"full"</span>:   <span class="c"># 想更完整可放寬成 full / partial</span>
+            kept.append({<span class="s">"source"</span>: p[<span class="s">"id"</span>], <span class="s">"text"</span>: draft})
+
+    <span class="c"># ⑤ 沒有任何有依據的草稿：明講查無依據，不硬編</span>
+    <span class="k">if</span> <span class="k">not</span> kept:
+        <span class="k">return</span> <span class="s">"手冊與工單中查無足夠依據，建議改查對應章節或詢問原廠。"</span>
+    <span class="k">return</span> <span class="s">"\n"</span>.<span class="f">join</span>(<span class="s">f'{k["text"]}（來源：{k["source"]}）'</span> <span class="k">for</span> k <span class="k">in</span> kept)
+
+<span class="f">print</span>(<span class="f">self_rag</span>(<span class="s">"PT-203 旋角馬達過溫怎麼處理"</span>))
+<span class="f">print</span>(<span class="f">self_rag</span>(<span class="s">"旋角系統是做什麼用的"</span>))</code></pre>
+  <div class="prose"><p>這個近似做法每個段落最多多 3 次 LLM 呼叫（相關性、草稿、支持度），延遲與費用比原論文把批判內建在單一模型裡高；實務上可以把前兩步合併，或只對重要問題啟用。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>基礎 RAG（第 001 堂）</th><th>重排序（第 005 堂）</th><th>上下文壓縮（第 012 堂）</th><th>Self-RAG（本堂）</th></tr>
+    <tr><th>誰決定要不要檢索</th><td>固定每題都檢索</td><td>固定每題都檢索</td><td>固定每題都檢索</td><td>模型自己用 [Retrieve] 決定</td></tr>
+    <tr><th>怎麼處理壞段落</th><td>全部送進模型</td><td>排序靠後、少取幾份</td><td>裁掉無關句子</td><td>[IsRel] 逐段判斷，無關就不用</td></tr>
+    <tr><th>會檢查答案有無依據嗎</th><td>否</td><td>否</td><td>否</td><td>是，[IsSup] 逐句檢查</td></tr>
+    <tr><th>成本</th><td>最低</td><td>多一個精排模型</td><td>多一道壓縮</td><td>需訓練／微調，或多次 LLM 評審呼叫</td></tr>
+  </table>
+  <div class="prose"><p>Self-RAG 處理的是「流程由誰控制」，和前面的檢索技巧可以疊加：檢索端用混合檢索加重排序，生成端再用 Self-RAG 風格的自我檢查。下一類方法（CRAG、Adaptive RAG）也是在檢索結果不好時換路線，差別在判斷由外部評估器而非單一模型負責。</p></div>
+
+  <h2>⚠️ Self-RAG 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>批判模型也會錯</b>：[IsRel] 把舊款 OW-6 段落判成相關，或 [IsSup] 把「過度推論」判成有支持，都會讓壞內容溜進答案。要用評估集量測批判的精確率與召回率。</li>
+      <li><b>支持度太嚴會漏答</b>：互動範例把要求調成「僅完全支持」，帶有個案推論的句子被丟掉，答案變短。查手冊這類高風險場景偏向嚴謹，但要接受「寧缺勿濫」。</li>
+      <li><b>[Retrieve] = No 可能放過該查的題</b>：模型自信地用記憶回答「保養週期」，數字可能過時或根本是編的。涉及告警代碼、料號、門檻值的題目，建議用規則強制檢索。</li>
+      <li><b>「有支持」不等於「正確」</b>：段落本身可能過期或是舊版手冊，IsSup 只檢查句子與段落一致。版本與機型仍要靠中繼資料過濾（第 011 堂）。</li>
+      <li><b>訓練與維護成本高</b>：原始做法要建批判資料、微調模型；換領域或換基底模型就得重來。資源有限時，先從提示詞式評審加評估集開始。</li>
+      <li><b>延遲與費用</b>：逐段評審會讓呼叫次數成倍增加。簡單問答、延遲敏感的場景，固定流程的 RAG 加重排序通常更划算。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的檢索為簡化的 TF-IDF 模擬，[Retrieve] 與 [IsRel] 以人工標註模擬；範例中的告警代碼、步驟與門檻僅供教學示範。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Asai、Wu、Wang、Sil、Hajishirzi，〈Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection〉（arXiv:2310.11511，ICLR 2024）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>Self-RAG 的 [IsSup] 反思詞元在檢查什麼？</b></p>
+    <button class="opt">A. 檢索到的段落與問題的相似度</button>
+    <button class="opt">B. 模型生成的句子是否有檢索段落作為依據</button>
+    <button class="opt">C. 要不要啟動檢索</button>
+    <div class="why">A 是 [IsRel]，C 是 [Retrieve]。[IsSup] 檢查生成內容被段落支持的程度（完全、部分、無），用來抓出模型在段落之外自行補上的主張。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>技師問「PT-203 怎麼處理」，檢索到舊款 OW-6 的過溫段落（代碼 PT-103）。Self-RAG 最可能怎麼處理它？</b></p>
+    <button class="opt">A. 照用，因為段落字面和問題很像</button>
+    <button class="opt">B. 把 [Retrieve] 設成 No 重新回答</button>
+    <button class="opt">C. 由 [IsRel] 判為無關而不採用，改用相關的 OW-8 段落</button>
+    <div class="why">[IsRel] 逐段判斷段落能否用來回答問題，機型或告警代碼對不上就判為無關。但批判模型可能判斷錯誤，所以仍需要機型過濾與評估集把關。</div>
+  </div>
+
+  <nav class="pager" data-slug="self-rag"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8500, steps:[
+  { title:'一般 RAG：撈到什麼就用什麼', text:'技師問「PT-203 旋角馬達過溫怎麼處理」，檢索回來的前 3 名裡有<b>舊款 OW-6</b> 的段落。固定流程<b>不會質疑</b>，全部塞給模型，答案混入 PT-103 的做法。' },
+  { title:'Self-RAG：讓模型自己批判', text:'Self-RAG（Asai 等人，2023）微調一個語言模型，讓它在生成文字時<b>順便輸出反思詞元</b>。這些詞元是模型對自己與檢索結果的評語，推論時可以用來控制行為。' },
+  { title:'[Retrieve]：要不要檢索', text:'模型先輸出 <b>[Retrieve]</b>：Yes、No 或 Continue。問「旋角是什麼」多半<b>不必查手冊</b>；問「PT-203 怎麼處理」就必須查。不需要時省下檢索與長上下文。' },
+  { title:'需要時才檢索，取回多個候選', text:'決定要檢索後，照一般做法取回前幾名候選段落（<b>檢索器本身不變</b>）。接下來不是全部採用，而是<b>逐段檢查</b>，這正是 Self-RAG 與固定流程的差別。' },
+  { title:'[IsRel]：這段相關嗎', text:'模型對每個段落輸出 <b>[IsRel]</b>：相關或無關。OW-6 舊款的段落代碼與機型都對不上，被判為<b>無關</b>；OW-8 手冊與 WTG-17 工單被判為相關。' },
+  { title:'[IsSup]：我寫的句子有依據嗎', text:'模型針對每個段落各寫一段草稿，再輸出 <b>[IsSup]</b>：完全支持、部分支持或無支持。工單只講 WTG-17 個案，若草稿推廣到所有機組，就只會得到<b>部分支持</b>。' },
+  { title:'[IsUse]＋加權打分', text:'<b>[IsUse]</b> 以 1–5 分評整體回答的有用程度。解碼時以<b>分段束搜尋</b>，把各批判詞元的機率加權，挑出分數最高的片段；調整權重就能偏向更嚴謹或更完整。' },
+  { title:'只採用有依據的內容', text:'答案只使用<b>相關且被支持</b>的片段，並附上來源；若所有段落都不可靠，就明講<b>查無依據</b>而不是硬編。代價是需要訓練批判能力，批判本身也會犯錯。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 虛構文件。id 在互動範例中用來對應草稿與標註 */
+  const P = [
+    { id:'A', src:'OW-8 手冊 3.4', text:'PT-203 旋角馬達過溫：先讀取近 24 小時溫度曲線，檢查散熱風道與冷卻風扇，再量測 PT100 感測器阻值與接線。' },
+    { id:'B', src:'OW-6 手冊（舊款）', text:'OW-6 旋角馬達過溫的告警代碼為 PT-103，處理流程與 OW-8 不同，請依附錄 B 逐項檢查。' },
+    { id:'C', src:'工單 WO-2026-0412', text:'WO-2026-0412：WTG-17 出現 PT-203 過溫告警，量測 PT100 阻值偏高，更換感測器後觀察 30 分鐘恢復正常。' },
+    { id:'D', src:'OW-8 手冊 3.4', text:'PT-205 旋角馬達煞車異常：煞車釋放時間超過設定值時，檢查煞車線圈電壓與摩擦盤間隙。' },
+    { id:'E', src:'OW-8 手冊 3.5', text:'PT-230 旋角備援電源測試失敗：每半年做一次放電測試，失敗時檢查電容模組與充電器。' },
+    { id:'F', src:'巡檢報告', text:'鷗灣離岸風場每年 3 月與 9 月以無人機巡檢葉片表面，記錄裂紋、前緣侵蝕與雷擊痕跡。' },
+    { id:'G', src:'工安規範', text:'進入輪轂前須完成上鎖掛牌（LOTO），確認葉輪鎖已插入，並由第二人在輪轂外待命。' }
+  ];
+  const idx = rt.buildIndex(P.map(p => ({ text:p.text })));
+
+  /* 問題：retrieve＝理想的 [Retrieve]；rel＝理想的 [IsRel]（相關段落 id）；
+     drafts＝模擬生成器針對各段落寫的草稿，ok＝草稿內容是否正確可用；沒列出的段落，草稿即段落原文 */
+  const Q = [
+    { q:'PT-203 旋角馬達過溫怎麼處理', retrieve:true, rel:['A','C'], drafts:{
+        A:{ t:'先讀取近 24 小時溫度曲線，檢查散熱風道與冷卻風扇，再量測 PT100 阻值與接線。', ok:true },
+        B:{ t:'PT-203 的處理流程同 OW-6，代碼為 PT-103，請依附錄 B 逐項檢查。', ok:false },
+        C:{ t:'WTG-17 曾因 PT100 阻值偏高，更換感測器後恢復，所有 OW-8 機組都適用這個做法。', ok:false } } },
+    { q:'旋角系統是做什麼用的', retrieve:false, rel:[], direct:'旋角（pitch）系統用來調整葉片的角度，藉此控制轉速與功率，並可在緊急時把葉片轉到順槳（feathering）位置，讓轉子減速。' },
+    { q:'WTG-17 的 PT-205 煞車異常怎麼查', retrieve:true, rel:['D'], drafts:{
+        D:{ t:'檢查煞車線圈電壓與摩擦盤間隙。', ok:true } } },
+    { q:'GB-117 齒輪箱高速軸軸承過溫怎麼處理', retrieve:true, rel:[] }
+  ];
+
+  let qi = 0, mode = 'self', supMin = 0.35, always = false;
+
+  const cov = (d, p) => {
+    const a = new Set(rt.tokenize(d)), b = new Set(rt.tokenize(p));
+    let n = 0; a.forEach(t => { if(b.has(t)) n++; });
+    return a.size ? n / a.size : 0;
+  };
+  const supLabel = s => s >= 0.8 ? ['完全支持','good'] : s >= 0.35 ? ['部分支持','warn'] : ['無支持','bad'];
+
+  function run(){
+    const Qi = Q[qi];
+    const doRetrieve = mode === 'naive' || Qi.retrieve || always;
+    const hits = doRetrieve ? rt.searchVector(idx, Qi.q, 3) : [];
+    const rows = hits.map(h => {
+      const p = P[h.i];
+      const d = (Qi.drafts && Qi.drafts[p.id]) || { t:p.text, ok:Qi.rel.includes(p.id) };
+      const sup = cov(d.t, p.text);
+      const isRel = Qi.rel.includes(p.id);
+      const use = mode === 'naive' || (isRel && sup >= supMin);
+      return { p, d, sup, isRel, use, score:h.score };
+    });
+    const used = rows.filter(r => r.use);
+    const bad = used.filter(r => !r.d.ok).length;
+    const direct = mode === 'self' && !Qi.retrieve && !always;
+
+    $('#opts').innerHTML = mode === 'self'
+      ? `<button type="button" data-always="1" class="${always ? 'on' : ''}">${always ? '☑' : '☐'} 強制每題都檢索（模擬 [Retrieve] 失誤或規則強制）</button>` : '';
+    $('#supSeg').style.display = mode === 'self' ? '' : 'none';
+
+    let st = `檢索 ${doRetrieve ? 1 : 0} 次`;
+    if(doRetrieve) st += `，取回 ${rows.length} 段，採用 ${used.length} 段，其中有誤或不可用 ${bad} 段`;
+    if(direct) st += '，模型判斷不必查手冊，直接回答';
+    $('#stat').textContent = st + '。';
+
+    $('#hits').innerHTML = rows.map(r => {
+      const [sl, sc] = supLabel(r.sup);
+      const tags = mode === 'naive' ? '' :
+        `　[IsRel] ${r.isRel ? '相關' : '無關'}　[IsSup] ${sl}（${r.sup.toFixed(2)}）`;
+      return `<div class="hit ${r.use ? 'top' : 'low'}">
+        <div class="meta"><span>${esc(r.p.id)}．${esc(r.p.src)}　${r.use ? '✔ 採用' : '✘ 不採用'}${tags}</span><span>相似度 ${r.score.toFixed(3)}</span></div>
+        <div>${rt.highlight(r.p.text, Qi.q)}</div>
+        <div class="muted" style="font-size:13px;margin-top:4px">草稿：${esc(r.d.t)}${r.d.ok ? '' : '　⚠️ 此草稿內容不可靠'}</div>
+      </div>`;
+    }).join('');
+
+    let ans;
+    if(direct) ans = Qi.direct + '\n（模型自行回答，未檢索。此題是一般概念，可接受；涉及告警代碼、料號、門檻值時應強制檢索。）';
+    else if(used.length) ans = used.map(r => `${r.d.t}（來源：${r.p.src}）`).join('\n');
+    else ans = '手冊與工單中查無足夠依據，建議改查對應章節或詢問原廠。';
+    if(mode === 'naive' && !Qi.rel.length) ans += '\n（一般 RAG 找不到相關內容也得作答，模型容易拿無關段落湊答案。）';
+    $('#answer').textContent = '最終答案：\n' + ans;
+  }
+
+  $('#presets').innerHTML = Q.map((x, i) => `<button type="button" data-i="${i}" class="${i === qi ? 'on' : ''}">${esc(x.q)}</button>`).join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return; qi = +b.dataset.i;
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#opts').onclick = e => { if(e.target.closest('button')){ always = !always; run(); } };
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => { mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); });
+  $('#supSeg').querySelectorAll('button').forEach(b => b.onclick = () => { supMin = +b.dataset.sup;
+    $('#supSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); });
+  run();
+})();
+</script>
+</body>
+</html>
