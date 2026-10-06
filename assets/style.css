@@ -174,3 +174,27 @@ table.cmp th{color:var(--muted);font-weight:600;white-space:nowrap}
 .quiz .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--panel))}
 .quiz .why{display:none;color:var(--muted);font-size:14px;margin-top:6px}
 .quiz.done .why{display:block}
+
+/* 測驗關卡 */
+.qs-status{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12px;color:var(--muted);margin:8px 0 4px;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:2}
+.qs-bar{flex:1;height:4px;background:var(--soft);border-radius:2px;overflow:hidden}
+.qs-bar b{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.qq{margin:12px 0}
+.qq p b{font-family:var(--serif);font-weight:700}
+.qq-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:4px}
+.qq-no{color:var(--accent-ink);font-weight:700}
+.qq .opt{display:block;width:100%;text-align:left;margin:6px 0;font:inherit;padding:9px 12px;border-radius:var(--radius);border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.qq .opt:hover{border-color:var(--accent)}
+.qq.done .opt{cursor:default}
+.qq .opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 12%,var(--panel))}
+.qq .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--panel))}
+.qq .why{display:none;color:var(--muted);font-size:14px;margin-top:6px}
+.qq.done .why{display:block}
+.qs-result{text-align:center;margin:20px 0;border-width:2px}
+.qs-result.pass{border-color:var(--good)}
+.qs-result.retry{border-color:var(--warn)}
+.qs-score{font-family:var(--serif);font-size:20px;color:var(--muted)}
+.qs-score b{font-size:56px;color:var(--ink)}
+.qs-result h3{margin:.2em 0}
+.entry.quiz .when b{color:var(--accent-ink)}
+.tag.quiz{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}

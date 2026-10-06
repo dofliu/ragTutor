@@ -73,8 +73,18 @@
       fetch('lessons/catalog.json', {cache:'no-cache'}).then(r => r.json()),
       fetch('lessons/roadmap.json', {cache:'no-cache'}).then(r => r.json())
     ]);
-    const lessons = cat.lessons;
-    document.getElementById('lesson-list').innerHTML = lessons.slice().reverse().map((l, i) => `
+    const all = cat.lessons, lessons = all.filter(l => l.type !== 'quiz');
+    const bestOf = l => { try{ return +localStorage.getItem('ragtutor-quiz-' + l.slug) || 0; }catch(e){ return 0; } };
+    document.getElementById('lesson-list').innerHTML = all.slice().reverse().map((l, i) => l.type === 'quiz' ? `
+      <a class="entry quiz" href="${l.file}">
+        <div class="when"><b>QUIZ ${l.quiz}</b>${esc(l.date)}</div>
+        <div>
+          <h3>${esc(l.title)}${i === 0 ? '<span class="new">NEW</span>' : ''}</h3>
+          <div class="en">${esc(l.en)}</div>
+          <p>${esc(l.summary)}</p>
+          <span class="tag quiz">測驗關卡</span>${bestOf(l) ? `<span class="tag">最佳 ${bestOf(l)} / 8</span>` : ''}
+        </div>
+      </a>` : `
       <a class="entry" href="${l.file}">
         <div class="when"><b>No.${pad(l.no)}</b>${esc(l.date)}</div>
         <div>

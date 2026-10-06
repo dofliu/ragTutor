@@ -2,6 +2,7 @@
  * - RagTutor.player(opts)   分鏡式動畫播放器
  * - RagTutor.rt             迷你檢索工具箱（斷詞、TF-IDF、BM25、餘弦相似度）
  * - RagTutor.quiz(el)       小測驗
+ * - RagTutor.quizSet(opts)  測驗關卡（多題、計分、答錯回頭複習的連結）
  * - 自動：主題切換、課程上一堂/下一堂導覽（讀 lessons/catalog.json）
  */
 (function(){
@@ -206,6 +207,72 @@
     });
   }
 
+
+  /* ---------- 測驗關卡 ----------
+   * RagTutor.quizSet({ el:'#quiz', id:'quiz-1', pass:6,
+   *   questions:[{ from:'002-chunking', q:'題目', opts:['A','B','C'], a:0, why:'解析' }, …] })
+   * 每次載入（與「再測一次」）會打亂選項順序；最佳成績存在 localStorage（key: ragtutor-quiz-<id>）。
+   */
+  function quizSet(o){
+    const root = typeof o.el === 'string' ? $(o.el) : o.el;
+    const names = o.names || {};
+    const key = 'ragtutor-quiz-' + o.id;
+    const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; };
+    let state;
+    const best = () => { try{ return +localStorage.getItem(key) || 0; }catch(e){ return 0; } };
+
+    function start(){
+      state = { done:0, right:0, wrong:[] };
+      root.innerHTML = `<div class="qs-status"><span class="qs-count"></span><div class="qs-bar"><b></b></div></div>` +
+        o.questions.map((q, qi) => {
+          const order = shuffle(q.opts.map((t, i) => ({ t, ok: i === q.a })));
+          return `<div class="qq card" data-qi="${qi}">
+            <div class="qq-meta"><span class="qq-no">Q${qi+1}</span><a href="${q.from}.html">出自第 ${escapeHtml(q.from.slice(0,3))} 堂</a></div>
+            <p><b>${escapeHtml(q.q)}</b></p>
+            ${order.map((x, i) => `<button class="opt" type="button" data-ok="${x.ok ? 1 : 0}">${'ABCD'[i]}. ${escapeHtml(x.t)}</button>`).join('')}
+            <div class="why">${q.why}</div></div>`;
+        }).join('') + '<div class="qs-result" hidden></div>';
+      const upd = () => {
+        $('.qs-count', root).textContent = `已作答 ${state.done} / ${o.questions.length}`;
+        $('.qs-bar b', root).style.width = (state.done / o.questions.length * 100) + '%';
+      };
+      upd();
+      $$('.qq', root).forEach(card => $$('.opt', card).forEach(b => b.addEventListener('click', () => {
+        if(card.classList.contains('done')) return;
+        card.classList.add('done');
+        const ok = b.dataset.ok === '1';
+        b.classList.add(ok ? 'right' : 'wrong');
+        $$('.opt', card).forEach(x => { if(x.dataset.ok === '1') x.classList.add('right'); });
+        state.done++;
+        if(ok) state.right++; else state.wrong.push(o.questions[+card.dataset.qi]);
+        upd();
+        if(state.done === o.questions.length) finish();
+      })));
+    }
+
+    function finish(){
+      const n = o.questions.length, pass = o.pass || Math.ceil(n * 0.75);
+      const prev = best();
+      if(state.right > prev){ try{ localStorage.setItem(key, String(state.right)); }catch(e){} }
+      const lessons = [...new Set(state.wrong.map(q => q.from))];
+      const msg = state.right === n ? '全對！這幾堂的觀念都穩了。'
+        : state.right >= pass ? '過關！答錯的題目看一下解析就好。'
+        : '還差一點，建議回頭看看下面列出的課程再挑戰。';
+      const box = $('.qs-result', root);
+      box.hidden = false;
+      box.className = 'qs-result card ' + (state.right >= pass ? 'pass' : 'retry');
+      box.innerHTML = `<div class="qs-score"><b>${state.right}</b> / ${n}</div>
+        <h3>${state.right >= pass ? '🎉 過關' : '📚 再加油'}</h3><p>${msg}</p>
+        <p class="muted" style="font-size:13px">最佳成績：${Math.max(prev, state.right)} / ${n}（過關標準 ${pass} 題）</p>
+        ${lessons.length ? `<p>建議複習：${lessons.map(f => `<a href="${f}.html">${escapeHtml(names[f] || ('第 ' + f.slice(0,3) + ' 堂'))}</a>`).join('、')}</p>` : ''}
+        <button type="button" class="primary qs-retry">再測一次（選項會重新排列）</button>`;
+      $('.qs-retry', box).addEventListener('click', () => { start(); root.scrollIntoView({behavior:'smooth', block:'start'}); });
+      box.scrollIntoView({behavior:'smooth', block:'nearest'});
+    }
+    start();
+    return { restart:start };
+  }
+
   /* ---------- 課程導覽（上一堂 / 下一堂） ---------- */
   async function initPager(){
     const el = $('.pager[data-slug]'); if(!el) return;
@@ -221,5 +288,5 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => { initTheme(); initQuiz(); initPager(); });
-  window.RagTutor = { player, rt, escapeHtml };
+  window.RagTutor = { player, rt, escapeHtml, quizSet };
 })();

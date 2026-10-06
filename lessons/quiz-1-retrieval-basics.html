@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>測驗關卡 1：檢索基礎打底｜RAG 動畫教室</title>
+<meta name="description" content="第 001–004 堂的小測驗：基礎 RAG、切塊、嵌入與向量檢索、混合檢索。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">關卡 1</span><span class="tag">複習第 001–004 堂</span><span class="tag">約 8 分鐘</span></p>
+  <h1>檢索基礎打底</h1>
+  <p class="lead">學完基礎 RAG、切塊、嵌入與向量檢索、混合檢索四堂，來檢查一下觀念有沒有真的吸收。共 8 題，每題作答後會立刻顯示解析，答錯的題目會附上回頭複習的課程連結。</p>
+  <div class="callout">涵蓋課程：<a href="001-naive-rag.html">基礎 RAG</a>、<a href="002-chunking.html">切塊</a>、<a href="003-embeddings.html">嵌入與向量檢索</a>、<a href="004-hybrid-search.html">混合檢索</a>。選項順序每次都會重新排列；最佳成績只存在你的瀏覽器裡。</div>
+
+  <h2>🧩 開考前，先快速回顧</h2>
+  <div class="keypoints"><div class="card"><b>基礎 RAG</b>索引（離線）切塊、嵌入、入庫；查詢（線上）檢索後交給 LLM。更新知識只要重新索引，品質瓶頸多半在檢索。 <a href="001-naive-rag.html">回到這一堂 →</a></div><div class="card"><b>切塊</b>固定長度最省事但會切斷句子；重疊是低成本保險；遞迴依結構切；語意切塊依話題轉換切。 <a href="002-chunking.html">回到這一堂 →</a></div><div class="card"><b>嵌入與向量檢索</b>嵌入把內容變成向量；餘弦相似度看方向不看長度；暴力法線性成長；ANN／HNSW 用少量誤差換速度。 <a href="003-embeddings.html">回到這一堂 →</a></div><div class="card"><b>混合檢索</b>BM25 擅長代碼與專有名詞，向量擅長語意相近；RRF 只看名次，把兩邊融合。 <a href="004-hybrid-search.html">回到這一堂 →</a></div></div>
+
+  <h2>📝 測驗（8 題）</h2>
+  <div id="quiz"></div>
+
+  <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。</div>
+
+  <nav class="pager" data-slug="quiz-1-retrieval-basics"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.quizSet({ el:'#quiz', id:'quiz-1-retrieval-basics', pass:6,
+  names:{"001-naive-rag": "第 001 堂 基礎 RAG", "002-chunking": "第 002 堂 切塊", "003-embeddings": "第 003 堂 嵌入與向量檢索", "004-hybrid-search": "第 004 堂 混合檢索"},
+  questions:[
+ {
+  "from": "001-naive-rag",
+  "q": "技師問「葉片旋角馬達故障」，系統卻找出塔架保養的片段，答案也跟著錯。依 RAG 的流程，最該先檢查哪一步？",
+  "opts": [
+   "檢索：有沒有找對相關的片段",
+   "把語言模型換成更大的模型",
+   "重新訓練語言模型的權重"
+  ],
+  "a": 0,
+  "why": "RAG 的答案品質高度取決於檢索。找錯片段，再強的模型也只能依錯誤資料作答，所以排查要先從檢索（含切塊、嵌入）下手。"
+ },
+ {
+  "from": "001-naive-rag",
+  "q": "《OW-8 運維手冊》改版後，要讓助理改用新版內容，且不動模型權重，最直接的做法是？",
+  "opts": [
+   "把整本手冊塞進每次的提示詞",
+   "重新微調語言模型",
+   "更新文件並重新索引（切塊、嵌入、入庫）"
+  ],
+  "a": 2,
+  "why": "RAG 把知識放在外部資料庫，更新文件並重新索引即可；不必訓練模型，還能附上出處讓技師查證。"
+ },
+ {
+  "from": "002-chunking",
+  "q": "手冊裡「須先完成上鎖掛牌，再拆卸馬達」這句，被固定長度切塊切成兩半，分屬兩個片段。哪個調整成本最低、最能降低這種風險？",
+  "opts": [
+   "把片段縮到只有 1 個字",
+   "讓相鄰片段保留一段重疊（overlap）",
+   "把嵌入模型換掉"
+  ],
+  "a": 1,
+  "why": "重疊讓邊界附近的句子至少完整出現在其中一個片段，只要在切下一塊時往回多帶一段字。片段縮到 1 個字會讓語意完全消失。"
+ },
+ {
+  "from": "002-chunking",
+  "q": "遞迴切塊（recursive chunking）的做法是什麼？",
+  "opts": [
+   "只看字數，每 N 個字切一刀",
+   "依段落、句號、逗號的優先順序切，只有片段仍然太長才往下一層切",
+   "比對相鄰句子的嵌入相似度，話題改變才切"
+  ],
+  "a": 1,
+  "why": "遞迴切塊盡量沿著文件結構切，避免切斷句子。只看字數是固定長度切塊；比對相鄰句子相似度則是語意切塊。"
+ },
+ {
+  "from": "003-embeddings",
+  "q": "餘弦相似度（cosine similarity）比較兩個向量的什麼？",
+  "opts": [
+   "兩個向量的長度差",
+   "兩個向量的夾角（方向），與長度無關",
+   "兩段文字有幾個字相同"
+  ],
+  "a": 1,
+  "why": "餘弦相似度看方向不看長度，是最常見的「像不像」量尺。字面重疊則是 BM25 這類關鍵字方法在看的東西。"
+ },
+ {
+  "from": "003-embeddings",
+  "q": "資料庫有上千萬個片段時，為什麼常改用 HNSW 這類 ANN 索引，而不是暴力比對？",
+  "opts": [
+   "ANN 保證每次都找到真正最相似的那一筆",
+   "暴力法無法計算餘弦相似度",
+   "ANN 只比對一小部分鄰居，用少量的準確度誤差換取大幅縮短的搜尋時間"
+  ],
+  "a": 2,
+  "why": "暴力法的比對次數隨資料筆數線性成長；HNSW 以分層圖狀索引只比對少數鄰居，屬於近似最近鄰搜尋，通常能取得很高的召回率，但不保證絕對最相似。"
+ },
+ {
+  "from": "004-hybrid-search",
+  "q": "技師直接輸入告警代碼「GB-117」。只用向量檢索可能漏掉，補上哪種方法最有幫助？",
+  "opts": [
+   "BM25 關鍵字檢索，靠罕見詞的字面比對命中",
+   "把片段切得更長",
+   "提高向量的維度"
+  ],
+  "a": 0,
+  "why": "代碼、型號這類罕見詞，BM25 靠逆文件頻率（IDF）能準確命中；向量檢索對這類字串常常不夠敏感。"
+ },
+ {
+  "from": "004-hybrid-search",
+  "q": "RRF（倒數排名融合）為什麼用名次而不是直接把 BM25 分數與向量相似度相加？",
+  "opts": [
+   "因為名次比分數更精確",
+   "因為兩種分數的尺度與分布天差地遠，直接相加沒有意義；名次可以公平地合併",
+   "因為 BM25 一定比向量分數低"
+  ],
+  "a": 1,
+  "why": "BM25 分數沒有上限，向量相似度介於 0 到 1，尺度不同。RRF 只用每份清單的名次計算 1/(k+rank)，不需要校準原始分數。"
+ }
+]
+});
+</script>
+</body>
+</html>

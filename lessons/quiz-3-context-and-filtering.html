@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>測驗關卡 3：脈絡、融合與過濾｜RAG 動畫教室</title>
+<meta name="description" content="第 009–012 堂的小測驗：情境化檢索、RAG-Fusion、中繼資料過濾、上下文壓縮。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">關卡 3</span><span class="tag">複習第 009–012 堂</span><span class="tag">約 8 分鐘</span></p>
+  <h1>脈絡、融合與過濾</h1>
+  <p class="lead">情境化檢索、RAG-Fusion、中繼資料過濾與自我查詢、上下文壓縮，這四堂處理的是「檢索前後怎麼補脈絡、融合、過濾、瘦身」。共 8 題，包含一題 RRF 的實際算分。</p>
+  <div class="callout">涵蓋課程：<a href="009-contextual-retrieval.html">情境化檢索</a>、<a href="010-rag-fusion.html">RAG-Fusion</a>、<a href="011-metadata-filtering.html">中繼資料過濾</a>、<a href="012-context-compression.html">上下文壓縮</a>。選項順序每次都會重新排列；最佳成績只存在你的瀏覽器裡。</div>
+
+  <h2>🧩 開考前，先快速回顧</h2>
+  <div class="keypoints"><div class="card"><b>情境化檢索</b>索引時由 LLM 為每個片段補上脈絡（機型、章節），嵌入與 BM25 都用「情境＋片段」；一次性成本。 <a href="009-contextual-retrieval.html">回到這一堂 →</a></div><div class="card"><b>RAG-Fusion</b>多個問法各自檢索，用 RRF 把名次合併成統一排序；問法偏題會讓答案偏題。 <a href="010-rag-fusion.html">回到這一堂 →</a></div><div class="card"><b>中繼資料過濾</b>機型、日期等明確條件用精確過濾；Self-Query 讓 LLM 拆成語意查詢＋過濾條件；先過濾比後過濾穩。 <a href="011-metadata-filtering.html">回到這一堂 →</a></div><div class="card"><b>上下文壓縮</b>在檢索之後只留與問題有關的句子；抽取比改寫安全；安全注意事項要用規則強制保留。 <a href="012-context-compression.html">回到這一堂 →</a></div></div>
+
+  <h2>📝 測驗（8 題）</h2>
+  <div id="quiz"></div>
+
+  <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。</div>
+
+  <nav class="pager" data-slug="quiz-3-context-and-filtering"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.quizSet({ el:'#quiz', id:'quiz-3-context-and-filtering', pass:6,
+  names:{"009-contextual-retrieval": "第 009 堂 情境化檢索", "010-rag-fusion": "第 010 堂 RAG-Fusion", "011-metadata-filtering": "第 011 堂 中繼資料過濾", "012-context-compression": "第 012 堂 上下文壓縮"},
+  questions:[
+ {
+  "from": "009-contextual-retrieval",
+  "q": "OW-6 與 OW-8 兩份手冊中，「更換馬達前須完成上鎖掛牌」的片段幾乎一樣，切塊後很難分辨。情境化檢索怎麼解決這個問題？",
+  "opts": [
+   "查詢時請使用者補充機型",
+   "建索引前由 LLM 讀整份文件，為每個片段生成一兩句情境（例如所屬機型與章節）並接在片段前",
+   "回答時才讓 LLM 猜這是哪份手冊"
+  ],
+  "a": 1,
+  "why": "切塊讓片段脫離了所屬文件的脈絡。情境化在索引階段補回這些資訊，再做嵌入與 BM25，查詢時不必再呼叫 LLM。"
+ },
+ {
+  "from": "009-contextual-retrieval",
+  "q": "情境化檢索的成本主要發生在哪裡？",
+  "opts": [
+   "每次查詢都要多呼叫一次 LLM",
+   "只發生在建索引時，每個片段一次性生成情境，與之後的查詢量無關",
+   "只發生在向量資料庫的儲存費"
+  ],
+  "a": 1,
+  "why": "情境是索引時一次生成的；整份文件可用提示詞快取（prompt caching）重複利用以降低費用。"
+ },
+ {
+  "from": "010-rag-fusion",
+  "q": "三個問法的結果中，段落 A 的名次分別是第 1、第 2、第 3；段落 B 只在其中一個問法拿到第 1，其餘沒出現。以 k = 60 的 RRF（score = Σ 1/(k+rank)），哪個總分較高？",
+  "opts": [
+   "段落 A（約 0.048 對 0.016）",
+   "段落 B，因為它拿過第 1 名",
+   "兩者相同"
+  ],
+  "a": 0,
+  "why": "A = 1/61 + 1/62 + 1/63 ≈ 0.0484；B = 1/61 ≈ 0.0164。被多個問法認同的段落自然上浮，這是 RAG-Fusion 比單純聯集多出來的排序依據。"
+ },
+ {
+  "from": "010-rag-fusion",
+  "q": "RAG-Fusion 最主要的風險是什麼？",
+  "opts": [
+   "RRF 會讓排名最高的段落被刪除",
+   "LLM 產生的問法若與原問題不夠相關，檢索結果與答案可能偏題",
+   "它完全不需要呼叫 LLM，所以結果不穩定"
+  ],
+  "a": 1,
+  "why": "多個問法由 LLM 產生，需要確保它們忠於原意。代價還包括多一輪改寫與多次檢索的延遲與費用。"
+ },
+ {
+  "from": "011-metadata-filtering",
+  "q": "技師問「只要 OW-8、2025 年之後發布的技術通報，怎麼處理 PT-211」。其中哪一部分最適合交給中繼資料過濾，而不是靠向量相似度？",
+  "opts": [
+   "「怎麼處理」這個意圖",
+   "「PT-211」的語意聯想",
+   "「OW-8」「2025 年之後」「技術通報」這類明確的條件"
+  ],
+  "a": 2,
+  "why": "向量負責「像不像」，過濾負責「是不是」。機型、日期、文件類型是精確條件，用過濾比用語意猜測可靠。"
+ },
+ {
+  "from": "011-metadata-filtering",
+  "q": "Self-Query 檢索中，LLM 負責做什麼？",
+  "opts": [
+   "把自然語言問題拆成「語意查詢」與「結構化過濾條件」，再交給向量資料庫執行",
+   "直接替向量資料庫產生向量",
+   "把所有文件的中繼資料重新標註一遍"
+  ],
+  "a": 0,
+  "why": "給 LLM 欄位清單與可用值，它輸出語意查詢＋過濾條件，使用者不必自己填表單。欄位值要在建索引時就正規化存好。"
+ },
+ {
+  "from": "012-context-compression",
+  "q": "為什麼壓縮手冊段落時，通常「抽取原句」比「讓 LLM 改寫摘要」更安全？",
+  "opts": [
+   "因為抽取比較省 token",
+   "因為只挑出原句、不改寫，數字、告警代碼與步驟順序才不會被改錯，也能追溯來源",
+   "因為改寫無法處理中文"
+  ],
+  "a": 1,
+  "why": "維運資料中的數字與步驟順序一個都不能錯。讓 LLM 回傳句子編號，再由程式取回原句，是實務上穩健的做法。"
+ },
+ {
+  "from": "012-context-compression",
+  "q": "用相似度門檻壓縮時，「上鎖掛牌（LOTO）」這類安全注意事項容易因與問題字面不像而被丟掉。比較穩當的處理是？",
+  "opts": [
+   "把門檻調到 0，等於完全不壓縮",
+   "用規則保底：以中繼資料標註安全注意事項，壓縮後強制補回",
+   "改用更大的 LLM 來判斷"
+  ],
+  "a": 1,
+  "why": "必保留的內容要用規則決定，不要賭相似度或 LLM 的臨場判斷。把門檻調到 0 只是取消壓縮，失去了意義。"
+ }
+]
+});
+</script>
+</body>
+</html>

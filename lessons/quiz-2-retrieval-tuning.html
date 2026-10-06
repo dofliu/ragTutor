@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>測驗關卡 2：把檢索調準｜RAG 動畫教室</title>
+<meta name="description" content="第 005–008 堂的小測驗：重排序、查詢改寫與多重查詢、HyDE、父子文件檢索。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">關卡 2</span><span class="tag">複習第 005–008 堂</span><span class="tag">約 8 分鐘</span></p>
+  <h1>把檢索調準</h1>
+  <p class="lead">重排序、查詢改寫與多重查詢、HyDE、父子文件檢索，這四堂都在「把檢索調準」。共 8 題，混合了情境判斷與觀念，作答後會立刻顯示解析。</p>
+  <div class="callout">涵蓋課程：<a href="005-reranking.html">重排序</a>、<a href="006-query-rewriting.html">查詢改寫與多重查詢</a>、<a href="007-hyde.html">HyDE</a>、<a href="008-parent-document.html">父子文件檢索</a>。選項順序每次都會重新排列；最佳成績只存在你的瀏覽器裡。</div>
+
+  <h2>🧩 開考前，先快速回顧</h2>
+  <div class="keypoints"><div class="card"><b>重排序</b>Bi-encoder 快但粗、Cross-encoder 準但慢；先召回候選池再精排。候選池漏掉正解，重排救不回來。 <a href="005-reranking.html">回到這一堂 →</a></div><div class="card"><b>查詢改寫與多重查詢</b>模糊問題背後有多種原因，多重查詢各自檢索再聯集；精確查詢（如告警代碼）通常不必展開。 <a href="006-query-rewriting.html">回到這一堂 →</a></div><div class="card"><b>HyDE</b>先生成假設文件，用它的向量去檢索；假設文件只用來找資料，不進最終答案。 <a href="007-hyde.html">回到這一堂 →</a></div><div class="card"><b>父子文件檢索</b>小塊命中、大塊回傳；向量索引存子塊與父 ID，文件庫存整節原文；自動合併靠門檻。 <a href="008-parent-document.html">回到這一堂 →</a></div></div>
+
+  <h2>📝 測驗（8 題）</h2>
+  <div id="quiz"></div>
+
+  <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。</div>
+
+  <nav class="pager" data-slug="quiz-2-retrieval-tuning"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.quizSet({ el:'#quiz', id:'quiz-2-retrieval-tuning', pass:6,
+  names:{"005-reranking": "第 005 堂 重排序", "006-query-rewriting": "第 006 堂 查詢改寫與多重查詢", "007-hyde": "第 007 堂 HyDE", "008-parent-document": "第 008 堂 父子文件檢索"},
+  questions:[
+ {
+  "from": "005-reranking",
+  "q": "為什麼不直接用 Cross-encoder 掃過整個資料庫來找答案？",
+  "opts": [
+   "因為 Cross-encoder 不能處理中文",
+   "因為 Cross-encoder 的準確度比 Bi-encoder 低",
+   "因為它必須把問題與每篇文件成對輸入模型，無法預先算好文件向量，對整庫逐篇計算太慢"
+  ],
+  "a": 2,
+  "why": "Cross-encoder 讓問題與文件一起做 full attention，能抓細節但無法預先計算、也不能用 ANN 加速，所以只拿來精排小批候選。"
+ },
+ {
+  "from": "005-reranking",
+  "q": "正確的段落在召回階段就沒進入候選池，後面接上最強的重排序模型會怎樣？",
+  "opts": [
+   "重排序模型會從資料庫中補撈回來",
+   "救不回來，重排序只能調整候選池「裡面」的順序",
+   "會自動降低其他段落的分數而讓它浮現"
+  ],
+  "a": 1,
+  "why": "重排序只改順序，不會新增候選。所以候選池大小是關鍵旋鈕：太小會在源頭就丟掉正解。"
+ },
+ {
+  "from": "006-query-rewriting",
+  "q": "技師說「風機一直自己停機」。為什麼要展開成多個不同角度的查詢，而不是只改寫成一句更精確的查詢？",
+  "opts": [
+   "因為向量檢索一次只能接受一個字",
+   "因為 LLM 一次只能生成一個查詢",
+   "因為這個問題背後可能對應變流器、齒輪箱、旋角備援電源等多種原因，單一查詢只能涵蓋其中一個角度"
+  ],
+  "a": 2,
+  "why": "模糊問題常有多種可能原因，多重查詢各自檢索，才能涵蓋單一查詢用詞永遠找不到的段落。"
+ },
+ {
+  "from": "006-query-rewriting",
+  "q": "技師直接輸入「PT-205」告警代碼。對這個查詢，通常最合理的做法是？",
+  "opts": [
+   "不需要特別改寫或展開，直接檢索即可",
+   "一律展開成 10 個以上的改寫查詢",
+   "先用 HyDE 生成一份假設手冊"
+  ],
+  "a": 0,
+  "why": "已經很精確的查詢再展開，只會多花延遲與成本。每多一個改寫查詢就多一次檢索，改寫不是越多越好。"
+ },
+ {
+  "from": "007-hyde",
+  "q": "HyDE 生成的假設文件，最後扮演什麼角色？",
+  "opts": [
+   "直接當作最終答案回傳給技師",
+   "只用來產生查詢向量，去檢索真實文件；最終答案仍依真實段落產生",
+   "用來取代知識庫中的原始手冊"
+  ],
+  "a": 1,
+  "why": "HyDE 的價值在於假設文件「長得像」答案段落，讓查詢向量更靠近真實文件；編造的細節會被嵌入淡化，也不會進入最終答案。"
+ },
+ {
+  "from": "007-hyde",
+  "q": "哪種情況最適合考慮使用 HyDE？",
+  "opts": [
+   "技師輸入精確的料號，要查對應備品",
+   "技師用症狀描述（「馬達好像很燙」），手冊卻是用技術術語寫的，兩者用詞落差大",
+   "資料庫只有幾份文件，隨便怎麼查都找得到"
+  ],
+  "a": 1,
+  "why": "HyDE 把「問句」轉成「答案文體」，最適合問句與文件用詞落差大的情況。精確代碼、料號用關鍵字檢索更直接。"
+ },
+ {
+  "from": "008-parent-document",
+  "q": "父子文件檢索中，向量索引與文件庫（docstore）各自存什麼？",
+  "opts": [
+   "向量索引存子塊與其父 ID；文件庫以父 ID 存整節原文，命中後用 ID 查表",
+   "向量索引存整本手冊；文件庫存所有子塊",
+   "兩者都只存同樣大小的片段"
+  ],
+  "a": 0,
+  "why": "命中子塊後，用父 ID 到文件庫取出整節原文，不必再做一次向量檢索。小塊利於「找」，大塊利於「讀」。"
+ },
+ {
+  "from": "008-parent-document",
+  "q": "技師只想查「備品料號 PT-MTR-02 是什麼」。回傳整節 5 個小塊的程序並不合適，下列何者是合理的處理？",
+  "opts": [
+   "一律回傳整節，讓 LLM 自己挑",
+   "只命中零星小塊時維持小塊，同一父節點命中夠多子塊才合併成父節點（自動合併的門檻）",
+   "把所有小塊改成更大的塊"
+  ],
+  "a": 1,
+  "why": "單一事實的問題，小塊就夠了。自動合併以門檻判斷是否展開，避免把不相關的內容塞進上下文。"
+ }
+]
+});
+</script>
+</body>
+</html>
