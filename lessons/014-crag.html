@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CRAG 修正式 RAG：檢索品質評估與網路補救｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂 CRAG（Corrective RAG）：輕量評估器替檢索結果打信心分數，判為正確、錯誤或模糊，錯誤時丟棄並改用其他來源補救，並看門檻鬆緊的取捨。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 014 堂</span><span class="tag lv3">高階</span><span class="tag">約 15 分鐘</span></p>
+  <h1>CRAG 修正式 RAG：檢索品質評估與網路補救</h1>
+  <p class="lead">檢索器不是每次都對。技師問「OW-8 的 PT-211 怎麼處理」，手冊裡可能只有<b>舊款 OW-6</b> 的角度偏差段落，字面很像、內容卻不適用，一般 RAG 仍照單全收。<b>CRAG（Corrective Retrieval-Augmented Generation，修正式 RAG）</b>在檢索與生成之間加一個<b>輕量的檢索評估器</b>，替每份文件打信心分數，再判成「正確、錯誤、模糊」三種情況：正確就<b>精煉後使用</b>，錯誤就<b>丟掉並改用其他來源補救</b>，模糊就兩邊合併。</p>
+
+  
+  <h2>🎬 動畫：先評估檢索結果，再決定怎麼用</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="CRAG 動畫：一般 RAG 把撈到的舊款手冊段落直接送給模型；CRAG 加入檢索評估器替文件打信心分數，全部偏低時判為錯誤，丟棄文件並改寫查詢，改查技術通報，經知識精煉後只留下有用片段，產生可靠答案">
+  <defs>
+    <marker id="ah14" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" style="fill:var(--muted)"/></marker>
+  </defs>
+
+  <rect x="250" y="14" width="420" height="48" rx="10" style="fill:var(--panel);stroke:var(--query);stroke-width:2"/>
+  <text x="460" y="33" text-anchor="middle" font-size="11.5" class="t-muted">👤 現場技師輸入</text>
+  <text x="460" y="52" text-anchor="middle" font-size="13" font-weight="700">「OW-8 的 PT-211 葉片角度偏差過大怎麼處理」</text>
+
+  <rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 一般 RAG：撈到舊款手冊也照單全收</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="1" data-to="1">② CRAG：檢索與生成之間加一個評估器</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="2" data-to="2">③ 替每份文件打「與問題相關」的信心分數</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="3" data-to="3">④ 依門檻分成正確、錯誤、模糊三種動作</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="4" data-to="4">⑤ 判為錯誤：丟棄文件，把問題改寫成關鍵字</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="5" data-to="5">⑥ 補救檢索：改查其他來源（這裡是技術通報）</text>
+  <text x="30" y="96" text-anchor="start" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="6" data-to="6">⑦ 知識精煉：拆成小片段，只留有用的</text>
+  <text x="460" y="96" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 用可靠的片段生成答案，並附來源</text>
+
+  <!-- 左欄：初次檢索的三份文件 -->
+  <g data-dim="4 5 6 7">
+    <rect x="20" y="112" width="290" height="70" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+    <text x="34" y="138" font-size="12.5" font-weight="700">OW-6 手冊：PT-111 角度偏差</text>
+    <text x="34" y="162" font-size="11.5" class="t-muted">舊款機型，流程不同</text>
+    <g data-from="2"><rect x="214" y="146" width="84" height="19" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/><text x="256" y="160" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">信心 0.25</text></g>
+    <rect x="20" y="190" width="290" height="70" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+    <text x="34" y="216" font-size="12.5" font-weight="700">OW-6 手冊：PT-103 過溫</text>
+    <text x="34" y="240" font-size="11.5" class="t-muted">代碼與主題都不同</text>
+    <g data-from="2"><rect x="214" y="224" width="84" height="19" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/><text x="256" y="238" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">信心 0.10</text></g>
+    <rect x="20" y="268" width="290" height="70" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+    <text x="34" y="294" font-size="12.5" font-weight="700">巡檢報告：葉片前緣侵蝕</text>
+    <text x="34" y="318" font-size="11.5" class="t-muted">字面像、主題無關</text>
+    <g data-from="2"><rect x="214" y="302" width="84" height="19" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/><text x="256" y="316" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">信心 0.10</text></g>
+  </g>
+
+  <!-- 一般 RAG：直接送進 LLM -->
+  <g data-to="0">
+    <path d="M312 147 H376" class="arrow" marker-end="url(#ah14)"/><path d="M312 225 H376" class="arrow" marker-end="url(#ah14)"/><path d="M312 303 H376" class="arrow" marker-end="url(#ah14)"/>
+    <rect x="380" y="150" width="250" height="150" rx="10" style="fill:var(--panel);stroke:var(--llm);stroke-width:2"/>
+    <text x="505" y="188" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--llm)">LLM 生成</text>
+    <text x="505" y="220" text-anchor="middle" font-size="11.5">拿到什麼就用什麼</text>
+    <text x="505" y="242" text-anchor="middle" font-size="11.5" class="t-muted">沒有人檢查文件可不可靠</text>
+    <path d="M632 225 H726" class="arrow" marker-end="url(#ah14)"/>
+    <rect x="730" y="112" width="176" height="226" rx="10" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+    <text x="818" y="136" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--bad)">答案</text>
+    <text x="818" y="170" text-anchor="middle" font-size="11.5">照 OW-6 的 PT-111</text>
+    <text x="818" y="190" text-anchor="middle" font-size="11.5">流程回答 OW-8</text>
+    <text x="818" y="226" text-anchor="middle" font-size="11.5" class="t-muted">看起來有條有理，</text>
+    <text x="818" y="246" text-anchor="middle" font-size="11.5" class="t-muted">但機型與代碼都錯</text>
+    <text x="818" y="298" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">技師可能照錯版本做</text>
+  </g>
+
+  <!-- 中欄：評估器（step 1 起，內容依步驟切換） -->
+  <g data-from="1">
+    <rect x="340" y="112" width="270" height="226" rx="10" style="fill:var(--panel);stroke:var(--accent);stroke-width:2"/>
+    <text x="475" y="136" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--accent-ink)" data-to="4">檢索評估器</text>
+    <text x="475" y="136" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--doc)" data-from="5" data-to="5">補救檢索</text>
+    <text x="475" y="136" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--llm)" data-from="6" data-to="6">知識精煉</text>
+    <text x="475" y="136" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--good)" data-from="7">動作對照</text>
+
+    <g data-from="1" data-to="1">
+      <text x="475" y="172" text-anchor="middle" font-size="11.5">一個輕量的微調模型</text>
+      <text x="475" y="194" text-anchor="middle" font-size="11.5">只做一件事：</text>
+      <text x="475" y="216" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-ink)">這份文件能回答問題嗎？</text>
+      <text x="475" y="250" text-anchor="middle" font-size="11.5" class="t-muted">輸出信心分數（0～1）</text>
+      <text x="475" y="272" text-anchor="middle" font-size="11.5" class="t-muted">比整個 LLM 便宜很多</text>
+    </g>
+    <g data-from="2" data-to="2">
+      <text x="475" y="172" text-anchor="middle" font-size="11.5">逐份評分，最高只有 0.25</text>
+      <text x="475" y="198" text-anchor="middle" font-size="11.5" class="t-muted">機型、代碼對不上，</text>
+      <text x="475" y="218" text-anchor="middle" font-size="11.5" class="t-muted">字面再像分數也低</text>
+      <text x="475" y="256" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--bad)">全部都不太可靠</text>
+    </g>
+    <g data-from="3" data-to="3">
+      <g data-hot="9"><text x="356" y="170" font-size="11.5" font-weight="700" style="fill:var(--good)">有一份 ≥ 上門檻</text><text x="356" y="188" font-size="11.5" class="t-muted">→ 正確（Correct）</text></g>
+      <g data-hot="3"><rect x="350" y="206" width="250" height="44" rx="6" style="fill:none;stroke:var(--bad);stroke-width:1.6"/><text x="356" y="224" font-size="11.5" font-weight="700" style="fill:var(--bad)">全部 &lt; 下門檻（0.3）</text><text x="356" y="242" font-size="11.5" class="t-muted">→ 錯誤（Incorrect）← 本例</text></g>
+      <g data-hot="9"><text x="356" y="274" font-size="11.5" font-weight="700" style="fill:var(--warn)">其餘情形</text><text x="356" y="292" font-size="11.5" class="t-muted">→ 模糊（Ambiguous）</text></g>
+      <text x="356" y="320" font-size="11" class="t-muted">上、下門檻要用評估集調</text>
+    </g>
+    <g data-from="4" data-to="4">
+      <text x="475" y="172" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--bad)">判為錯誤（Incorrect）</text>
+      <text x="475" y="204" text-anchor="middle" font-size="11.5">丟棄左邊三份文件</text>
+      <text x="475" y="236" text-anchor="middle" font-size="11.5" class="t-muted">把問題改寫成關鍵字：</text>
+      <text x="475" y="260" text-anchor="middle" font-size="12" font-weight="700" class="t-mono">OW-8 PT-211 角度偏差</text>
+      <text x="475" y="300" text-anchor="middle" font-size="11" class="t-muted">短關鍵字比整句更適合搜尋</text>
+    </g>
+    <g data-from="5" data-to="5">
+      <text x="475" y="168" text-anchor="middle" font-size="11.5" class="t-muted">改寫後的關鍵字：</text>
+      <text x="475" y="190" text-anchor="middle" font-size="12" font-weight="700" class="t-mono">OW-8 PT-211 角度偏差</text>
+      <text x="475" y="226" text-anchor="middle" font-size="11.5">查技術通報庫（內部）</text>
+      <text x="475" y="252" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">找到 TB-2026-07</text>
+      <text x="475" y="274" text-anchor="middle" font-size="11.5" class="t-muted">OW-8 PT-211 處理建議</text>
+      <text x="475" y="312" text-anchor="middle" font-size="11" class="t-muted">原論文補救來源是網路搜尋</text>
+    </g>
+    <g data-from="6" data-to="6">
+      <text x="356" y="166" font-size="11.5" style="fill:var(--good)">✔ 比對三組編碼器讀值</text>
+      <text x="356" y="196" font-size="11.5" style="fill:var(--good)">✔ 檢查旋角編碼器接線與零位</text>
+      <text x="356" y="226" font-size="11.5" class="t-muted" style="text-decoration:line-through">✘ 通報編號與發布單位</text>
+      <text x="356" y="256" font-size="11.5" style="fill:var(--good)">✔ 處理前先鎖定葉輪並 LOTO</text>
+      <text x="475" y="300" text-anchor="middle" font-size="11" class="t-muted">拆成片段、逐片評分、重組</text>
+    </g>
+    <g data-from="7">
+      <text x="356" y="168" font-size="11.5" font-weight="700" style="fill:var(--good)">正確</text><text x="404" y="168" font-size="11.5">精煉原文件後使用</text>
+      <text x="356" y="206" font-size="11.5" font-weight="700" style="fill:var(--bad)">錯誤</text><text x="404" y="206" font-size="11.5">丟棄，改查其他來源</text>
+      <text x="356" y="244" font-size="11.5" font-weight="700" style="fill:var(--warn)">模糊</text><text x="404" y="244" font-size="11.5">精煉文件＋補救結果合併</text>
+      <text x="475" y="296" text-anchor="middle" font-size="11" class="t-muted">本例走「錯誤」這條路</text>
+    </g>
+  </g>
+
+  <!-- 右欄 -->
+  <g data-from="1" data-to="6">
+    <rect x="730" y="112" width="176" height="226" rx="10" style="fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:5 4"/>
+    <text x="818" y="136" text-anchor="middle" font-size="13" font-weight="700" class="t-muted">答案</text>
+    <text x="818" y="190" text-anchor="middle" font-size="11.5" class="t-muted">先確認資料可靠，</text>
+    <text x="818" y="210" text-anchor="middle" font-size="11.5" class="t-muted">再交給 LLM 生成</text>
+  </g>
+  <g data-from="7">
+    <path d="M612 225 H726" class="flow" style="stroke:var(--good)" marker-end="url(#ah14)"/>
+    <rect x="730" y="112" width="176" height="226" rx="10" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+    <text x="818" y="136" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--good)">最終答案</text>
+    <text x="818" y="170" text-anchor="middle" font-size="11.5">依 TB-2026-07：</text>
+    <text x="818" y="190" text-anchor="middle" font-size="11.5">先比對編碼器讀值，</text>
+    <text x="818" y="210" text-anchor="middle" font-size="11.5">查接線與零位，</text>
+    <text x="818" y="230" text-anchor="middle" font-size="11.5">處理前鎖定葉輪</text>
+    <text x="818" y="270" text-anchor="middle" font-size="11.5" class="t-muted">OW-6 段落不採用</text>
+    <text x="818" y="306" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">附來源，可查證</text>
+  </g>
+  <g data-from="5" data-to="6"><path d="M612 225 H726" class="flow" style="stroke:var(--doc)" marker-end="url(#ah14)"/></g>
+
+  <!-- 底部：三種動作 -->
+  <g data-from="1">
+    <g data-hot="3 6"><rect x="20" y="352" width="290" height="56" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:1.5"/><text x="34" y="375" font-size="12.5" font-weight="700" style="fill:var(--good)">Correct 正確</text><text x="34" y="395" font-size="11.5" class="t-muted">至少一份夠可靠 → 精煉後使用</text></g>
+    <g data-hot="3 4 5"><rect x="330" y="352" width="290" height="56" rx="8" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.5"/><text x="344" y="375" font-size="12.5" font-weight="700" style="fill:var(--bad)">Incorrect 錯誤</text><text x="344" y="395" font-size="11.5" class="t-muted">全部不可靠 → 丟棄，改查其他來源</text></g>
+    <g data-hot="3 7"><rect x="640" y="352" width="266" height="56" rx="8" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.5"/><text x="654" y="375" font-size="12.5" font-weight="700" style="fill:var(--warn)">Ambiguous 模糊</text><text x="654" y="395" font-size="11.5" class="t-muted">把握不大 → 精煉＋補救合併</text></g>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>多一個評估器</b>CRAG（Yan 等人，2024）在檢索與生成之間放一個輕量的檢索評估器，替每份文件評估與問題的相關程度，不需要動到檢索器或生成模型。</div>
+    <div class="card"><b>三種動作</b>依信心分數分成正確（Correct）、錯誤（Incorrect）、模糊（Ambiguous）：正確就精煉文件，錯誤就丟棄並補救檢索，模糊則兩種結果一起用。</div>
+    <div class="card"><b>補救檢索與知識精煉</b>原論文以網頁搜尋補救，並把文件拆成小片段、濾掉無關的再重組（decompose-then-recompose）。風場可把補救來源換成技術通報庫或原廠公開文件。</div>
+    <div class="card"><b>即插即用，但評估器要可信</b>CRAG 可套在各種 RAG 流程上；整個系統的上限取決於評估器的準確度，門檻太鬆放壞資料進來，太嚴則常常白白去補救。</div>
+  </div>
+
+  <h2>🧪 互動範例：一般 RAG vs CRAG</h2>
+  <div class="prose"><p>下面用虛構文件模擬三種問題。<b>檢索</b>是真的在瀏覽器裡算（簡化的 TF-IDF 餘弦相似度，取前 3 名）；<b>補救檢索</b>也是真的對「技術通報庫」另建索引，用改寫後的關鍵字去查；<b>知識精煉</b>真的把文件切成句子，只留下與問題有重疊詞元的片段。但<b>評估器的信心分數無法在網頁內由真的微調模型產生</b>，這裡以人工標註的分數模擬，真實評估器會有誤差。切換「一般 RAG」與「CRAG」，再調整門檻，看看判斷怎麼改變。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" data-mode="naive">一般 RAG（全部採用）</button>
+      <button type="button" class="on" data-mode="crag">CRAG</button>
+    </div>
+    <div class="row seg" id="thSeg">
+      <span class="muted" style="font-size:13px">門檻（上／下）：</span>
+      <button type="button" data-th="0.5,0.2">寬鬆 0.5／0.2</button>
+      <button type="button" class="on" data-th="0.7,0.3">標準 0.7／0.3</button>
+      <button type="button" data-th="0.85,0.5">嚴格 0.85／0.5</button>
+    </div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+    <div class="hits" id="fb"></div>
+    <div class="prompt-box" id="answer"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>原論文的評估器是另外微調的小模型，補救檢索用網頁搜尋。這裡用 <code>claude-sonnet-5</code> 以提示詞當評估器，做「CRAG 風格」的<b>近似</b>：逐份打分、依門檻判斷動作、錯誤時改寫查詢查通報庫、最後把文件切成句子只留相關的。範例文件為虛構，<code>retrieve</code> 與 <code>search_bulletins</code> 請換成你自己的檢索器。</p></div>
+<pre class="code"><code><span class="k">import</span> json
+<span class="k">import</span> re
+<span class="k">import</span> anthropic
+
+client = anthropic.<span class="f">Anthropic</span>()
+MODEL = <span class="s">"claude-sonnet-5"</span>
+UPPER, LOWER = <span class="s">0.7</span>, <span class="s">0.3</span>   <span class="c"># 上、下門檻：請用自己的評估集調整</span>
+
+<span class="k">def</span> <span class="f">ask</span>(prompt, max_tokens=<span class="s">300</span>):
+    msg = client.messages.<span class="f">create</span>(model=MODEL, max_tokens=max_tokens,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text
+
+<span class="c"># 假設的檢索器：回傳 [{"id": "...", "text": "..."}]</span>
+<span class="k">def</span> <span class="f">retrieve</span>(question, k=<span class="s">3</span>): ...          <span class="c"># 查《OW-8 運維手冊》</span>
+<span class="k">def</span> <span class="f">search_bulletins</span>(keywords, k=<span class="s">2</span>): ...   <span class="c"># 查技術通報庫（取代原論文的網頁搜尋）</span>
+
+<span class="k">def</span> <span class="f">score</span>(question, text):
+    <span class="c"># 評估器：這份文件能回答問題嗎？機型與告警代碼必須相符</span>
+    out = <span class="f">ask</span>(<span class="s">f'問題：{question}\n文件：{text}\n'</span>
+              <span class="s">'這份文件能回答問題嗎（機型與告警代碼需相符）？只輸出 0 到 1 的數字。'</span>)
+    <span class="k">return</span> <span class="f">float</span>(re.<span class="f">search</span>(<span class="s">r"[01](?:\.\d+)?"</span>, out).<span class="f">group</span>())
+
+<span class="k">def</span> <span class="f">refine</span>(question, text):
+    <span class="c"># 知識精煉：切成句子，逐句評分，只留下相關的再重組</span>
+    strips = [s <span class="k">for</span> s <span class="k">in</span> text.<span class="f">split</span>(<span class="s">"。"</span>) <span class="k">if</span> s.<span class="f">strip</span>()]
+    <span class="k">return</span> <span class="s">"。"</span>.<span class="f">join</span>(s <span class="k">for</span> s <span class="k">in</span> strips <span class="k">if</span> <span class="f">score</span>(question, s) &gt;= LOWER)
+
+<span class="k">def</span> <span class="f">crag</span>(question):
+    docs = <span class="f">retrieve</span>(question)
+    scores = [<span class="f">score</span>(question, d[<span class="s">"text"</span>]) <span class="k">for</span> d <span class="k">in</span> docs]
+
+    <span class="k">if</span> <span class="f">max</span>(scores) &gt;= UPPER:                 <span class="c"># Correct</span>
+        action = <span class="s">"correct"</span>
+    <span class="k">elif</span> <span class="f">max</span>(scores) &lt; LOWER:                <span class="c"># Incorrect</span>
+        action = <span class="s">"incorrect"</span>
+    <span class="k">else</span>:                                  <span class="c"># Ambiguous</span>
+        action = <span class="s">"ambiguous"</span>
+
+    context = []
+    <span class="k">if</span> action <span class="k">in</span> (<span class="s">"correct"</span>, <span class="s">"ambiguous"</span>):
+        context += [(d[<span class="s">"id"</span>], <span class="f">refine</span>(question, d[<span class="s">"text"</span>]))
+                    <span class="k">for</span> d, s <span class="k">in</span> <span class="f">zip</span>(docs, scores) <span class="k">if</span> s &gt;= LOWER]
+    <span class="k">if</span> action <span class="k">in</span> (<span class="s">"incorrect"</span>, <span class="s">"ambiguous"</span>):
+        <span class="c"># 補救：把問題改寫成關鍵字，改查其他來源</span>
+        kw = <span class="f">ask</span>(<span class="s">f'把問題改寫成 3～6 個搜尋關鍵字，空白分隔，只輸出關鍵字：{question}'</span>)
+        context += [(d[<span class="s">"id"</span>], <span class="f">refine</span>(question, d[<span class="s">"text"</span>])) <span class="k">for</span> d <span class="k">in</span> <span class="f">search_bulletins</span>(kw)]
+
+    <span class="k">if</span> <span class="k">not</span> context:
+        <span class="k">return</span> <span class="s">"手冊與通報中查無足夠依據，建議詢問原廠。"</span>
+    refs = <span class="s">"\n"</span>.<span class="f">join</span>(<span class="s">f"[{i}] {t}"</span> <span class="k">for</span> i, t <span class="k">in</span> context)
+    <span class="k">return</span> <span class="f">ask</span>(<span class="s">f"只根據下列資料回答，並標註來源編號。\n{refs}\n問題：{question}"</span>, <span class="s">400</span>)
+
+<span class="f">print</span>(<span class="f">crag</span>(<span class="s">"OW-8 的 PT-211 葉片角度偏差過大怎麼處理"</span>))</code></pre>
+  <div class="prose"><p>每份文件多一次評分呼叫，精煉時每個句子又多一次，成本不低；實務上可以改用小型分類模型當評估器，或只對信心分數落在模糊區間的文件做精煉。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>基礎 RAG（第 001 堂）</th><th>重排序（第 005 堂）</th><th>Self-RAG（第 013 堂）</th><th>CRAG（本堂）</th></tr>
+    <tr><th>檢索結果很差時</th><td>照單全收</td><td>重新排序，但候選裡沒好文件就沒用</td><td>[IsRel] 判無關後不採用</td><td>判為錯誤，丟棄並改查其他來源</td></tr>
+    <tr><th>誰來判斷</th><td>沒有人</td><td>精排模型打相關分數</td><td>微調過的生成模型自己判斷</td><td>外掛的輕量評估器判斷</td></tr>
+    <tr><th>能補到新資料嗎</th><td>否</td><td>否</td><td>否，只能在既有段落中挑</td><td>是，補救檢索可查手冊以外的來源</td></tr>
+    <tr><th>成本</th><td>最低</td><td>多一個精排模型</td><td>需訓練或微調生成模型</td><td>多一個評估器，補救時多一次檢索</td></tr>
+  </table>
+  <div class="prose"><p>Self-RAG 讓生成模型自己批判，CRAG 則把「檢索品質把關」獨立成一個外掛元件，生成模型不必重新訓練。兩者可以疊加：檢索端用混合檢索加重排序，中間用 CRAG 評估與補救，生成端再做依據檢查。下一堂的 Adaptive RAG 會更進一步，一開始就依問題難度選擇路線。</p></div>
+
+  <h2>⚠️ CRAG 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>評估器會判錯</b>：把舊款 OW-6 的段落判成高分，壞資料就直接通關；把好文件判成低分，又會白白丟棄。要用評估集量測，不要憑感覺調門檻。</li>
+      <li><b>門檻太鬆或太嚴都有代價</b>：互動範例中，上門檻降到 0.5，原本需要補充的「模糊」題會被判為正確，漏掉通報裡的新資訊；下門檻升高，則更常放棄手冊轉去補救。</li>
+      <li><b>補救來源本身要可信</b>：原論文用網頁搜尋，網路內容良莠不齊；在運維場景，建議補救來源限定為通報庫、原廠公開文件等受控資料，不要直接開放全網。</li>
+      <li><b>機密與資安</b>：把工單或設備代碼放進外部搜尋的查詢，可能洩漏內部資訊。改寫查詢時要先去識別化，或只查內部來源。</li>
+      <li><b>精煉可能切掉關鍵前提</b>：把安全注意事項（例如先鎖定葉輪、LOTO）當成不相關而濾掉，後果比答不出來更嚴重。高風險段落可設成「一律保留」。</li>
+      <li><b>延遲與費用</b>：每份文件多一次評估，補救時又多一輪檢索。檢索品質本來就穩定、問題簡單時，固定流程加重排序通常更划算。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的檢索為簡化的 TF-IDF 模擬，評估器信心分數以人工標註模擬；範例中的告警代碼、通報編號與步驟僅供教學示範。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Yan、Gu、Zhu、Ling，〈Corrective Retrieval Augmented Generation〉（arXiv:2401.15884）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>CRAG 的評估器判定「所有檢索到的文件都不可靠」（Incorrect）時，會怎麼做？</b></p>
+    <button class="opt">A. 仍使用分數最高的那份文件</button>
+    <button class="opt">B. 丟棄這些文件，改寫查詢並用其他來源補救檢索</button>
+    <button class="opt">C. 只把 top-k 調大，再檢索同一個資料庫</button>
+    <div class="why">Incorrect 代表檢索結果整體不可信，所以丟棄；原論文改用網頁搜尋補救。只調大 top-k 通常撈到更多同類的壞文件。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>評估器的信心分數落在上、下門檻之間（Ambiguous）時，最合理的處理是？</b></p>
+    <button class="opt">A. 直接回答「不知道」</button>
+    <button class="opt">B. 把分數當成 0 重新評估</button>
+    <button class="opt">C. 同時使用精煉後的原文件與補救檢索的結果</button>
+    <div class="why">模糊代表把握不大，既不能完全相信原文件，也不該全部丟棄，所以兩邊合併，讓互補的資訊一起進來；代價是多一次補救檢索。</div>
+  </div>
+
+  <nav class="pager" data-slug="crag"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8500, steps:[
+  { title:'一般 RAG：撈到什麼就用什麼', text:'技師問「OW-8 的 PT-211 怎麼處理」，手冊只撈到<b>舊款 OW-6</b> 的角度偏差段落與兩份無關文件。固定流程不會質疑，全部送給模型，答案<b>機型與代碼都錯</b>。' },
+  { title:'CRAG：加一個檢索評估器', text:'CRAG（Yan 等人，2024）在檢索與生成之間放一個<b>輕量的檢索評估器</b>，專門判斷「這份文件能不能回答這個問題」。檢索器與生成模型都不必改動。' },
+  { title:'替每份文件打信心分數', text:'評估器逐份輸出<b>信心分數</b>。OW-6 的 PT-111 段落字面雖像，但機型與代碼對不上，只有 <b>0.25</b>；另外兩份更低。三份都不夠可靠。' },
+  { title:'依門檻分成三種動作', text:'有一份高於<b>上門檻</b>就是正確；全部低於<b>下門檻</b>就是錯誤；介於之間是模糊。本例最高分 0.25 低於下門檻 0.3，判為<b>錯誤</b>。門檻要用評估集調整。' },
+  { title:'判為錯誤：丟棄並改寫查詢', text:'既然手冊檢索結果不可信，就把這三份文件<b>整個丟棄</b>，並把問題改寫成適合搜尋的關鍵字：「OW-8 PT-211 角度偏差」，準備改查別的來源。' },
+  { title:'補救檢索：改查其他來源', text:'用關鍵字去查<b>技術通報庫</b>，找到 TB-2026-07：OW-8 的 PT-211 處理建議。原論文在這一步使用網頁搜尋，在運維場景可換成受控的內部或原廠資料。' },
+  { title:'知識精煉：只留有用的片段', text:'通報不是每句都有用。CRAG 把文件<b>拆成小片段</b>，逐片評分、濾掉無關的，再重組。編號與發布單位被濾掉，編碼器比對、接線零位、鎖定葉輪三項保留。' },
+  { title:'用可靠的片段生成答案', text:'模型只根據精煉後的通報片段回答並<b>附上來源</b>。若是「模糊」，會把精煉後的手冊文件與補救結果<b>合併</b>。代價是多一個評估器，且評估器本身也會犯錯。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 主知識庫（虛構）。ok＝內容是否適用 OW-8 */
+  const M = [
+    { id:'M1', src:'OW-8 手冊 3.4', ok:true, text:'PT-203 旋角馬達過溫：先讀取近 24 小時溫度曲線，檢查散熱風道與冷卻風扇。再量測 PT100 感測器阻值與接線。更換馬達前須完成上鎖掛牌。本節最後修訂於去年。' },
+    { id:'M2', src:'OW-6 手冊（舊款）', ok:false, text:'OW-6 旋角馬達過溫的告警代碼為 PT-103，處理流程與 OW-8 不同，請依附錄 B 逐項檢查。' },
+    { id:'M3', src:'OW-8 手冊 3.5', ok:true, text:'PT-230 旋角備援電源測試失敗：每半年做一次放電測試。失敗時檢查電容模組與充電器。' },
+    { id:'M4', src:'OW-6 手冊（舊款）', ok:false, text:'OW-6 三支葉片角度偏差過大的代碼為 PT-111，請檢查編碼器零位與連桿，流程與 OW-8 不同。' },
+    { id:'M5', src:'OW-8 手冊 3.4', ok:true, text:'PT-205 旋角馬達煞車異常：煞車釋放時間超過設定值時，檢查煞車線圈電壓與摩擦盤間隙。' },
+    { id:'M6', src:'巡檢報告', ok:true, text:'鷗灣離岸風場每年 3 月與 9 月以無人機巡檢葉片表面，記錄裂紋、前緣侵蝕與雷擊痕跡。' },
+    { id:'M7', src:'工安規範', ok:true, text:'進入輪轂前須完成上鎖掛牌（LOTO），確認葉輪鎖已插入，並由第二人在輪轂外待命。' }
+  ];
+  /* 補救來源：技術通報庫（虛構） */
+  const W = [
+    { id:'TB-2026-07', src:'技術通報 TB-2026-07', ok:true, text:'OW-8 PT-211 三支葉片角度偏差過大：先比對三組旋角編碼器讀值，找出偏差最大的葉片。檢查該葉片的旋角編碼器接線與零位，必要時重新校正零位。處理前須鎖定葉輪並完成上鎖掛牌。本通報由技術支援組發布。' },
+    { id:'TB-2026-03', src:'技術通報 TB-2026-03', ok:true, text:'OW-8 PT-230 旋角備援電源測試失敗：備援電容模組容量衰退時，放電測試可能失敗。連續兩次失敗時，更換電容模組並重新測試。' },
+    { id:'TB-2026-05', src:'技術通報 TB-2026-05', ok:true, text:'葉片前緣塗裝補修材料更新：新批次材料的固化時間延長，施工須避開高濕度天候。' },
+    { id:'TB-2026-09', src:'技術通報 TB-2026-09', ok:true, text:'OW-8 偏航系統更新：YW-042 偏航誤差過大的閾值設定調整，請依新版參數表設定。' }
+  ];
+  const idxM = rt.buildIndex(M.map(d => ({ text:d.text })));
+  const idxW = rt.buildIndex(W.map(d => ({ text:d.text })));
+
+  /* ev＝人工標註的評估器分數（模擬）；沒列出的文件預設 0.1。kw＝改寫後的關鍵字 */
+  const Q = [
+    { q:'OW-8 的 PT-211 葉片角度偏差過大怎麼處理', kw:'OW-8 PT-211 角度偏差', ev:{ M4:0.25, M1:0.15 } },
+    { q:'OW-8 的 PT-203 旋角馬達過溫怎麼處理', kw:'OW-8 PT-203 過溫', ev:{ M1:0.92, M2:0.2, M5:0.3 } },
+    { q:'OW-8 的 PT-230 備援電源測試失敗怎麼處理', kw:'OW-8 PT-230 備援電源', ev:{ M3:0.6 } }
+  ];
+
+  let qi = 0, mode = 'crag', up = 0.7, lo = 0.3;
+
+  const split = t => t.split(/(?<=。)/).map(s => s.trim()).filter(Boolean);
+  /* 知識精煉：句子與問題共有的詞元夠多就保留；安全相關句（LOTO）一律保留 */
+  function refine(text, q){
+    const qs = new Set(rt.tokenize(q));
+    return split(text).map(s => {
+      const st = [...new Set(rt.tokenize(s))];
+      const hit = st.filter(t => qs.has(t) && (t.length >= 2 || /[a-z0-9]/.test(t))).length;
+      return { s, keep: hit >= 2 || /上鎖掛牌|LOTO/.test(s) };
+    });
+  }
+  const strips = (text, q) => refine(text, q).map(x =>
+    x.keep ? esc(x.s) : `<s style="opacity:.55">${esc(x.s)}</s>`).join('');
+  const kept = (text, q) => refine(text, q).filter(x => x.keep).map(x => x.s).join('');
+
+  function run(){
+    const Qi = Q[qi];
+    const hits = rt.searchVector(idxM, Qi.q, 3);
+    const rows = hits.map(h => ({ d:M[h.i], score:h.score, ev:Qi.ev[M[h.i].id] ?? 0.1 }));
+    const best = Math.max(...rows.map(r => r.ev));
+    const action = best >= up ? 'correct' : best < lo ? 'incorrect' : 'ambiguous';
+    const label = { correct:['正確 Correct','good'], incorrect:['錯誤 Incorrect','bad'], ambiguous:['模糊 Ambiguous','warn'] }[action];
+
+    $('#thSeg').style.display = mode === 'crag' ? '' : 'none';
+
+    /* 決定採用內容 */
+    let used = [];   // {src, text, ok}
+    let fbHits = [];
+    if(mode === 'naive'){
+      used = rows.map(r => ({ src:r.d.src, text:r.d.text, ok:r.d.ok }));
+    } else {
+      if(action !== 'incorrect')
+        rows.filter(r => r.ev >= lo).forEach(r => used.push({ src:r.d.src, text:kept(r.d.text, Qi.q), ok:r.d.ok }));
+      if(action !== 'correct'){
+        fbHits = rt.searchVector(idxW, Qi.kw, 2).filter(h => h.score > 0.15);
+        fbHits.forEach(h => used.push({ src:W[h.i].src, text:kept(W[h.i].text, Qi.q), ok:W[h.i].ok }));
+      }
+    }
+    used = used.filter(u => u.text);
+    const bad = used.filter(u => !u.ok).length;
+
+    $('#stat').textContent = mode === 'naive'
+      ? `一般 RAG：取回 3 份文件全部送進模型，其中不適用 OW-8 的有 ${rows.filter(r => !r.d.ok).length} 份。`
+      : `評估器最高分 ${best.toFixed(2)}（上門檻 ${up}、下門檻 ${lo}）→ 判為「${label[0]}」；採用 ${used.length} 個片段，其中有誤 ${bad} 個${fbHits.length ? `；補救檢索取回 ${fbHits.length} 份通報` : ''}。`;
+
+    $('#hits').innerHTML = rows.map(r => {
+      const dropped = mode === 'crag' && (action === 'incorrect' || r.ev < lo);
+      const tag = mode === 'naive' ? '' : `　評估器信心 ${r.ev.toFixed(2)}　${dropped ? '✘ 丟棄' : '✔ 保留並精煉'}`;
+      const body = mode === 'crag' && !dropped ? strips(r.d.text, Qi.q) : rt.highlight(r.d.text, Qi.q);
+      return `<div class="hit ${dropped ? 'low' : 'top'}">
+        <div class="meta"><span>${esc(r.d.id)}．${esc(r.d.src)}${tag}</span><span>相似度 ${r.score.toFixed(3)}</span></div>
+        <div>${body}</div>
+        ${r.d.ok ? '' : '<div class="muted" style="font-size:13px;margin-top:4px">⚠️ 舊款機型內容，不適用 OW-8</div>'}
+      </div>`;
+    }).join('');
+
+    $('#fb').innerHTML = fbHits.length ? `<div class="muted" style="font-size:13px">補救檢索（關鍵字「${esc(Qi.kw)}」查技術通報庫）：</div>` +
+      fbHits.map(h => `<div class="hit top"><div class="meta"><span>${esc(W[h.i].src)}　✔ 保留並精煉</span><span>相似度 ${h.score.toFixed(3)}</span></div><div>${strips(W[h.i].text, Qi.q)}</div></div>`).join('') : '';
+
+    let ans = used.length ? used.map(u => `${u.text}（來源：${u.src}）`).join('\n') : '手冊與通報中查無足夠依據，建議詢問原廠。';
+    if(mode === 'naive' && bad) ans += '\n（混入舊款 OW-6 的內容，答案可能照錯版本。）';
+    if(mode === 'crag' && action === 'correct' && Qi.q.includes('PT-230')) ans += '\n（門檻放寬後判為正確，沒有補查通報，漏掉「連續兩次失敗就更換電容模組」。）';
+    $('#answer').textContent = '最終答案依據：\n' + ans;
+  }
+
+  $('#presets').innerHTML = Q.map((x, i) => `<button type="button" data-i="${i}" class="${i === qi ? 'on' : ''}">${esc(x.q)}</button>`).join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return; qi = +b.dataset.i;
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => { mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); });
+  $('#thSeg').querySelectorAll('button').forEach(b => b.onclick = () => { [up, lo] = b.dataset.th.split(',').map(Number);
+    $('#thSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); });
+  run();
+})();
+</script>
+</body>
+</html>
