@@ -267,6 +267,20 @@
       "date": "2026-10-07"
     },
     {
+      "type": "quiz",
+      "quiz": 4,
+      "slug": "quiz-4-self-correct-route",
+      "file": "lessons/quiz-4-self-correct-route.html",
+      "title": "測驗關卡 4：自我反思、修正與路由",
+      "en": "Checkpoint 4 · Lessons 013–016",
+      "level": 0,
+      "summary": "第 013–016 堂複習：Self-RAG、CRAG、Adaptive RAG、RAPTOR。8 題，答完立即看解析，答錯會指向該回頭複習的課程。",
+      "tags": [
+        "測驗關卡"
+      ],
+      "date": "2026-10-07"
+    },
+    {
       "no": 17,
       "slug": "graphrag",
       "file": "lessons/017-graphrag.html",

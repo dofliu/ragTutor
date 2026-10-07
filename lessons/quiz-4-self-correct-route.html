@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>測驗關卡 4：自我反思、修正與路由｜RAG 動畫教室</title>
+<meta name="description" content="第 013–016 堂複習測驗：Self-RAG、CRAG、Adaptive RAG、RAPTOR，8 題，答錯會連回該堂複習。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">關卡 4</span><span class="tag">複習第 013–016 堂</span><span class="tag">約 8 分鐘</span></p>
+  <h1>自我反思、修正與路由</h1>
+  <p class="lead">Self-RAG、CRAG、Adaptive RAG 讓系統自己判斷「要不要查、查到的可不可信、該走哪條路」，RAPTOR 則用摘要樹回答全局問題。共 8 題，每堂各 2 題。</p>
+  <div class="callout">涵蓋課程：<a href="013-self-rag.html">Self-RAG</a>、<a href="014-crag.html">CRAG</a>、<a href="015-adaptive-rag.html">Adaptive RAG</a>、<a href="016-raptor.html">RAPTOR</a>。選項順序每次都會重新排列；最佳成績只存在你的瀏覽器裡。</div>
+
+  <h2>🧩 開考前，先快速回顧</h2>
+  <div class="keypoints"><div class="card"><b>Self-RAG</b>模型輸出 [Retrieve] 決定要不要查；[IsRel]、[IsSup]、[IsUse] 批判段落與答案；批判模型也會錯。 <a href="013-self-rag.html">回到這一堂 →</a></div><div class="card"><b>CRAG</b>輕量評估器依信心分數分成正確／錯誤／模糊，再精煉、補救檢索或兩者併用；門檻要靠評估集調。 <a href="014-crag.html">回到這一堂 →</a></div><div class="card"><b>Adaptive RAG</b>小型分類器依問題複雜度分流到不檢索、單步、多步；分錯會答不全或多花錢。 <a href="015-adaptive-rag.html">回到這一堂 →</a></div><div class="card"><b>RAPTOR</b>切塊遞迴地嵌入、分群、摘要成樹；全局問題取摘要、細節取原文；建樹成本高、文件更新要重做。 <a href="016-raptor.html">回到這一堂 →</a></div></div>
+
+  <h2>📝 測驗（8 題）</h2>
+  <div id="quiz"></div>
+
+  <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。</div>
+
+  <nav class="pager" data-slug="quiz-4-self-correct-route"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.quizSet({ el:'#quiz', id:'quiz-4-self-correct-route', pass:6,
+  names:{"013-self-rag": "第 013 堂 Self-RAG", "014-crag": "第 014 堂 CRAG", "015-adaptive-rag": "第 015 堂 Adaptive RAG", "016-raptor": "第 016 堂 RAPTOR"},
+  questions:[
+ {
+  "from": "013-self-rag",
+  "q": "在 Self-RAG 中，[Retrieve] 詞元的作用是什麼？",
+  "opts": [
+   "決定目前這一段需不需要先檢索外部資料",
+   "對最終答案打 1–5 分",
+   "把檢索到的段落壓縮成摘要"
+  ],
+  "a": 0,
+  "why": "[Retrieve] 讓模型按需檢索（Yes／No／Continue），不需要查手冊的問題可直接回答。對答案打分的是 [IsUse]。"
+ },
+ {
+  "from": "013-self-rag",
+  "q": "批判詞元 [IsSup] 評估的是什麼？",
+  "opts": [
+   "問題本身難不難",
+   "生成的句子被檢索段落支持的程度（完全／部分／無）",
+   "段落的原文長度"
+  ],
+  "a": 1,
+  "why": "[IsSup] 檢查句子與段落的一致程度。它不保證段落本身正確或適用於該機型，版本仍要靠中繼資料過濾。"
+ },
+ {
+  "from": "014-crag",
+  "q": "CRAG 的檢索評估器判為「模糊」（Ambiguous）時，怎麼處理？",
+  "opts": [
+   "直接放棄回答",
+   "把原本檢索的結果與補救檢索的結果一起使用",
+   "只用模型記憶，不用任何文件"
+  ],
+  "a": 1,
+  "why": "正確→精煉原文件；錯誤→丟棄並補救檢索；模糊→兩種來源併用，讓信心不足時仍有退路。"
+ },
+ {
+  "from": "014-crag",
+  "q": "在運維場景，CRAG 的補救檢索來源為什麼建議限定為受控資料（如技術通報庫）？",
+  "opts": [
+   "因為網頁搜尋一定比較慢",
+   "開放網路的內容良莠不齊，也可能因查詢洩漏內部資訊",
+   "因為補救檢索不能使用關鍵字"
+  ],
+  "a": 1,
+  "why": "補救來源本身要可信；把工單或設備代碼丟到外部搜尋也有資安風險，所以建議限定內部或原廠公開資料，並先去識別化。"
+ },
+ {
+  "from": "015-adaptive-rag",
+  "q": "Adaptive RAG 把問題分流之後，哪一類問題通常走「多步檢索」路線？",
+  "opts": [
+   "查單一告警代碼的意義",
+   "需要跨多份文件整合的根因分析",
+   "與手冊無關的閒聊"
+  ],
+  "a": 1,
+  "why": "複雜、需整合多份資料的問題走多步檢索；單一事實走單步，不需外部資料的走不檢索。"
+ },
+ {
+  "from": "015-adaptive-rag",
+  "q": "分類器把複雜問題誤判成簡單，通常會發生什麼事？",
+  "opts": [
+   "只是多花一點錢，答案不受影響",
+   "答案缺資料，卻可能顯得很有把握",
+   "系統會自動重新分類"
+  ],
+  "a": 1,
+  "why": "分太簡單會答不全；分太複雜只是多花成本。兩者代價不對稱，高風險場景宜偏向走複雜路線。"
+ },
+ {
+  "from": "016-raptor",
+  "q": "RAPTOR 為什麼適合回答「旋角系統有哪些定期保養項目」這類問題？",
+  "opts": [
+   "摘要節點已整合散在各節的項目，一次取回就涵蓋較完整",
+   "它把每個切塊變得更長",
+   "它保證摘要一定比原文精確"
+  ],
+  "a": 0,
+  "why": "高層摘要濃縮了一群切塊，適合整合多段的全局問題。摘要是生成的，不保證比原文精確，涉及數值與安全時要回原文核對。"
+ },
+ {
+  "from": "016-raptor",
+  "q": "RAPTOR 的 collapsed tree 檢索是怎麼做的？",
+  "opts": [
+   "由根開始逐層往下選，只看選中節點的子節點",
+   "把所有層的節點攤平成一個清單，直接比對相似度取前幾名",
+   "只查最底層的原文切塊"
+  ],
+  "a": 1,
+  "why": "collapsed tree 把各層節點攤平一起比，由問題自己決定要取摘要還是原文；逐層往下選的是樹遍歷。"
+ }
+]
+});
+</script>
+</body>
+</html>

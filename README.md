@@ -25,6 +25,7 @@
 | 014 | [CRAG 修正式 RAG：檢索品質評估與網路補救](https://dofliu.github.io/ragTutor/lessons/014-crag.html) |
 | 015 | [Adaptive RAG：依問題難度選擇路線](https://dofliu.github.io/ragTutor/lessons/015-adaptive-rag.html) |
 | 016 | [RAPTOR：遞迴摘要樹檢索](https://dofliu.github.io/ragTutor/lessons/016-raptor.html) |
+| 🎯 關卡 4 | [測驗關卡 4：自我反思、修正與路由（第 013–016 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-4-self-correct-route.html) |
 | 017 | [GraphRAG：知識圖譜與社群摘要](https://dofliu.github.io/ragTutor/lessons/017-graphrag.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
