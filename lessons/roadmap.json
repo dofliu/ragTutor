@@ -17,7 +17,7 @@
     { "slug": "crag", "title": "CRAG 修正式 RAG：檢索品質評估與網路補救", "en": "Corrective RAG", "level": 3, "status": "done", "file": "lessons/014-crag.html", "scenario": "檢索到的是舊款 OW-6 的手冊段落，評估為不適用後改查技術通報或外部資料" },
     { "slug": "adaptive-rag", "title": "Adaptive RAG：依問題難度選擇路線", "en": "Adaptive RAG", "level": 3, "status": "done", "file": "lessons/015-adaptive-rag.html", "scenario": "查單一告警代碼走簡單檢索，跨手冊與多份工單的根因分析走多步檢索" },
     { "slug": "raptor", "title": "RAPTOR：遞迴摘要樹檢索", "en": "RAPTOR", "level": 3, "status": "done", "file": "lessons/016-raptor.html", "scenario": "整本運維手冊建成「章→節→段」的遞迴摘要樹，回答「旋角系統有哪些定期保養項目」這類全局問題" },
-    { "slug": "graphrag", "title": "GraphRAG：知識圖譜與社群摘要", "en": "GraphRAG", "level": 3, "status": "todo", "scenario": "手冊中零件—故障模式—告警代碼—排除步驟之間的知識圖譜與社群摘要" },
+    { "slug": "graphrag", "title": "GraphRAG：知識圖譜與社群摘要", "en": "GraphRAG", "level": 3, "status": "done", "file": "lessons/017-graphrag.html", "scenario": "手冊中零件—故障模式—告警代碼—排除步驟之間的知識圖譜與社群摘要" },
     { "slug": "colbert", "title": "ColBERT 延遲互動：逐詞向量比對", "en": "ColBERT / Late Interaction", "level": 3, "status": "todo", "scenario": "料號、告警代碼與專有名詞的逐詞精確比對" },
     { "slug": "agentic-rag", "title": "Agentic RAG：讓代理人規劃多步檢索", "en": "Agentic RAG", "level": 3, "status": "todo", "scenario": "代理人依序查 SCADA 告警、運維手冊、歷史工單與海象天候窗口，再提出維修排程建議" },
     { "slug": "multimodal-rag", "title": "多模態 RAG：圖片、表格與 PDF 版面", "en": "Multimodal RAG", "level": 3, "status": "todo", "scenario": "手冊裡的旋角系統配線圖、零件爆炸圖、告警代碼表格與葉片巡檢照片一起檢索" },

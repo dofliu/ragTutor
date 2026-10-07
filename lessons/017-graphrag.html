@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GraphRAG：知識圖譜與社群摘要｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂 GraphRAG：由 LLM 從文件抽出實體與關係建成知識圖譜，做社群偵測並為每個社群寫摘要，再以區域搜尋與全局 map-reduce 回答跨文件的問題。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 017 堂</span><span class="tag lv3">高階</span><span class="tag">約 18 分鐘</span></p>
+  <h1>GraphRAG：知識圖譜與社群摘要</h1>
+  <p class="lead">技師問「旋角系統的故障主要分成哪幾類？彼此怎麼關聯？」手冊把<b>零件、故障模式、告警代碼</b>分散寫在各節，切塊之後，<b>誰連到誰</b>的資訊就丟了。<b>GraphRAG</b> 先請 LLM 從文件抽出<b>實體與關係</b>，連成知識圖譜，再用<b>社群偵測</b>分群、為每個社群寫摘要。區域問題沿著實體的鄰居找，全局問題則讓各社群摘要分頭回答再合併。</p>
+
+  <h2>🎬 動畫：把手冊建成知識圖譜</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="GraphRAG 動畫：只查切塊看不出零件、故障與告警之間的關係；先由 LLM 抽出實體與關係建成知識圖譜，用社群偵測分群並為每個社群寫摘要；區域問題從實體的鄰居找，全局問題對各社群摘要做 map-reduce 後合併成答案">
+<rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 沒有圖：切塊之間的關係看不出來</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="1" data-to="1">② LLM 從每個切塊抽出實體（零件、告警）</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="2" data-to="2">③ 抽出實體之間的關係，連成知識圖譜</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent-ink)" data-from="3" data-to="3">④ 社群偵測：把連得緊的實體分成社群</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="4" data-to="4">⑤ 每個社群寫一則摘要（索引階段完成）</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="5" data-to="5">⑥ 區域問題：從問題中的實體出發，看鄰居</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="6" data-to="6">⑦ 全局問題：Map，每則社群摘要各出部分答案</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ Reduce：合併部分答案，得到全局答案</text>
+<g data-to="0">
+<rect x="24" y="118" width="260" height="56" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="36" y="141" font-size="12" font-weight="700" style="fill:var(--doc)">3.7.2 備援電源每半年放電測試</text>
+<text x="36" y="160" font-size="11" class="t-muted">失敗時顯示 PT-230</text>
+<rect x="24" y="188" width="260" height="56" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="36" y="211" font-size="12" font-weight="700" style="fill:var(--doc)">3.4 PT-203 旋角馬達過溫</text>
+<text x="36" y="230" font-size="11" class="t-muted">檢查冷卻風扇與風道</text>
+<rect x="330" y="118" width="260" height="56" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="342" y="141" font-size="12" font-weight="700" style="fill:var(--doc)">3.5 PT-205 旋角馬達煞車異常</text>
+<text x="342" y="160" font-size="11" class="t-muted">檢查煞車線圈與煞車間隙</text>
+<rect x="330" y="188" width="260" height="56" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="342" y="211" font-size="12" font-weight="700" style="fill:var(--doc)">旋角馬達冷卻風扇停轉</text>
+<text x="342" y="230" font-size="11" class="t-muted">散熱不足而 PT-203 過溫</text>
+<rect x="636" y="118" width="260" height="56" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="648" y="141" font-size="12" font-weight="700" style="fill:var(--doc)">PT-230 備援電源測試失敗</text>
+<text x="648" y="160" font-size="11" class="t-muted">電容模組電壓不足</text>
+<rect x="636" y="188" width="260" height="56" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="648" y="211" font-size="12" font-weight="700" style="fill:var(--doc)">煞車線圈斷路</text>
+<text x="648" y="230" font-size="11" class="t-muted">煞車無法釋放，馬達轉不動</text>
+<text x="460" y="278" text-anchor="middle" font-size="12" style="fill:var(--bad)">各塊各說各的：誰連到誰、影響什麼，沒有任何標示</text>
+</g>
+<g data-from="3">
+<rect x="24" y="166" width="260" height="130" rx="10" style="fill:none;stroke:var(--vec);stroke-width:1.8;stroke-dasharray:5 4"/>
+<rect x="330" y="166" width="260" height="130" rx="10" style="fill:none;stroke:var(--vec);stroke-width:1.8;stroke-dasharray:5 4"/>
+<rect x="636" y="166" width="260" height="130" rx="10" style="fill:none;stroke:var(--vec);stroke-width:1.8;stroke-dasharray:5 4"/>
+</g>
+<g data-from="2">
+<path d="M154 220 L84 254" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<path d="M154 220 L214 254" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<path d="M460 220 L390 254" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<path d="M460 220 L520 254" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<g data-hot="5"><path d="M766 220 L696 254" style="fill:none;stroke:var(--muted);stroke-width:1.8"/></g>
+<g data-hot="5"><path d="M766 220 L826 254" style="fill:none;stroke:var(--muted);stroke-width:1.8"/></g>
+<path d="M212 203 L402 203" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<g data-hot="5"><path d="M518 203 L708 203" style="fill:none;stroke:var(--muted);stroke-width:1.8"/></g>
+<text x="307" y="196" text-anchor="middle" font-size="11" style="fill:var(--vec)">供電</text>
+<text x="613" y="196" text-anchor="middle" font-size="11" style="fill:var(--vec)">制動</text>
+</g>
+<g data-from="1">
+<g><rect x="96" y="186" width="116" height="34" rx="17" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="154" y="207" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">備援電源</text></g>
+<g><rect x="34" y="254" width="100" height="34" rx="17" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="84" y="275" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">電容模組</text></g>
+<g><rect x="164" y="254" width="100" height="34" rx="17" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="214" y="275" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">PT-230</text></g>
+<g data-hot="5"><rect x="402" y="186" width="116" height="34" rx="17" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="460" y="207" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">旋角馬達</text></g>
+<g><rect x="340" y="254" width="100" height="34" rx="17" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="390" y="275" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">冷卻風扇</text></g>
+<g><rect x="470" y="254" width="100" height="34" rx="17" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="520" y="275" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">PT-203</text></g>
+<g data-hot="5"><rect x="708" y="186" width="116" height="34" rx="17" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="766" y="207" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">煞車線圈</text></g>
+<g data-hot="5"><rect x="646" y="254" width="100" height="34" rx="17" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="696" y="275" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">煞車間隙</text></g>
+<g data-hot="5"><rect x="776" y="254" width="100" height="34" rx="17" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="826" y="275" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">PT-205</text></g>
+</g>
+<g data-from="4">
+<g data-hot="6"><rect x="24" y="112" width="260" height="46" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:2"/><text x="154" y="132" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">社群 A：備援電源</text><text x="154" y="149" text-anchor="middle" font-size="11" class="t-muted">電容放電測試、PT-230</text></g>
+<g data-hot="6"><rect x="330" y="112" width="260" height="46" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:2"/><text x="460" y="132" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">社群 B：馬達溫度</text><text x="460" y="149" text-anchor="middle" font-size="11" class="t-muted">PT-203、冷卻風扇、風道</text></g>
+<g data-hot="6"><rect x="636" y="112" width="260" height="46" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:2"/><text x="766" y="132" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">社群 C：旋角煞車</text><text x="766" y="149" text-anchor="middle" font-size="11" class="t-muted">PT-205、線圈與間隙</text></g>
+</g>
+<g data-from="6" data-to="6">
+<rect x="24" y="306" width="260" height="42" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/><text x="154" y="332" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--query)">部分答案：電源類故障</text>
+<rect x="330" y="306" width="260" height="42" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/><text x="460" y="332" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--query)">部分答案：馬達過溫類</text>
+<rect x="636" y="306" width="260" height="42" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/><text x="766" y="332" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--query)">部分答案：煞車類故障</text>
+</g>
+<g data-from="7"><g data-hot="7"><rect x="150" y="306" width="620" height="44" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/><text x="460" y="325" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">全局答案：三類故障（電源、馬達過溫、煞車）</text><text x="460" y="341" text-anchor="middle" font-size="11" class="t-muted">並說明「備援電源供電給旋角馬達」「馬達與煞車線圈互相制動」</text></g></g>
+<rect x="20" y="364" width="886" height="46" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+<g data-to="0"><text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--query)">問題：</tspan>旋角系統的故障主要分成哪幾類？彼此怎麼關聯？</text><text x="34" y="401" font-size="11.5"><tspan font-weight="700" style="fill:var(--bad)">只取前 3 塊：</tspan>多半是同一類的段落，只答得出過溫，沒有整體分類。</text></g>
+<g data-from="1" data-to="1"><text x="34" y="384" font-size="11.5">請 LLM 讀每個切塊，抽出<tspan font-weight="700" style="fill:var(--doc)">實體</tspan>（備援電源、旋角馬達、PT-203…）與類型。</text><text x="34" y="401" font-size="11.5" class="t-muted">同一個實體出現在許多切塊時，會被合併成同一個節點，並彙整它的描述。</text></g>
+<g data-from="2" data-to="2"><text x="34" y="384" font-size="11.5">同時抽出實體之間的<tspan font-weight="700" style="fill:var(--vec)">關係</tspan>，例如「備援電源 → 供電 → 旋角馬達」，每條關係都附一句描述。</text><text x="34" y="401" font-size="11.5" class="t-muted">圖由 LLM 抽取而成，可能漏抽或抽錯，建好之後要抽查。</text></g>
+<g data-from="3" data-to="3"><text x="34" y="384" font-size="11.5">用 Leiden 演算法做階層式社群偵測：同一社群內連線密、社群之間連線稀。</text><text x="34" y="401" font-size="11.5" class="t-muted">本例分成三個社群；真實語料會有多個層級，由細到粗的社群。</text></g>
+<g data-from="4" data-to="4"><text x="34" y="384" font-size="11.5">LLM 讀取社群內的實體與關係，寫成一則<tspan font-weight="700" style="fill:var(--llm)">社群摘要</tspan>；高層社群的摘要可由低層摘要彙整。</text><text x="34" y="401" font-size="11.5" class="t-muted">這是索引階段最花錢的部分：每個實體、關係與社群都要 LLM 處理。</text></g>
+<g data-from="5" data-to="5"><text x="34" y="384" font-size="11.5">問「PT-205 要檢查什麼」：先認出實體 PT-205，沿著圖取它的鄰居與相關切塊（高亮）。</text><text x="34" y="401" font-size="11.5" class="t-muted">這是區域（local）搜尋：適合針對特定實體、需要順著關係往外看的問題。</text></g>
+<g data-from="6" data-to="6"><text x="34" y="384" font-size="11.5">全局問題沒有特定實體，所以讓<tspan font-weight="700" style="fill:var(--query)">每一則社群摘要</tspan>各自回答，產生部分答案並打分。</text><text x="34" y="401" font-size="11.5" class="t-muted">這是 Map：每個社群一次 LLM 呼叫，可平行；社群越多，呼叫越多。</text></g>
+<g data-from="7" data-to="7"><text x="34" y="384" font-size="11.5">Reduce：把高分的部分答案合併成一份全局答案，涵蓋<tspan font-weight="700" style="fill:var(--good)">三類故障</tspan>與它們的關聯。</text><text x="34" y="401" font-size="11.5" class="t-muted">代價：建圖與建摘要成本高，全局查詢也要多次 LLM 呼叫；小型單點問題用不到。</text></g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>圖 + 社群摘要</b>GraphRAG（Edge 等人，Microsoft Research，2024）以 LLM 從切塊抽出實體與關係建圖，再用 Leiden 演算法偵測社群，並為各社群生成摘要。</div>
+    <div class="card"><b>全局問題用 map-reduce</b>像「手冊整體有哪些主題」這類問題沒有特定實體，所以讓每則社群摘要各出一份部分答案（map），再合併（reduce）。</div>
+    <div class="card"><b>區域問題走實體鄰居</b>問題中有明確實體時，從該實體出發，取它的相鄰實體、關係與相關切塊，補足「順著關係往外看」的資訊。</div>
+    <div class="card"><b>索引成本高</b>每個切塊都要抽取實體與關係，每個社群還要寫摘要；文件更新時圖與摘要也要更新。問題多半是單點查詢時不划算。</div>
+  </div>
+
+  <h2>🧪 互動範例：向量檢索 vs 區域搜尋 vs 全局搜尋</h2>
+  <div class="prose"><p>下面是虛構的《OW-8 運維手冊》旋角系統片段：<b>8 個切塊</b>、9 個實體、3 個社群。<b>實體、關係與社群摘要是我事先標註、手寫的（沒有真的呼叫 LLM）</b>，向量檢索則是在瀏覽器裡用簡化的 TF-IDF 餘弦相似度真的算。選一個問題與檢索方式，看取回的內容涵蓋了多少「必要的切塊」（社群摘要算涵蓋它底下所有切塊），以及要花幾次 LLM 呼叫。你也可以輸入自己的問題，只是「必要」的標註僅限預設題。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><input type="text" id="qin" placeholder="輸入自己的問題，例如：冷卻風扇停轉會有什麼告警" aria-label="自訂問題"><button type="button" id="go">送出</button></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" class="on" data-mode="vec">向量檢索（一般 RAG）</button>
+      <button type="button" data-mode="local">GraphRAG 區域搜尋</button>
+      <button type="button" data-mode="global">GraphRAG 全局搜尋</button>
+    </div>
+    <div class="row"><label for="kr">k（向量與區域搜尋取回幾個切塊）：<b id="kv">3</b></label><input type="range" id="kr" min="1" max="6" value="3" style="flex:1;max-width:260px"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+    <div class="prompt-box" id="answer"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>最小實作：用 <code>claude-sonnet-5</code> 從切塊抽取實體與關係，以 <code>networkx</code> 建圖、做社群偵測（Leiden 需另裝 <code>graspologic</code> 或 <code>igraph</code>，這裡改用 networkx 內建的 Louvain 以便執行），再做全局的 map-reduce。先 <code>pip install anthropic networkx</code>。文件與問題皆為虛構；真實系統還會做實體合併、重複抽取（gleaning）與階層式社群。</p></div>
+<pre class="code"><code><span class="k">import</span> json, anthropic, networkx <span class="k">as</span> nx
+
+client = anthropic.<span class="f">Anthropic</span>()
+MODEL = <span class="s">"claude-sonnet-5"</span>
+
+<span class="c"># 手冊切塊（虛構）</span>
+chunks = [
+    <span class="s">"每半年做備援電源放電測試，記錄電容模組電壓；失敗時顯示 PT-230。"</span>,
+    <span class="s">"PT-230 旋角備援電源測試失敗：檢查電容模組電壓與充電迴路。備援電源負責供電給旋角馬達。"</span>,
+    <span class="s">"PT-203 旋角馬達過溫：檢查冷卻風扇與風道，量測 PT100 感測器阻值。"</span>,
+    <span class="s">"冷卻風扇停轉會使旋角馬達散熱不足，持續高負載時出現 PT-203。"</span>,
+    <span class="s">"PT-205 旋角馬達煞車異常：檢查煞車線圈電阻與煞車間隙。"</span>,
+    <span class="s">"煞車線圈斷路時煞車無法釋放，旋角馬達轉不動。"</span>,
+]
+
+<span class="k">def</span> <span class="f">ask</span>(prompt, max_tokens=<span class="s">600</span>):
+    msg = client.messages.<span class="f">create</span>(model=MODEL, max_tokens=max_tokens,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text.<span class="f">strip</span>()
+
+<span class="c"># 1) 抽取實體與關係：每個切塊一次 LLM 呼叫</span>
+<span class="k">def</span> <span class="f">extract</span>(text):
+    raw = <span class="f">ask</span>(<span class="s">'從下列段落抽出實體與關係，只輸出 JSON：'</span>
+              <span class="s">'{"entities":["名稱"],"relations":[["甲","關係","乙"]]}\n'</span> + text)
+    <span class="k">return</span> json.<span class="f">loads</span>(raw[raw.<span class="f">index</span>(<span class="s">"{"</span>): raw.<span class="f">rindex</span>(<span class="s">"}"</span>) + <span class="s">1</span>])
+
+G = nx.<span class="f">Graph</span>()
+<span class="k">for</span> c <span class="k">in</span> chunks:
+    r = <span class="f">extract</span>(c)
+    G.<span class="f">add_nodes_from</span>(r[<span class="s">"entities"</span>])
+    <span class="k">for</span> a, rel, b <span class="k">in</span> r[<span class="s">"relations"</span>]:
+        G.<span class="f">add_edge</span>(a, b, rel=rel)          <span class="c"># 同名實體自然合併成同一個節點</span>
+
+<span class="c"># 2) 社群偵測 + 3) 每個社群一則摘要</span>
+communities = nx.community.<span class="f">louvain_communities</span>(G, seed=<span class="s">0</span>)
+summaries = []
+<span class="k">for</span> members <span class="k">in</span> communities:
+    rels = [<span class="s">f"{a}-{d['rel']}-{b}"</span> <span class="k">for</span> a, b, d <span class="k">in</span> G.<span class="f">subgraph</span>(members).<span class="f">edges</span>(data=<span class="k">True</span>)]
+    summaries.<span class="f">append</span>(<span class="f">ask</span>(<span class="s">"用繁體中文，為下列實體與關係寫一則 80 字內的摘要，"</span>
+                          <span class="s">"不要加入沒有的內容：\n"</span> + <span class="s">f"實體：{sorted(members)}\n關係：{rels}"</span>))
+
+<span class="c"># 4) 全局搜尋：map（各社群摘要各答一次）→ reduce（合併）</span>
+<span class="k">def</span> <span class="f">global_search</span>(question):
+    partial = [<span class="f">ask</span>(<span class="s">f"摘要：{s}\n問題：{question}\n只根據摘要寫出相關的部分答案，沒有相關就回答「無」。"</span>)
+               <span class="k">for</span> s <span class="k">in</span> summaries]
+    partial = [p <span class="k">for</span> p <span class="k">in</span> partial <span class="k">if</span> p != <span class="s">"無"</span>]
+    <span class="k">return</span> <span class="f">ask</span>(<span class="s">f"問題：{question}\n把下列部分答案整合成完整答案：\n"</span> + <span class="s">"\n"</span>.<span class="f">join</span>(partial))
+
+<span class="f">print</span>(<span class="f">global_search</span>(<span class="s">"旋角系統的故障主要分成哪幾類？彼此怎麼關聯？"</span>))</code></pre>
+  <div class="prose"><p>區域搜尋則是：認出問題中的實體，用 <code>G.neighbors(實體)</code> 取鄰居，再把相關切塊、關係與社群摘要放進提示。正式使用時，要抽查抽取出的實體與關係，也要保留每個節點對應的原文切塊，答案才能回溯到出處。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>基礎 RAG（第 001 堂）</th><th>混合檢索（第 004 堂）</th><th>RAPTOR（第 016 堂）</th><th>GraphRAG（本堂）</th></tr>
+    <tr><th>索引的單位</th><td>原文切塊</td><td>切塊（向量 + 關鍵字）</td><td>切塊 + 依語意分群的摘要樹</td><td>切塊 + 實體關係圖 + 社群摘要</td></tr>
+    <tr><th>擅長的問題</th><td>單一事實</td><td>精確詞與語意並重</td><td>整合多段的全局問題</td><td>跨文件的關係與全局主題</td></tr>
+    <tr><th>分群依據</th><td>無</td><td>無</td><td>嵌入向量相近</td><td>圖上連線的密度（Leiden）</td></tr>
+    <tr><th>建索引成本</th><td>最低</td><td>低</td><td>每群一次摘要，逐層遞迴</td><td>每個切塊抽取 + 每個社群摘要，最高</td></tr>
+  </table>
+  <div class="prose"><p>RAPTOR 與 GraphRAG 都用 LLM 摘要回答全局問題，差別在<b>分群的依據</b>：RAPTOR 看文字語意相近，GraphRAG 看<b>實體之間有沒有關係</b>，所以更適合「零件—故障—告警」這種本來就有結構的知識。</p></div>
+
+  <h2>⚠️ GraphRAG 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>抽取會出錯</b>：LLM 可能漏抽實體、把同一個零件的不同寫法當成兩個，或抽出不存在的關係。圖建好後要抽查，並做實體合併。</li>
+      <li><b>索引成本高</b>：每個切塊至少一次抽取呼叫，每個社群再一次摘要呼叫。語料大時要先估算時間與費用。</li>
+      <li><b>全局查詢也貴</b>：map 階段每個社群一次呼叫，社群越多越慢、越貴；可只用較高層級的社群來省成本。</li>
+      <li><b>單點問題不划算</b>：查單一告警代碼、單一料號，混合檢索加重排序更簡單、更便宜、更精準。</li>
+      <li><b>摘要會省略細節</b>：社群摘要可能略掉門檻值或安全步驟。涉及作業安全時，答案仍要回到原文切塊核對。</li>
+      <li><b>文件更新要重做</b>：新增或修改手冊後，相關實體、關係與社群摘要都可能過時，要規劃增量更新或定期重建。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的實體、關係與摘要為事先手寫、檢索為簡化的 TF-IDF，告警代碼與故障關聯僅供教學示範。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Edge、Trinh、Cheng、Bradley、Chao、Mody、Truitt、Metropolitansky、Ness、Larson，〈From Local to Global: A Graph RAG Approach to Query-Focused Summarization〉（Microsoft Research，2024，arXiv:2404.16130）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="2">
+    <p><b>GraphRAG 的索引階段，大致依什麼順序進行？</b></p>
+    <button class="opt">A. 切塊 → 重排序 → 生成答案 → 建圖</button>
+    <button class="opt">B. 切塊 → 嵌入 → 建 HNSW 索引 → 結束</button>
+    <button class="opt">C. 切塊 → LLM 抽取實體與關係 → 建圖 → 社群偵測 → 社群摘要</button>
+    <div class="why">先用 LLM 從切塊抽出實體與關係並建成圖，再偵測社群，最後為各社群寫摘要，查詢時才用到這些摘要與圖。</div>
+  </div>
+  <div class="quiz card" data-answer="0">
+    <p><b>「旋角系統的故障主要分成哪幾類」這種全局問題，GraphRAG 怎麼處理？</b></p>
+    <button class="opt">A. 讓各社群摘要各自產生部分答案，再合併成最終答案（map-reduce）</button>
+    <button class="opt">B. 只取向量相似度最高的 3 個切塊直接回答</button>
+    <button class="opt">C. 把整張圖原封不動塞進提示，不做任何摘要</button>
+    <div class="why">全局問題沒有特定實體可抓，所以對各社群摘要做 map-reduce，涵蓋面廣。代價是 map 階段每個社群都要一次 LLM 呼叫。</div>
+  </div>
+
+  <nav class="pager" data-slug="graphrag"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'沒有圖：切塊之間的關係看不見', text:'問「旋角系統的故障主要分成哪幾類」，一般 RAG 取前 3 塊，多半是<b>同一類</b>的段落，只答得出過溫。切塊各說各的，<b>零件、故障與告警之間的關係</b>沒有被記錄下來。' },
+  { title:'抽出實體', text:'請 <b>LLM 讀每個切塊</b>，抽出實體：備援電源、旋角馬達、冷卻風扇、PT-203…。同名的實體會合併成<b>同一個節點</b>，描述彙整在一起。' },
+  { title:'抽出關係，連成圖', text:'同時抽出<b>實體之間的關係</b>，例如備援電源「供電」給旋角馬達、旋角馬達與煞車線圈「制動」相關。節點加上邊，就是一張<b>知識圖譜</b>。抽取可能出錯，要抽查。' },
+  { title:'社群偵測', text:'用 <b>Leiden 演算法</b>做階層式社群偵測：同社群內連線緊密，社群之間稀疏。這裡分出電源、馬達溫度、煞車三個社群；真實語料會有多個層級。' },
+  { title:'為每個社群寫摘要', text:'<b>LLM 讀取每個社群的實體與關係</b>，寫成一則摘要，高層社群可由低層摘要彙整。這些摘要在索引階段就產生，是全局問題的主要依據，也是主要的成本來源。' },
+  { title:'區域搜尋：從實體出發', text:'問題帶有明確實體（如 <b>PT-205</b>）時，先認出實體，再沿著圖取它的<b>鄰居、關係與相關切塊</b>。適合「這個東西還連到什麼」這類順著關係往外看的問題。' },
+  { title:'全局搜尋：Map', text:'沒有特定實體的全局問題，讓<b>每則社群摘要各自回答</b>，產生部分答案並打分。每個社群一次 LLM 呼叫，可以平行執行，社群越多，成本越高。' },
+  { title:'Reduce：合併成全局答案', text:'把高分的部分答案<b>合併</b>成一份答案：三類故障，加上「備援電源供電給旋角馬達」等關聯，比只取 3 個切塊完整。代價是建圖與全局查詢的 LLM 成本。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 虛構語料；實體、社群為事先標註，社群摘要為事先手寫 */
+  const C = [
+    { id:'C1', com:'A', src:'手冊 3.7.2', ents:['備援電源','電容模組','PT-230'], text:'手冊 3.7.2 每半年做備援電源放電測試，記錄電容模組電壓；測試失敗時顯示 PT-230。' },
+    { id:'C2', com:'A', src:'手冊 3.6', ents:['PT-230','備援電源','電容模組','旋角馬達'], text:'手冊 3.6 PT-230 旋角備援電源測試失敗：檢查電容模組電壓與充電迴路。備援電源負責供電給旋角馬達。' },
+    { id:'C3', com:'B', src:'手冊 3.4', ents:['PT-203','旋角馬達','冷卻風扇'], text:'手冊 3.4 PT-203 旋角馬達過溫：讀取溫度曲線，檢查冷卻風扇與風道，量測 PT100 感測器阻值。' },
+    { id:'C4', com:'B', src:'手冊 3.4.2', ents:['冷卻風扇','旋角馬達','PT-203'], text:'手冊 3.4.2 冷卻風扇停轉會使旋角馬達散熱不足，持續高負載運轉時會出現 PT-203。' },
+    { id:'C5', com:'B', src:'工安規範', ents:['PT-203','旋角馬達'], text:'工安規範：排除 PT-203 前須先完成上鎖掛牌（LOTO），再開啟旋角馬達罩。' },
+    { id:'C6', com:'C', src:'手冊 3.5', ents:['PT-205','煞車線圈','煞車間隙'], text:'手冊 3.5 PT-205 旋角馬達煞車異常：檢查煞車線圈電阻與煞車間隙，確認釋放時無拖滯。' },
+    { id:'C7', com:'C', src:'手冊 3.5.2', ents:['煞車線圈','旋角馬達','PT-205'], text:'手冊 3.5.2 煞車線圈斷路時，煞車無法釋放，旋角馬達轉不動，並出現 PT-205。' },
+    { id:'C8', com:'C', src:'手冊 3.5.3', ents:['煞車線圈','煞車間隙'], text:'手冊 3.5.3 更換煞車線圈後，須重新量測煞車間隙並記錄。' }
+  ];
+  const REL = [['備援電源','電容模組'],['備援電源','PT-230'],['備援電源','旋角馬達'],['旋角馬達','PT-203'],['旋角馬達','冷卻風扇'],['旋角馬達','煞車線圈'],['煞車線圈','PT-205'],['煞車線圈','煞車間隙']];
+  const COM = {
+    A:{ name:'社群 A 備援電源', text:'旋角備援電源：含電容模組，每半年做放電測試，失敗顯示 PT-230；備援電源負責供電給旋角馬達。' },
+    B:{ name:'社群 B 馬達溫度', text:'旋角馬達溫度：PT-203 過溫與冷卻風扇、風道散熱有關；排除前須完成上鎖掛牌。' },
+    C:{ name:'社群 C 旋角煞車', text:'旋角煞車：PT-205 煞車異常，檢查煞車線圈電阻與煞車間隙；更換線圈後須重新量測間隙。' }
+  };
+  const byId = Object.fromEntries(C.map((c, i) => [c.id, { ...c, i }]));
+  const neigh = e => REL.filter(r => r.includes(e)).map(r => r[0] === e ? r[1] : r[0]);
+  const allEnts = [...new Set(C.flatMap(c => c.ents))];
+  const idx = rt.buildIndex(C.map(c => ({ text:c.text })));
+  const covOf = h => h.src ? [h.id] : C.filter(c => c.com === h.com).map(c => c.id);
+
+  const P = [
+    { q:'旋角系統的故障主要分成哪幾類', need:['C1','C3','C6'], note:'需涵蓋電源、馬達過溫、煞車三類各一段' },
+    { q:'PT-205 要檢查什麼', need:['C6'], note:'只需要 PT-205 的排除段落' },
+    { q:'旋角馬達連到哪些零件與告警', need:['C2','C3','C7'], note:'需涵蓋備援電源、PT-203、煞車線圈三條關係' }
+  ];
+  let cur = P[0], mode = 'vec';
+
+  function vecPick(q, k){
+    return rt.searchVector(idx, q, k).map(h => ({ ...C[h.i], s:h.score }));
+  }
+  function run(){
+    const k = +$('#kr').value; $('#kv').textContent = k;
+    const q = cur.q;
+    let got = [], calls = 1, extra = '';
+    if(mode === 'vec'){
+      got = vecPick(q, k);
+    } else if(mode === 'local'){
+      const hit = allEnts.filter(e => q.toLowerCase().includes(e.toLowerCase()));
+      if(!hit.length){
+        got = vecPick(q, k);
+        extra = '問題中找不到任何已知實體，區域搜尋退回向量檢索。';
+      } else {
+        const nb = [...new Set(hit.flatMap(neigh))].filter(e => !hit.includes(e));
+        const sims = {}; rt.searchVector(idx, q, C.length).forEach(h => sims[C[h.i].id] = h.score);
+        /* 貪婪挑選：每次選「能多涵蓋新實體」的切塊，避免全擠在同一個鄰居 */
+        const pool = C.map(c => ({ ...c, s:sims[c.id], w:2 * c.ents.filter(e => hit.includes(e)).length + c.ents.filter(e => nb.includes(e)).length })).filter(c => c.w > 0);
+        const seen = new Set(); got = [];
+        while(got.length < k && pool.length){
+          const gain = c => c.ents.filter(e => !seen.has(e) && (hit.includes(e) || nb.includes(e))).length;
+          pool.sort((a, b) => gain(b) - gain(a) || b.w - a.w || b.s - a.s);
+          const c = pool.shift(); c.ents.forEach(e => seen.add(e)); got.push(c);
+        }
+        extra = `認出實體：${hit.join('、')}；一步鄰居：${nb.join('、') || '（無）'}。`;
+      }
+    } else {
+      got = Object.keys(COM).map(c => ({ id:c, com:c, text:COM[c].text, s:0 }));
+      calls = got.length + 1;
+      extra = '全局搜尋會讓每則社群摘要都參與 map。';
+    }
+    const covered = new Set(got.flatMap(covOf));
+    const chars = got.reduce((a, g) => a + g.text.length, 0);
+    let cover = '';
+    if(cur.need){
+      const ok = cur.need.filter(id => covered.has(id)).length;
+      cover = `；必要切塊涵蓋 ${ok} / ${cur.need.length}${ok < cur.need.length ? '（答案不完整）' : '（完整）'}`;
+    }
+    $('#stat').textContent = `取回 ${got.length} 項、約 ${chars} 字${cover}；回答前的 LLM 呼叫：${mode === 'global' ? `${got.length} 次 map + 1 次 reduce = ${calls} 次` : '1 次（只有最後生成）'}。${cur.note ? '（' + cur.note + '）' : ''}${extra ? ' ' + extra : ''}`;
+    $('#hits').innerHTML = got.map(g => {
+      const need = cur.need && covOf(g).some(id => cur.need.includes(id));
+      const label = !g.src ? esc(COM[g.com].name) + '．社群摘要（涵蓋 ' + covOf(g).join('、') + '）' : esc(g.id) + '．' + esc(g.src) + '．' + esc(COM[g.com].name);
+      return `<div class="hit ${need ? 'top' : 'low'}"><div class="meta"><span>${label}</span><span>${mode === 'local' && g.w !== undefined ? '關聯分 ' + g.w : mode === 'vec' ? '相似度 ' + g.s.toFixed(3) : ''}</span></div><div>${rt.highlight(g.text, q)}</div></div>`;
+    }).join('');
+    $('#answer').textContent = '最終答案依據：\n' + got.map(g => g.text + (g.src ? `（${g.id}）` : `（${g.id} 社群摘要）`)).join('\n');
+  }
+
+  $('#presets').innerHTML = P.map((x, i) => `<button type="button" data-i="${i}" class="${i === 0 ? 'on' : ''}">${esc(x.q)}</button>`).join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return; cur = P[+b.dataset.i]; $('#qin').value = '';
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  const submit = () => { const v = $('#qin').value.trim(); if(!v) return; cur = { q:v, need:null };
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.remove('on')); run(); };
+  $('#go').onclick = submit;
+  $('#qin').addEventListener('keydown', e => { if(e.key === 'Enter') submit(); });
+  $('#kr').oninput = run;
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => { mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); });
+  run();
+})();
+</script>
+</body>
+</html>

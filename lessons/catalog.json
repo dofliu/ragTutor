@@ -265,6 +265,20 @@
         "RAPTOR"
       ],
       "date": "2026-10-07"
+    },
+    {
+      "no": 17,
+      "slug": "graphrag",
+      "file": "lessons/017-graphrag.html",
+      "title": "GraphRAG：知識圖譜與社群摘要",
+      "en": "GraphRAG",
+      "level": 3,
+      "summary": "一般 RAG 的切塊看不出零件、故障與告警之間的關係。GraphRAG 讓 LLM 從文件抽出實體與關係建成知識圖譜，用社群偵測分群並為各社群寫摘要，區域問題沿著實體鄰居找，全局問題對社群摘要做 map-reduce；代價是抽取會出錯、建圖與查詢的 LLM 成本都高。",
+      "tags": [
+        "高階",
+        "GraphRAG"
+      ],
+      "date": "2026-10-07"
     }
   ]
 }
