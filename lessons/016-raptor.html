@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAPTOR：遞迴摘要樹檢索｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂 RAPTOR：把文件切塊後遞迴地分群、摘要，建成由細節到全局的摘要樹，再從整棵樹檢索，讓全局問題也找得到答案。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 016 堂</span><span class="tag lv3">高階</span><span class="tag">約 16 分鐘</span></p>
+  <h1>RAPTOR：遞迴摘要樹檢索</h1>
+  <p class="lead">技師問「旋角系統有哪些定期保養項目」，答案散在手冊好幾節：每季、每半年、每年的項目各寫在不同小段。一般 RAG 只取前幾個小塊，<b>漏項是必然的</b>。<b>RAPTOR</b> 先把小塊依語意<b>分群、請 LLM 寫摘要</b>，摘要再分群再摘要，<b>由下而上建成一棵摘要樹</b>。查詢時從整棵樹找，全局問題命中高層摘要，細節問題命中底層原文。</p>
+
+  <h2>🎬 動畫：把手冊建成一棵摘要樹</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="RAPTOR 動畫：只查切塊撈不到全局答案；把切塊分群、為每群寫摘要，再對摘要遞迴分群摘要，建成摘要樹；查詢時用樹遍歷或攤平整棵樹比對，全局題取回摘要、細節題取回原文切塊">
+  <defs>
+    <marker id="ah16" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" style="fill:var(--muted)"/></marker>
+  </defs>
+  <rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 沒有摘要：全局問題只撈到零碎的切塊</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="1" data-to="1">② 先把手冊切成小塊（葉節點）</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="2" data-to="2">③ 把語意相近的切塊分成一群</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="3" data-to="3">④ 每一群請 LLM 寫一則摘要，成為上一層節點</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent-ink)" data-from="4" data-to="4">⑤ 摘要再分群、再摘要，一路往上到根</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="5" data-to="5">⑥ 查詢方式一：樹遍歷，由根一層層往下選</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="6" data-to="6">⑦ 查詢方式二：collapsed tree，全部節點攤平一起比</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 全局題取到摘要、細節題取到原文</text>
+  <g data-from="2" data-to="2">
+    <rect x="18" y="300" width="332" height="68" rx="10" style="fill:none;stroke:var(--vec);stroke-width:1.8;stroke-dasharray:5 4"/>
+    <rect x="354" y="300" width="220" height="68" rx="10" style="fill:none;stroke:var(--vec);stroke-width:1.8;stroke-dasharray:5 4"/>
+    <rect x="578" y="300" width="332" height="68" rx="10" style="fill:none;stroke:var(--vec);stroke-width:1.8;stroke-dasharray:5 4"/>
+  </g>
+  <g data-from="3">
+    <path d="M72 312 L184 248" style="fill:none;stroke:var(--line);stroke-width:1.6"/>
+    <path d="M184 312 L184 248" style="fill:none;stroke:var(--line);stroke-width:1.6"/>
+    <path d="M296 312 L184 248" style="fill:none;stroke:var(--line);stroke-width:1.6"/>
+    <path d="M408 312 L464.0 248" style="fill:none;stroke:var(--line);stroke-width:1.6"/>
+    <path d="M520 312 L464.0 248" style="fill:none;stroke:var(--line);stroke-width:1.6"/>
+    <path d="M632 312 L744 248" style="fill:none;stroke:var(--line);stroke-width:1.6"/>
+    <path d="M744 312 L744 248" style="fill:none;stroke:var(--line);stroke-width:1.6"/>
+    <path d="M856 312 L744 248" style="fill:none;stroke:var(--line);stroke-width:1.6"/>
+  </g>
+  <g data-from="4">
+    <path d="M184 204 L460 156" style="fill:none;stroke:var(--line);stroke-width:1.6"/>
+    <path d="M464.0 204 L460 156" style="fill:none;stroke:var(--line);stroke-width:1.6"/>
+    <path d="M744 204 L460 156" style="fill:none;stroke:var(--line);stroke-width:1.6"/>
+  </g>
+  <g data-from="4"><g data-hot="5">
+    <rect x="330" y="112" width="260" height="44" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:2"/>
+    <text x="460" y="131" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">根摘要 R：旋角系統章節</text>
+    <text x="460" y="148" text-anchor="middle" font-size="11" class="t-muted">保養（電氣、機械）＋故障＋安全</text></g></g>
+  <g data-from="3"><g data-hot="5 6 7">
+    <rect x="84" y="204" width="200" height="44" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:2"/>
+    <text x="184" y="223" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">摘要 S1：電氣類保養</text>
+    <text x="184" y="240" text-anchor="middle" font-size="11" class="t-muted">每季／每半年／每年</text></g></g>
+  <g data-from="3"><g data-hot="5 6 7">
+    <rect x="364.0" y="204" width="200" height="44" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:2"/>
+    <text x="464.0" y="223" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">摘要 S2：機械潤滑類保養</text>
+    <text x="464.0" y="240" text-anchor="middle" font-size="11" class="t-muted">油質檢查、軸承加脂</text></g></g>
+  <g data-from="3" data-dim="5"><g>
+    <rect x="644" y="204" width="200" height="44" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:2"/>
+    <text x="744" y="223" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">摘要 S3：故障排除與安全</text>
+    <text x="744" y="240" text-anchor="middle" font-size="11" class="t-muted">PT-203、PT-205、LOTO</text></g></g>
+  <g>
+    <rect x="24" y="312" width="96" height="44" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+    <text x="72" y="330" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">L1 每季</text>
+    <text x="72" y="347" text-anchor="middle" font-size="11">碳刷、接線</text></g>
+  <g data-hot="0">
+    <rect x="136" y="312" width="96" height="44" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+    <text x="184" y="330" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">L2 每半年</text>
+    <text x="184" y="347" text-anchor="middle" font-size="11">備援電源測試</text></g>
+  <g>
+    <rect x="248" y="312" width="96" height="44" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+    <text x="296" y="330" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">L5 每年</text>
+    <text x="296" y="347" text-anchor="middle" font-size="11">編碼器校正</text></g>
+  <g data-hot="0">
+    <rect x="360" y="312" width="96" height="44" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+    <text x="408" y="330" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">L3 每半年</text>
+    <text x="408" y="347" text-anchor="middle" font-size="11">減速機油質</text></g>
+  <g data-hot="0">
+    <rect x="472" y="312" width="96" height="44" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+    <text x="520" y="330" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">L4 每年</text>
+    <text x="520" y="347" text-anchor="middle" font-size="11">旋角軸承潤滑</text></g>
+  <g data-hot="7">
+    <rect x="584" y="312" width="96" height="44" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+    <text x="632" y="330" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">L6 PT-203</text>
+    <text x="632" y="347" text-anchor="middle" font-size="11">馬達過溫</text></g>
+  <g>
+    <rect x="696" y="312" width="96" height="44" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+    <text x="744" y="330" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">L7 PT-205</text>
+    <text x="744" y="347" text-anchor="middle" font-size="11">煞車異常</text></g>
+  <g>
+    <rect x="808" y="312" width="96" height="44" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+    <text x="856" y="330" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">L8 工安</text>
+    <text x="856" y="347" text-anchor="middle" font-size="11">進輪轂 LOTO</text></g>
+  <rect x="20" y="364" width="886" height="46" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+  <g data-to="0">
+    <text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--query)">問題：</tspan>旋角系統有哪些定期保養項目？（共 5 項，散在 L1–L5）</text>
+    <text x="34" y="401" font-size="11.5"><tspan font-weight="700" style="fill:var(--bad)">只取前 3 塊：</tspan>L2、L3、L4，漏了碳刷與編碼器，答案缺 2 項。</text></g>
+  <g data-from="1" data-to="1">
+    <text x="34" y="384" font-size="11.5">每塊約幾十到一百多字，只講一個細節；相鄰章節也許只是擺在一起，彼此沒有標示關聯。</text>
+    <text x="34" y="401" font-size="11.5" class="t-muted">原論文以約 100 個 token 為一塊，這就是 RAPTOR 樹最底層的葉節點。</text></g>
+  <g data-from="2" data-to="2">
+    <text x="34" y="384" font-size="11.5">依嵌入向量把相近的切塊歸成一群（論文用 UMAP 降維後做高斯混合模型 GMM 分群）。</text>
+    <text x="34" y="401" font-size="11.5" class="t-muted">分群看語意、不看原文順序，所以 L5 編碼器校正會跟 L1、L2 同群。</text></g>
+  <g data-from="3" data-to="3">
+    <text x="34" y="384" font-size="11.5">每群交給 LLM 寫成一則<tspan font-weight="700" style="fill:var(--llm)">摘要</tspan>，摘要本身也是節點，之後會被嵌入、被檢索。</text>
+    <text x="34" y="401" font-size="11.5" class="t-muted">摘要是 LLM 生成的，內容要抽查；它看起來通順不代表沒有遺漏。</text></g>
+  <g data-from="4" data-to="4">
+    <text x="34" y="384" font-size="11.5">對第一層摘要重複「嵌入 → 分群 → 摘要」，直到不能再分或只剩一群，得到一棵樹。</text>
+    <text x="34" y="401" font-size="11.5" class="t-muted">越往上越抽象、越概括；越往下越細、越貼近原文。層數依文件而定。</text></g>
+  <g data-from="5" data-to="5">
+    <text x="34" y="384" font-size="11.5">從根層開始取最相關的 k 個節點，再只看它們的子節點，逐層往下選，最後合併各層結果。</text>
+    <text x="34" y="401" font-size="11.5" class="t-muted">本例第一層選了 R，再往下選 S1、S2（高亮）；S3 的子節點不會被看到。</text></g>
+  <g data-from="6" data-to="6">
+    <text x="34" y="384" font-size="11.5">把所有層的節點攤平成一個清單，直接比對相似度，取前幾名，直到湊滿 token 預算。</text>
+    <text x="34" y="401" font-size="11.5" class="t-muted">論文的實驗中，collapsed tree 的表現比樹遍歷好；高亮為 S1、S2 兩則摘要。</text></g>
+  <g data-from="7">
+    <text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--good)">全局題</tspan>取到 S1、S2 兩則摘要，涵蓋 5 項保養；<tspan font-weight="700" style="fill:var(--doc)">細節題</tspan>（PT100 阻值）仍直接取到 L6 原文。</text>
+    <text x="34" y="401" font-size="11.5" class="t-muted">代價是建樹要多次呼叫 LLM；文件更新時，相關的摘要也得重做。</text></g>
+</svg>  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>遞迴建樹</b>RAPTOR（Sarthi 等人，ICLR 2024）把文件切成小塊（葉節點），重複「嵌入、分群、摘要」，由下而上得到不同抽象層次的節點。</div>
+    <div class="card"><b>摘要也是可檢索的節點</b>摘要會被嵌入並放進索引，所以「有哪些保養項目」這類需要整合多段的全局問題，能直接命中一則概括的摘要。</div>
+    <div class="card"><b>兩種查詢法</b>樹遍歷由根逐層往下選；collapsed tree 把所有層攤平一起比。原論文的實驗中，collapsed tree 表現較好，因為它能依問題自行挑層級。</div>
+    <div class="card"><b>用建樹成本換全局視野</b>建樹要大量 LLM 摘要呼叫，文件更新時摘要要重做；若問題都是查單一告警代碼，這筆成本就不划算。</div>
+  </div>
+
+  <h2>🧪 互動範例：只查原文切塊 vs 查整棵摘要樹</h2>
+  <div class="prose"><p>下面是虛構的《OW-8 運維手冊》旋角系統保養章節：<b>8 個葉節點</b>、3 則第一層摘要、1 則根摘要。<b>摘要是我事先寫好的（沒有真的呼叫 LLM）</b>，檢索則是在瀏覽器裡用簡化的 TF-IDF 餘弦相似度真的算。選一個問題與檢索方式，調整 <b>k</b>，看取回的節點涵蓋了多少「必要的原文切塊」（摘要節點算涵蓋它底下所有葉節點）。你也可以輸入自己的問題，只是「必要」的標註僅限預設題。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><input type="text" id="qin" placeholder="輸入自己的問題，例如：旋角軸承多久加一次油脂" aria-label="自訂問題"><button type="button" id="go">送出</button></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" data-mode="flat">只查葉節點（一般 RAG）</button>
+      <button type="button" data-mode="trav">樹遍歷</button>
+      <button type="button" class="on" data-mode="collapsed">Collapsed tree</button>
+    </div>
+    <div class="row"><label for="kr">k（每次取回幾個節點；樹遍歷是每層取幾個）：<b id="kv">3</b></label><input type="range" id="kr" min="1" max="5" value="3" style="flex:1;max-width:260px"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+    <div class="prompt-box" id="answer"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>最小實作：用 TF-IDF 字元 n-gram 當嵌入、<code>KMeans</code> 分群（原論文用 SBERT 嵌入、UMAP + GMM，這裡為了好執行而簡化），摘要與回答用 <code>claude-sonnet-5</code>。先 <code>pip install anthropic scikit-learn numpy</code>。文件與問題皆為虛構。</p></div>
+<pre class="code"><code><span class="k">import</span> anthropic, numpy <span class="k">as</span> np
+<span class="k">from</span> sklearn.cluster <span class="k">import</span> KMeans
+<span class="k">from</span> sklearn.feature_extraction.text <span class="k">import</span> TfidfVectorizer
+<span class="k">from</span> sklearn.metrics.pairwise <span class="k">import</span> cosine_similarity
+
+client = anthropic.<span class="f">Anthropic</span>()
+MODEL = <span class="s">"claude-sonnet-5"</span>
+
+<span class="c"># 葉節點：手冊切塊（虛構）</span>
+leaves = [
+    <span class="s">"每季保養：檢查旋角馬達碳刷磨耗與接線端子，記錄絕緣電阻。"</span>,
+    <span class="s">"每半年保養：旋角備援電源放電測試，記錄電容模組電壓。"</span>,
+    <span class="s">"每年保養：編碼器校正與三支葉片角度偏差檢查。"</span>,
+    <span class="s">"每半年保養：檢查旋角減速機油位與油質，異常時取樣送驗。"</span>,
+    <span class="s">"每年保養：旋角軸承潤滑，依規定油脂量加注。"</span>,
+    <span class="s">"PT-203 旋角馬達過溫：檢查風道與冷卻風扇，量測 PT100 阻值。"</span>,
+    <span class="s">"PT-205 旋角馬達煞車異常：檢查煞車線圈電阻與煞車間隙。"</span>,
+    <span class="s">"進入輪轂前須完成上鎖掛牌（LOTO），並由第二人待命。"</span>,
+]
+
+<span class="k">def</span> <span class="f">ask</span>(prompt, max_tokens=<span class="s">300</span>):
+    msg = client.messages.<span class="f">create</span>(model=MODEL, max_tokens=max_tokens,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text.<span class="f">strip</span>()
+
+<span class="k">def</span> <span class="f">summarize</span>(texts):
+    <span class="k">return</span> <span class="f">ask</span>(<span class="s">"用繁體中文，把下列段落整合成一則 80 字內的摘要，"</span>
+               <span class="s">"保留週期、告警代碼等關鍵資訊，不要加入段落沒有的內容：\n"</span> + <span class="s">"\n"</span>.<span class="f">join</span>(texts))
+
+<span class="k">def</span> <span class="f">embed</span>(texts):
+    <span class="k">return</span> TfidfVectorizer(analyzer=<span class="s">"char"</span>, ngram_range=(<span class="s">1</span>, <span class="s">2</span>)).<span class="f">fit_transform</span>(texts)
+
+<span class="k">def</span> <span class="f">build_tree</span>(texts, group_size=<span class="s">3</span>, max_levels=<span class="s">3</span>):
+    nodes = [{<span class="s">"text"</span>: t, <span class="s">"level"</span>: <span class="s">0</span>} <span class="k">for</span> t <span class="k">in</span> texts]
+    layer = nodes
+    <span class="k">for</span> level <span class="k">in</span> <span class="f">range</span>(<span class="s">1</span>, max_levels + <span class="s">1</span>):
+        <span class="k">if</span> <span class="f">len</span>(layer) &lt;= <span class="s">1</span>:
+            <span class="k">break</span>
+        k = <span class="f">max</span>(<span class="s">1</span>, <span class="f">round</span>(<span class="f">len</span>(layer) / group_size))
+        labels = <span class="f">KMeans</span>(n_clusters=k, n_init=<span class="s">10</span>, random_state=<span class="s">0</span>).<span class="f">fit_predict</span>(
+            <span class="f">embed</span>([n[<span class="s">"text"</span>] <span class="k">for</span> n <span class="k">in</span> layer]))
+        parents = []
+        <span class="k">for</span> c <span class="k">in</span> <span class="f">range</span>(k):
+            members = [n <span class="k">for</span> n, l <span class="k">in</span> <span class="f">zip</span>(layer, labels) <span class="k">if</span> l == c]
+            parents.<span class="f">append</span>({<span class="s">"text"</span>: <span class="f">summarize</span>([m[<span class="s">"text"</span>] <span class="k">for</span> m <span class="k">in</span> members]), <span class="s">"level"</span>: level})
+        nodes += parents
+        layer = parents                       <span class="c"># 下一輪對「摘要」再分群、再摘要</span>
+    <span class="k">return</span> nodes
+
+<span class="k">def</span> <span class="f">retrieve</span>(nodes, query, budget_chars=<span class="s">300</span>):
+    <span class="c"># collapsed tree：所有層的節點攤平，依相似度取到預算用完為止（論文以 token 計，這裡用字數近似）</span>
+    texts = [n[<span class="s">"text"</span>] <span class="k">for</span> n <span class="k">in</span> nodes]
+    vec = TfidfVectorizer(analyzer=<span class="s">"char"</span>, ngram_range=(<span class="s">1</span>, <span class="s">2</span>)).<span class="f">fit</span>(texts + [query])
+    sims = <span class="f">cosine_similarity</span>(vec.<span class="f">transform</span>([query]), vec.<span class="f">transform</span>(texts))[<span class="s">0</span>]
+    picked, used = [], <span class="s">0</span>
+    <span class="k">for</span> i <span class="k">in</span> np.<span class="f">argsort</span>(-sims):
+        <span class="k">if</span> used + <span class="f">len</span>(texts[i]) &gt; budget_chars:
+            <span class="k">break</span>
+        picked.<span class="f">append</span>(nodes[i]); used += <span class="f">len</span>(texts[i])
+    <span class="k">return</span> picked
+
+tree = <span class="f">build_tree</span>(leaves)
+question = <span class="s">"旋角系統有哪些定期保養項目？"</span>
+ctx = <span class="s">"\n"</span>.<span class="f">join</span>(<span class="s">f"- [L{n['level']}] {n['text']}"</span> <span class="k">for</span> n <span class="k">in</span> <span class="f">retrieve</span>(tree, question))
+<span class="f">print</span>(<span class="f">ask</span>(<span class="s">f"只根據下列資料回答；資料不足就說明不足。\n{ctx}\n問題：{question}"</span>))</code></pre>
+  <div class="prose"><p>正式使用時，記得把每個摘要節點對應的子節點記下來，答案才能回溯到原文出處；也要抽查摘要有沒有漏掉週期或把兩個機型的規定混在一起。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>基礎 RAG（第 001 堂）</th><th>父子文件（第 008 堂）</th><th>情境化檢索（第 009 堂）</th><th>RAPTOR（本堂）</th></tr>
+    <tr><th>索引的單位</th><td>原文切塊</td><td>小塊檢索、回傳所屬大塊</td><td>切塊 + LLM 寫的脈絡句</td><td>切塊 + 多層 LLM 摘要</td></tr>
+    <tr><th>擅長的問題</th><td>單一事實</td><td>需要上下文的細節</td><td>片段脈絡不明的細節</td><td>需要整合多段的全局問題</td></tr>
+    <tr><th>往上看的方向</th><td>無</td><td>回到原文的父塊</td><td>補上文件脈絡</td><td>抽象化：多段濃縮成摘要</td></tr>
+    <tr><th>建索引成本</th><td>最低</td><td>低</td><td>每塊一次 LLM 呼叫</td><td>每群一次，且逐層遞迴</td></tr>
+  </table>
+  <div class="prose"><p>父子文件是「往上拿<b>原文</b>」，RAPTOR 是「往上拿<b>濃縮後的摘要</b>」，可以讀到比單一章節更大範圍的資訊；摘要卻是生成的，不如原文可靠。下一堂的 GraphRAG 也用 LLM 生成摘要，但是先抽出實體與關係再做社群摘要。</p></div>
+
+  <h2>⚠️ RAPTOR 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>摘要可能出錯或遺漏</b>：LLM 摘要看似通順，卻可能漏掉週期、把數值寫錯。涉及安全作業或門檻值的問題，答案應回到葉節點原文核對。</li>
+      <li><b>建樹成本高</b>：每群、每層都要呼叫 LLM。文件很大時，建樹的時間與費用要先估算。</li>
+      <li><b>文件更新要重建</b>：改了一個葉節點，上層摘要就過時。要設計增量更新，或固定週期重建。</li>
+      <li><b>分群品質決定摘要品質</b>：不相干的片段被分在同一群，摘要就會東拼西湊。分群方法與群的大小要用自己的資料驗證。</li>
+      <li><b>問題多半是單點查詢時不划算</b>：如果幾乎都是查單一告警代碼，混合檢索加重排序更簡單、更便宜。</li>
+      <li><b>摘要會稀釋精確詞</b>：料號、告警代碼等精確字串可能在摘要中被省略；collapsed tree 要保留葉節點，並可搭配關鍵字檢索。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的摘要為事先手寫、檢索為簡化的 TF-IDF，保養週期與告警代碼僅供教學示範。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Sarthi、Abdullah、Tuli、Khanna、Goldie、Manning，〈RAPTOR: Recursive Abstractive Processing for Tree-Organized Retrieval〉（ICLR 2024，arXiv:2401.18059）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>RAPTOR 建樹時，由下而上重複的步驟是什麼？</b></p>
+    <button class="opt">A. 檢索、重排序、生成答案</button>
+    <button class="opt">B. 嵌入、分群、為每群生成摘要</button>
+    <button class="opt">C. 切塊、去重、刪除舊文件</button>
+    <div class="why">葉節點先分群並各寫一則摘要，摘要再作為下一輪的輸入重複同樣步驟，直到只剩一個根節點或不能再分。</div>
+  </div>
+  <div class="quiz card" data-answer="0">
+    <p><b>為什麼 RAPTOR 對「旋角系統有哪些定期保養項目」這類問題特別有幫助？</b></p>
+    <button class="opt">A. 高層摘要已整合散在各節的項目，一次取回就涵蓋較完整</button>
+    <button class="opt">B. 摘要保證比原文更精確，所以不必再回頭核對</button>
+    <button class="opt">C. 它讓每個切塊變得更長，所以一次取回的切塊就夠了</button>
+    <div class="why">全局問題需要整合多段內容，摘要節點正好濃縮了一群切塊。但摘要是生成的，並不保證比原文精確；涉及安全或數值時仍要回到原文。</div>
+  </div>
+
+  <nav class="pager" data-slug="raptor"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'沒有摘要：全局問題漏項', text:'問「旋角系統有哪些定期保養項目」，5 項散在不同小段。一般 RAG 只取前 3 塊，撈到<b>備援電源、減速機、軸承</b>，漏了碳刷與編碼器，答案<b>不完整</b>，卻看不出缺了什麼。' },
+  { title:'先切成小塊：葉節點', text:'把章節切成小塊，每塊只講一個細節，這是樹的<b>最底層（葉節點）</b>。原論文以約 100 個 token 為一塊。單看一個小塊，看不出它屬於哪一類保養。' },
+  { title:'依語意分群', text:'把<b>嵌入向量相近</b>的切塊歸成一群。論文先用 UMAP 降維，再用高斯混合模型（GMM）分群。分群看語意，不看原文順序，所以編碼器校正與碳刷、備援電源會同群。' },
+  { title:'每群寫一則摘要', text:'請 <b>LLM 為每一群寫摘要</b>，成為上一層的節點。摘要會被嵌入並放進索引，之後也能被檢索到。但摘要是生成的，可能漏掉細節，要抽查。' },
+  { title:'遞迴往上，直到根', text:'對摘要<b>再分群、再摘要</b>，直到只剩一個根節點。越往上越概括，越往下越貼近原文。同一份手冊就有了「章、群、段」三種粒度可查。' },
+  { title:'查詢法一：樹遍歷', text:'從<b>根層</b>取最相關的 k 個節點，再只看它們的子節點，逐層往下選。路徑固定，要先選對上層，否則整個分支都看不到。' },
+  { title:'查詢法二：collapsed tree', text:'把<b>所有層的節點攤平</b>，直接比對相似度，取前幾名直到湊滿 token 預算。問題自己決定要摘要還是原文。原論文的實驗中，這個做法表現較好。' },
+  { title:'全局看摘要、細節看原文', text:'全局題取到 <b>S1、S2 兩則摘要</b>，涵蓋 5 項保養；「PT100 阻值怎麼量」這類細節題仍直接取到<b>原文切塊 L6</b>。代價是建樹的 LLM 成本，以及文件更新時摘要要重做。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 虛構的摘要樹：lv 0 葉節點、1 第一層摘要、2 根摘要；摘要為事先手寫 */
+  const N = [
+    { id:'L1', lv:0, src:'手冊 3.7.1', text:'手冊 3.7.1 每季保養：檢查旋角馬達碳刷磨耗與接線端子，確認無燒蝕與鬆脫，並記錄馬達絕緣電阻。' },
+    { id:'L2', lv:0, src:'手冊 3.7.2', text:'手冊 3.7.2 每半年保養：旋角備援電源放電測試，記錄電容模組電壓；測試失敗會出現 PT-230。' },
+    { id:'L3', lv:0, src:'手冊 3.7.3', text:'手冊 3.7.3 每半年保養：檢查旋角減速機油位與油質，油色異常時取樣送驗。' },
+    { id:'L4', lv:0, src:'手冊 3.7.4', text:'手冊 3.7.4 每年保養：旋角軸承潤滑，依規定油脂量加注，並轉動葉片使油脂均勻分布。' },
+    { id:'L5', lv:0, src:'手冊 3.7.5', text:'手冊 3.7.5 每年保養：編碼器校正與角度偏差檢查，三支葉片角度差須在容許範圍內，否則會出現 PT-211。' },
+    { id:'L6', lv:0, src:'手冊 3.4', text:'手冊 3.4 PT-203 旋角馬達過溫：讀取近 24 小時溫度曲線，檢查風道與冷卻風扇，量測 PT100 感測器阻值與接線。' },
+    { id:'L7', lv:0, src:'手冊 3.5', text:'手冊 3.5 PT-205 旋角馬達煞車異常：檢查煞車線圈電阻與煞車間隙，確認釋放時無拖滯。' },
+    { id:'L8', lv:0, src:'工安規範', text:'工安規範：進入輪轂前須完成上鎖掛牌（LOTO），確認葉輪鎖已插入，並由第二人在輪轂外待命。' },
+    { id:'S1', lv:1, src:'摘要', kids:['L1','L2','L5'], text:'旋角系統電氣與電源類定期保養項目：每季檢查馬達碳刷、接線與絕緣電阻；每半年做備援電源放電測試；每年做編碼器校正與葉片角度偏差檢查。' },
+    { id:'S2', lv:1, src:'摘要', kids:['L3','L4'], text:'旋角系統機械與潤滑類定期保養項目：每半年檢查減速機油位與油質；每年對旋角軸承加注油脂。' },
+    { id:'S3', lv:1, src:'摘要', kids:['L6','L7','L8'], text:'旋角系統故障排除與安全：PT-203 過溫、PT-205 煞車異常的檢查流程，以及進入輪轂前的上鎖掛牌要求。' },
+    { id:'R',  lv:2, src:'根摘要', kids:['S1','S2','S3'], text:'旋角系統（pitch）章節摘要：包含電氣、機械兩大類週期性保養（每季、每半年、每年），以及常見告警的故障排除與輪轂作業安全。' }
+  ];
+  const byId = Object.fromEntries(N.map((n, i) => [n.id, { ...n, i }]));
+  const idx = rt.buildIndex(N.map(n => ({ text:n.text })));
+  const leavesOf = id => { const n = byId[id]; return n.lv === 0 ? [id] : n.kids.flatMap(leavesOf); };
+  const LV = ['原文切塊', '第一層摘要', '根摘要'];
+
+  const P = [
+    { q:'旋角系統有哪些定期保養項目', need:['L1','L2','L3','L4','L5'] },
+    { q:'PT-203 的 PT100 阻值怎麼量', need:['L6'] },
+    { q:'進入輪轂前要做什麼', need:['L8'] }
+  ];
+  let cur = P[0], mode = 'collapsed';
+
+  const score = q => { const hits = rt.searchVector(idx, q, N.length), s = {}; hits.forEach(h => s[N[h.i].id] = h.score); return s; };
+
+  function pick(q, k){
+    const s = score(q), by = ids => ids.slice().sort((a, b) => s[b] - s[a]);
+    if(mode === 'flat') return by(N.filter(n => n.lv === 0).map(n => n.id)).slice(0, k).map(id => ({ id, s:s[id] }));
+    if(mode === 'collapsed') return by(N.map(n => n.id)).slice(0, k).map(id => ({ id, s:s[id] }));
+    /* 樹遍歷：根層取 k 個，再從它們的子節點取 k 個，一路到葉節點 */
+    let layer = by(['R']).slice(0, k), out = layer.slice();
+    while(byId[layer[0]] && byId[layer[0]].lv > 0){
+      layer = by(layer.flatMap(id => byId[id].kids)).slice(0, k);
+      out = out.concat(layer);
+    }
+    return out.map(id => ({ id, s:s[id] }));
+  }
+
+  function run(){
+    const k = +$('#kr').value; $('#kv').textContent = k;
+    const q = cur.q, got = pick(q, k);
+    const covered = new Set(got.flatMap(g => leavesOf(g.id)));
+    const chars = got.reduce((a, g) => a + byId[g.id].text.length, 0);
+    let cover = '';
+    if(cur.need){
+      const ok = cur.need.filter(id => covered.has(id)).length;
+      cover = `；必要的原文涵蓋 ${ok} / ${cur.need.length}${ok < cur.need.length ? '（答案不完整）' : '（完整）'}`;
+    }
+    $('#stat').textContent = `取回 ${got.length} 個節點、約 ${chars} 字${cover}。`;
+    $('#hits').innerHTML = got.map(g => {
+      const n = byId[g.id], need = cur.need && leavesOf(g.id).some(id => cur.need.includes(id));
+      return `<div class="hit ${need ? 'top' : 'low'}"><div class="meta"><span>${esc(g.id)}．${LV[n.lv]}${n.lv ? '（涵蓋 ' + leavesOf(g.id).join('、') + '）' : '．' + esc(n.src)}</span><span>相似度 ${g.s.toFixed(3)}</span></div><div>${rt.highlight(n.text, q)}</div></div>`;
+    }).join('');
+    $('#answer').textContent = '最終答案依據：\n' + got.map(g => `${byId[g.id].text}（${LV[byId[g.id].lv]} ${g.id}）`).join('\n');
+  }
+
+  $('#presets').innerHTML = P.map((x, i) => `<button type="button" data-i="${i}" class="${i === 0 ? 'on' : ''}">${esc(x.q)}</button>`).join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return; cur = P[+b.dataset.i]; $('#qin').value = '';
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  const submit = () => { const v = $('#qin').value.trim(); if(!v) return; cur = { q:v, need:null };
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.remove('on')); run(); };
+  $('#go').onclick = submit;
+  $('#qin').addEventListener('keydown', e => { if(e.key === 'Enter') submit(); });
+  $('#kr').oninput = run;
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => { mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); });
+  run();
+})();
+</script>
+</body>
+</html>

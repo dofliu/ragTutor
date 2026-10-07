@@ -251,6 +251,20 @@
         "Adaptive RAG"
       ],
       "date": "2026-10-07"
+    },
+    {
+      "no": 16,
+      "slug": "raptor",
+      "file": "lessons/016-raptor.html",
+      "title": "RAPTOR：遞迴摘要樹檢索",
+      "en": "RAPTOR",
+      "level": 3,
+      "summary": "一般 RAG 只取幾個小塊，整合多段的全局問題會漏項。RAPTOR 把切塊遞迴地分群、摘要，建成由原文到概括的摘要樹，再用樹遍歷或 collapsed tree 檢索；代價是建樹要大量 LLM 呼叫、摘要可能出錯，文件更新時也要重做。",
+      "tags": [
+        "高階",
+        "RAPTOR"
+      ],
+      "date": "2026-10-07"
     }
   ]
 }
