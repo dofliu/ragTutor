@@ -237,6 +237,20 @@
         "CRAG"
       ],
       "date": "2026-10-06"
+    },
+    {
+      "no": 15,
+      "slug": "adaptive-rag",
+      "file": "lessons/015-adaptive-rag.html",
+      "title": "Adaptive RAG：依問題難度選擇路線",
+      "en": "Adaptive RAG",
+      "level": 3,
+      "summary": "固定流程對簡單題浪費、對複雜題答不全。Adaptive RAG 先用較小的分類器判斷問題複雜度，再分流到不檢索、單步檢索或多步檢索；代價是分類器會判錯，複雜題被分到簡單路線時答案不完整，多步路線的呼叫次數也較多。",
+      "tags": [
+        "高階",
+        "Adaptive RAG"
+      ],
+      "date": "2026-10-07"
     }
   ]
 }

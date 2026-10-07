@@ -23,6 +23,7 @@
 | 🎯 關卡 3 | [測驗關卡 3：脈絡、融合與過濾（第 009–012 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-3-context-and-filtering.html) |
 | 013 | [Self-RAG：模型自己判斷何時檢索、是否可信](https://dofliu.github.io/ragTutor/lessons/013-self-rag.html) |
 | 014 | [CRAG 修正式 RAG：檢索品質評估與網路補救](https://dofliu.github.io/ragTutor/lessons/014-crag.html) |
+| 015 | [Adaptive RAG：依問題難度選擇路線](https://dofliu.github.io/ragTutor/lessons/015-adaptive-rag.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 

@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Adaptive RAG：依問題難度選擇路線｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂 Adaptive RAG：先用分類器判斷問題複雜度，簡單題不檢索、一般題單步檢索、複雜題多步檢索，並比較固定流程與自適應路線的成本與涵蓋度。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 015 堂</span><span class="tag lv3">高階</span><span class="tag">約 15 分鐘</span></p>
+  <h1>Adaptive RAG：依問題難度選擇路線</h1>
+  <p class="lead">不是每個問題都值得同樣的力氣。「旋角系統是做什麼的」不必翻手冊；「PT-203 怎麼處理」查一次手冊就夠；但「WTG-17 的 PT-203 為什麼一直復發」要<b>跨手冊、工單與振動報告</b>一步步查。固定流程不是浪費就是答不全。<b>Adaptive RAG（自適應 RAG）</b>先用一個<b>複雜度分類器</b>判斷問題難度，再分流到<b>不檢索、單步檢索、多步檢索</b>三條路線之一。</p>
+
+  <h2>🎬 動畫：先判斷難度，再選路線</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="Adaptive RAG 動畫：固定單步檢索對複雜問題答不完整；加入複雜度分類器後，概念題不檢索、告警處理題單步檢索、根因分析題多步檢索，最後比較各路線的檢索次數">
+  <defs>
+    <marker id="ah15" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" style="fill:var(--muted)"/></marker>
+  </defs>
+
+  <rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 固定流程：每個問題都走同一條路</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="1" data-to="1">② 加一個複雜度分類器，讀完問題再分流</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="2" data-to="2">③ 路線 A：簡單概念題，不檢索</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="3" data-to="3">④ 路線 B：一般題，單步檢索一次</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="4" data-to="4">⑤ 路線 C：複雜題，多步檢索並整合</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="5" data-to="5">⑥ 分類器怎麼來：用較小的模型學出標籤</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="6" data-to="6">⑦ 分類會出錯，兩種錯誤的代價不同</text>
+  <text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 該省的省、該查的查</text>
+
+  <!-- 左欄：三個問題 -->
+  <g data-dim="2 3 4">
+    <g data-hot="2"><rect x="20" y="112" width="240" height="64" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/>
+      <text x="34" y="134" font-size="11" class="t-muted">概念題</text><text x="34" y="157" font-size="12" font-weight="700">旋角系統是做什麼的？</text></g>
+    <g data-hot="3"><rect x="20" y="196" width="240" height="64" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/>
+      <text x="34" y="218" font-size="11" class="t-muted">告警處理題</text><text x="34" y="241" font-size="12" font-weight="700">PT-203 旋角馬達過溫怎麼處理</text></g>
+    <g data-hot="4"><rect x="20" y="280" width="240" height="64" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/>
+      <text x="34" y="302" font-size="11" class="t-muted">根因分析題</text><text x="34" y="325" font-size="12" font-weight="700">WTG-17 PT-203 為何一直復發？</text></g>
+  </g>
+
+  <!-- 步驟 0：固定單步檢索 -->
+  <g data-to="0">
+    <path d="M262 144 H466" class="arrow" marker-end="url(#ah15)"/><path d="M262 228 H466" class="arrow" marker-end="url(#ah15)"/><path d="M262 312 H466" class="arrow" marker-end="url(#ah15)"/>
+    <rect x="470" y="112" width="436" height="232" rx="10" style="fill:var(--panel);stroke:var(--doc);stroke-width:2"/>
+    <text x="688" y="136" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--doc)">固定流程：一律單步檢索 → LLM</text>
+    <text x="488" y="166" font-size="11.5" style="fill:var(--warn)">概念題：能答，但多查了一次，白花時間</text>
+    <text x="488" y="250" font-size="11.5" style="fill:var(--good)">告警處理題：查一次手冊就夠，剛好</text>
+    <text x="488" y="318" font-size="11.5" font-weight="700" style="fill:var(--bad)">根因分析題：只撈到 2 份工單</text>
+    <text x="488" y="336" font-size="11.5" class="t-muted">缺手冊步驟與振動報告，答案不完整</text>
+  </g>
+
+  <!-- 步驟 1 起：分類器與三條路線 -->
+  <g data-from="1">
+    <path d="M262 144 H288" class="arrow" marker-end="url(#ah15)"/><path d="M262 228 H288" class="arrow" marker-end="url(#ah15)"/><path d="M262 312 H288" class="arrow" marker-end="url(#ah15)"/>
+    <rect x="290" y="112" width="140" height="232" rx="10" style="fill:var(--panel);stroke:var(--accent);stroke-width:2"/>
+    <text x="360" y="136" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--accent-ink)">複雜度分類器</text>
+    <g data-to="4">
+      <text x="360" y="176" text-anchor="middle" font-size="11.5">讀問題，輸出</text>
+      <text x="360" y="198" text-anchor="middle" font-size="11.5">複雜度標籤</text>
+      <text x="360" y="232" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--accent-ink)">A / B / C</text>
+      <text x="360" y="272" text-anchor="middle" font-size="11" class="t-muted">比跑完整流程</text>
+      <text x="360" y="290" text-anchor="middle" font-size="11" class="t-muted">便宜很多</text>
+    </g>
+    <g data-from="5" data-to="5">
+      <text x="360" y="172" text-anchor="middle" font-size="11.5">較小的模型</text>
+      <text x="360" y="194" text-anchor="middle" font-size="11.5">學會預測標籤</text>
+      <text x="360" y="230" text-anchor="middle" font-size="11" class="t-muted">標籤由哪種</text>
+      <text x="360" y="248" text-anchor="middle" font-size="11" class="t-muted">策略答得對</text>
+      <text x="360" y="266" text-anchor="middle" font-size="11" class="t-muted">自動產生</text>
+    </g>
+    <g data-from="6" data-to="6">
+      <text x="360" y="172" text-anchor="middle" font-size="11.5" style="fill:var(--bad)">C 分到 B</text>
+      <text x="360" y="192" text-anchor="middle" font-size="11" class="t-muted">答不完整</text>
+      <text x="360" y="230" text-anchor="middle" font-size="11.5" style="fill:var(--warn)">A 分到 C</text>
+      <text x="360" y="250" text-anchor="middle" font-size="11" class="t-muted">浪費成本</text>
+    </g>
+    <g data-from="7">
+      <text x="360" y="176" text-anchor="middle" font-size="11.5">依難度分流</text>
+      <text x="360" y="198" text-anchor="middle" font-size="11.5">各走各的路</text>
+      <text x="360" y="240" text-anchor="middle" font-size="11" class="t-muted">省下的是</text>
+      <text x="360" y="258" text-anchor="middle" font-size="11" class="t-muted">不必要的呼叫</text>
+    </g>
+
+    <path d="M432 144 H468" class="arrow" marker-end="url(#ah15)"/><path d="M432 228 H468" class="arrow" marker-end="url(#ah15)"/><path d="M432 312 H468" class="arrow" marker-end="url(#ah15)"/>
+
+    <g data-dim="3 4" data-hot="2">
+      <rect x="470" y="112" width="436" height="64" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/>
+      <text x="484" y="132" font-size="12.5" font-weight="700" style="fill:var(--query)">A　不檢索</text>
+      <text x="484" y="152" font-size="11.5">LLM 直接用自身知識回答，不查手冊</text>
+      <text x="484" y="168" font-size="11" class="t-muted">0 次檢索、1 次生成</text>
+    </g>
+    <g data-dim="2 4" data-hot="3">
+      <rect x="470" y="196" width="436" height="64" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+      <text x="484" y="216" font-size="12.5" font-weight="700" style="fill:var(--doc)">B　單步檢索</text>
+      <text x="484" y="236" font-size="11.5">查一次《OW-8 運維手冊》，取回前幾名再生成</text>
+      <text x="484" y="252" font-size="11" class="t-muted">1 次檢索、1 次生成（就是基礎 RAG）</text>
+    </g>
+    <g data-dim="2 3" data-hot="4">
+      <rect x="470" y="280" width="436" height="64" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.8"/>
+      <text x="484" y="300" font-size="12.5" font-weight="700" style="fill:var(--llm)">C　多步檢索</text>
+      <text x="484" y="320" font-size="11.5" data-to="3">依序多輪檢索，每一輪參考上一輪的結果</text>
+      <text x="484" y="320" font-size="11.5" data-from="4">① 查手冊步驟　② 查工單　③ 查 CMS 振動報告</text>
+      <text x="484" y="336" font-size="11" class="t-muted" data-to="3">需要多少輪就走多少輪</text>
+      <text x="484" y="336" font-size="11" class="t-muted" data-from="4">逐輪整合後才生成答案</text>
+    </g>
+  </g>
+
+  <!-- 底部說明帶 -->
+  <g data-from="5">
+    <rect x="20" y="352" width="886" height="56" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+    <g data-from="5" data-to="5">
+      <text x="34" y="376" font-size="12" font-weight="700" style="fill:var(--vec)">訓練標籤：</text>
+      <text x="108" y="376" font-size="11.5">依「最簡單且能答對的策略」自動標成 A / B / C；</text>
+      <text x="34" y="396" font-size="11.5" class="t-muted">答不出差別時，再用資料集特性補標（單跳題多半標 B，多跳題多半標 C）。</text>
+    </g>
+    <g data-from="6" data-to="6">
+      <text x="34" y="376" font-size="11.5"><tspan font-weight="700" style="fill:var(--bad)">複雜題被分到簡單路線</tspan>：答案不完整，還可能很有自信。</text>
+      <text x="34" y="396" font-size="11.5"><tspan font-weight="700" style="fill:var(--warn)">簡單題被分到複雜路線</tspan>：答案沒錯，但多花時間與費用。</text>
+    </g>
+    <g data-from="7">
+      <text x="34" y="376" font-size="11.5"><tspan font-weight="700" style="fill:var(--good)">本例的檢索次數</tspan>　A：0 次　B：1 次　C：3 次（輪數為本例假設）</text>
+      <text x="34" y="396" font-size="11.5" class="t-muted">比「一律多步」省，又比「一律單步」答得全；前提是分類器夠準。</text>
+    </g>
+  </g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>三條路線</b>Adaptive RAG（Jeong 等人，NAACL 2024）依問題複雜度在不檢索、單步檢索、多步（迭代）檢索之間切換，讓簡單題不浪費、複雜題不缺資料。</div>
+    <div class="card"><b>分類器是關鍵</b>由一個較小的語言模型預測問題的複雜度標籤，再決定走哪一條路線；它的判斷比跑完整流程便宜得多。</div>
+    <div class="card"><b>標籤自動產生</b>訓練標籤不靠人工逐題標註，而是依各策略實際答對與否，再配合資料集本身的特性（單跳或多跳）補標。</div>
+    <div class="card"><b>路由不是魔法</b>分錯一次，複雜題只拿到殘缺答案，簡單題則多花成本。它省的是不必要的呼叫，不會讓檢索本身變準。</div>
+  </div>
+
+  <h2>🧪 互動範例：固定流程 vs 自適應路線</h2>
+  <div class="prose"><p>下面用虛構文件（手冊、工單、CMS 報告）建一個索引。<b>檢索是真的在瀏覽器裡算</b>（簡化的 TF-IDF 餘弦相似度）；多步檢索會真的分輪查詢並合併結果。但<b>分類器在這裡是「規則」模擬的</b>（比對「為什麼、根因、復發」等詞），不是訓練出來的模型，所以你可以輸入自己的問題，看它怎麼分流，也很容易找到它判錯的例子。「必要資料」是人工為三個範例題標註的。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><input type="text" id="qin" placeholder="輸入自己的問題，例如：WTG-05 的 YW-042 怎麼處理" aria-label="自訂問題"><button type="button" id="go">送出</button></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" data-mode="single">固定：一律單步</button>
+      <button type="button" data-mode="multi">固定：一律多步</button>
+      <button type="button" class="on" data-mode="adaptive">Adaptive（分類器路由）</button>
+    </div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+    <div class="prompt-box" id="answer"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>原論文的分類器是另外訓練的小模型。這裡用 <code>claude-sonnet-5</code> 以提示詞當分類器做「Adaptive 風格」的<b>近似</b>：先判斷 A / B / C，再走對應路線；多步路線讓模型每一輪決定要不要再查。<code>retrieve</code> 請換成你自己的檢索器，文件與問題皆為虛構。</p></div>
+<pre class="code"><code><span class="k">import</span> anthropic
+
+client = anthropic.<span class="f">Anthropic</span>()
+MODEL = <span class="s">"claude-sonnet-5"</span>
+MAX_ROUNDS = <span class="s">4</span>     <span class="c"># 多步檢索的輪數上限，避免無限循環</span>
+
+<span class="k">def</span> <span class="f">ask</span>(prompt, max_tokens=<span class="s">400</span>):
+    msg = client.messages.<span class="f">create</span>(model=MODEL, max_tokens=max_tokens,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text.<span class="f">strip</span>()
+
+<span class="c"># 假設的檢索器：查手冊、工單、CMS 報告，回傳文字片段清單</span>
+<span class="k">def</span> <span class="f">retrieve</span>(query, k=<span class="s">3</span>): ...
+
+<span class="k">def</span> <span class="f">classify</span>(question):
+    <span class="c"># 複雜度分類器：A 不需檢索、B 單步、C 需跨文件多步</span>
+    out = <span class="f">ask</span>(<span class="s">"把問題分成 A、B、C 其中一類，只輸出一個字母。\n"</span>
+              <span class="s">"A：一般概念，不需查文件。\n"</span>
+              <span class="s">"B：查一份手冊就能回答的告警處理題。\n"</span>
+              <span class="s">"C：要跨手冊、工單、報告多步推理的根因分析題。\n"</span>
+              <span class="s">f"問題：{question}"</span>, <span class="s">5</span>)
+    <span class="k">return</span> out[<span class="s">0</span>] <span class="k">if</span> out[:<span class="s">1</span>] <span class="k">in</span> <span class="s">"ABC"</span> <span class="k">else</span> <span class="s">"B"</span>   <span class="c"># 判不出來就退回單步</span>
+
+<span class="k">def</span> <span class="f">answer_with</span>(question, notes):
+    ctx = <span class="s">"\n"</span>.<span class="f">join</span>(<span class="s">f"- {n}"</span> <span class="k">for</span> n <span class="k">in</span> notes) <span class="k">or</span> <span class="s">"（無）"</span>
+    <span class="k">return</span> <span class="f">ask</span>(<span class="s">f"只根據下列資料回答；資料不足就說明不足。\n{ctx}\n問題：{question}"</span>)
+
+<span class="k">def</span> <span class="f">adaptive_rag</span>(question):
+    route = <span class="f">classify</span>(question)
+    <span class="k">if</span> route == <span class="s">"A"</span>:
+        <span class="k">return</span> <span class="f">ask</span>(question)                       <span class="c"># 不檢索</span>
+    <span class="k">if</span> route == <span class="s">"B"</span>:
+        <span class="k">return</span> <span class="f">answer_with</span>(question, <span class="f">retrieve</span>(question))   <span class="c"># 單步</span>
+
+    <span class="c"># C：多步。每一輪讓模型看已蒐集的資料，決定下一個要查什麼，或宣告足夠</span>
+    notes = []
+    <span class="k">for</span> _ <span class="k">in</span> <span class="f">range</span>(MAX_ROUNDS):
+        nxt = <span class="f">ask</span>(<span class="s">f"問題：{question}\n已蒐集：{notes}\n"</span>
+                  <span class="s">"若資料足夠回答，只輸出 DONE；否則輸出下一個要查的搜尋語句。"</span>, <span class="s">60</span>)
+        <span class="k">if</span> nxt.<span class="f">startswith</span>(<span class="s">"DONE"</span>):
+            <span class="k">break</span>
+        notes += <span class="f">retrieve</span>(nxt, k=<span class="s">2</span>)
+    <span class="k">return</span> <span class="f">answer_with</span>(question, notes)
+
+<span class="f">print</span>(<span class="f">adaptive_rag</span>(<span class="s">"WTG-17 的 PT-203 為什麼一直復發，根因是什麼"</span>))</code></pre>
+  <div class="prose"><p>實務上可以用小型分類模型或規則先做粗分，不必每題多花一次大模型呼叫；也要記錄每題實際走了哪條路線，才能回頭用評估集檢查分類器有沒有偏向某一邊。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>基礎 RAG（第 001 堂）</th><th>Self-RAG（第 013 堂）</th><th>CRAG（第 014 堂）</th><th>Adaptive RAG（本堂）</th></tr>
+    <tr><th>決策時機</th><td>無，每題都檢索一次</td><td>生成過程中，模型自己決定</td><td>檢索之後，評估結果好壞</td><td>檢索之前，依問題難度分流</td></tr>
+    <tr><th>誰來判斷</th><td>沒有人</td><td>微調過的生成模型</td><td>輕量評估器</td><td>複雜度分類器（較小的模型）</td></tr>
+    <tr><th>複雜問題</th><td>單步，常常答不全</td><td>逐段檢索與批判</td><td>補救檢索</td><td>多步檢索，逐輪整合</td></tr>
+    <tr><th>主要成本</th><td>最低</td><td>要訓練、逐段評審</td><td>每份文件多一次評估</td><td>多一個分類器；走多步路線時呼叫次數多</td></tr>
+  </table>
+  <div class="prose"><p>CRAG 在檢索<b>之後</b>把關品質，Adaptive RAG 在檢索<b>之前</b>決定力氣。兩者互補：先分流，單步路線再接 CRAG 的評估，多步路線每一輪也可以檢查結果。更進一步讓模型自己規劃工具與步驟，就是後面會談的 Agentic RAG。</p></div>
+
+  <h2>⚠️ Adaptive RAG 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>分類器判錯</b>：把根因分析題當成單步題，答案會缺資料還顯得很有把握。互動範例中輸入含糊的問題就能看到這種情況；上線後要用評估集統計混淆矩陣。</li>
+      <li><b>錯誤代價不對稱</b>：分太簡單會答不全，分太複雜只是多花錢。高風險場景（例如涉及安全作業）寧可偏向走複雜路線。</li>
+      <li><b>多步檢索要設上限</b>：沒有輪數與費用上限，模型可能一直查下去；也要設停止條件，並在資料仍不足時誠實說明。</li>
+      <li><b>「不檢索」路線的風險</b>：模型自身知識可能過時或不適用 OW-8。涉及機型細節、告警代碼、門檻值的題目，不要放進 A 路線。</li>
+      <li><b>流量單一時不划算</b>：如果幾乎所有問題都是查單一告警代碼，固定單步加重排序更簡單、更容易除錯；問題類型多樣、成本敏感時才值得加路由。</li>
+      <li><b>路由本身要可觀察</b>：把每題的標籤、路線與檢索次數寫進日誌，使用者回報「答不好」時才查得出是分流錯，還是檢索錯。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的分類器以規則模擬、檢索為簡化的 TF-IDF；工單、報告與告警代碼僅供教學示範，檢索輪數也是為了說明而設定。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Jeong、Baek、Cho、Hwang、Park，〈Adaptive-RAG: Learning to Adapt Retrieval-Augmented Large Language Models through Question Complexity〉（NAACL 2024，arXiv:2403.14403）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>Adaptive RAG 的分類器在流程中的哪個時間點運作？</b></p>
+    <button class="opt">A. 檢索完成之後，替每份文件打信心分數</button>
+    <button class="opt">B. 檢索之前，依問題複雜度決定走哪條路線</button>
+    <button class="opt">C. 生成答案之後，檢查每句話有沒有依據</button>
+    <div class="why">分類器先看問題本身，決定不檢索、單步或多步；檢索後評估文件品質是 CRAG，生成後檢查依據則是 Self-RAG 一類的做法。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>技師問「WTG-17 的 PT-203 為什麼一直復發」，卻被分類器判為單步題。最可能的後果是？</b></p>
+    <button class="opt">A. 系統會多花很多檢索成本，但答案正確</button>
+    <button class="opt">B. 分類器會自動重新訓練並修正路線</button>
+    <button class="opt">C. 只查一次，可能缺少工單或振動報告，答案不完整</button>
+    <div class="why">複雜題被分到簡單路線，是代價較高的那種錯誤：資料不全卻仍會產生看似合理的答案。因此要用評估集監控分類器，高風險題可偏向走多步。</div>
+  </div>
+
+  <nav class="pager" data-slug="adaptive-rag"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'固定流程：一律走同一條路', text:'三個問題都走<b>單步檢索</b>。概念題多查一次，告警處理題剛好，但根因分析題只撈到兩份工單，缺了手冊步驟與振動報告，<b>答案不完整</b>。若改成一律多步，簡單題又白花成本。' },
+  { title:'加一個複雜度分類器', text:'Adaptive RAG（Jeong 等人，2024）在最前面放一個<b>分類器</b>，讀完問題輸出複雜度標籤 A、B、C，再分流到不同路線。分類器是較小的模型，比跑完整流程便宜。' },
+  { title:'路線 A：不檢索', text:'「旋角系統是做什麼的」是<b>一般概念題</b>，模型本身就懂，直接回答，省下一次檢索。但涉及機型細節與告警代碼的題目，不該走這條路。' },
+  { title:'路線 B：單步檢索', text:'「PT-203 怎麼處理」答案就在<b>一份手冊</b>裡，查一次、取回前幾名、再生成，也就是基礎 RAG。多數告警查詢走這條路，成本最划算。' },
+  { title:'路線 C：多步檢索', text:'「為何一直復發」要<b>跨文件推理</b>：先查手冊排除步驟，看到歷史再查工單，懷疑軸承再查 CMS 振動報告，逐輪整合後才生成答案。輪數要設上限。' },
+  { title:'分類器怎麼訓練', text:'論文用<b>自動產生的標籤</b>訓練小模型：看各策略實際能不能答對，取最簡單且答對的當標籤；再配合資料集特性（單跳題、多跳題）補標，不必逐題人工標註。' },
+  { title:'分類會出錯', text:'複雜題被分到簡單路線，答案<b>不完整還可能很有自信</b>；簡單題被分到複雜路線，答案沒錯卻<b>多花成本</b>。兩種錯誤代價不同，高風險題可偏向走複雜路線。' },
+  { title:'該省的省、該查的查', text:'依難度分流後，簡單題不浪費，複雜題也有足夠的資料。本例檢索次數為 A 0 次、B 1 次、C 3 次（<b>輪數為假設</b>）。前提是分類器夠準，並持續用評估集監控。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 虛構知識庫：手冊、工單、CMS 報告 */
+  const D = [
+    { id:'M1', src:'OW-8 手冊 3.4', text:'OW-8 手冊 3.4 PT-203 旋角馬達過溫：先讀取近 24 小時溫度曲線，檢查散熱風道與冷卻風扇。再量測 PT100 感測器阻值與接線。更換馬達前須完成上鎖掛牌。' },
+    { id:'M2', src:'OW-8 手冊 3.1', text:'旋角系統（pitch）依風速調整葉片角度以控制轉速與功率，緊急停機時可將葉片順槳（feathering）。系統包含旋角馬達、減速機、編碼器與備援電源。' },
+    { id:'M3', src:'工單 WO-2026-0412', text:'WTG-17 旋角馬達 PT-203 過溫：清潔風道濾網並更換冷卻風扇，結案。' },
+    { id:'M4', src:'工單 WO-2026-0455', text:'WTG-17 PT-203 三日後再度出現：量測 PT100 阻值與接線正常，馬達繞組溫升仍偏高，建議送 CMS 進一步分析。' },
+    { id:'M5', src:'CMS 報告', text:'WTG-17 旋角馬達 CMS 振動報告：軸承振動值較上月上升，疑似軸承早期磨耗，建議排程檢查。' },
+    { id:'M6', src:'OW-8 手冊 3.5', text:'OW-8 手冊 3.5 PT-230 旋角備援電源測試失敗：每半年做一次放電測試。失敗時檢查電容模組與充電器。' },
+    { id:'M7', src:'工安規範', text:'進入輪轂前須完成上鎖掛牌（LOTO），確認葉輪鎖已插入，並由第二人在輪轂外待命。' },
+    { id:'M8', src:'工單 WO-2026-0388', text:'WTG-09 PT-230 備援電源測試失敗：更換電容模組後恢復，結案。' },
+    { id:'M9', src:'工單 WO-2026-0431', text:'WTG-17 偏航系統 YW-042 偏航誤差過大：重新校正風向計後恢復，結案。' }
+  ];
+  const idx = rt.buildIndex(D.map(d => ({ text:d.text })));
+
+  /* need＝人工標註的必要資料（只有預設題才有） */
+  const P = [
+    { q:'旋角系統是做什麼的', need:[] },
+    { q:'OW-8 的 PT-203 旋角馬達過溫怎麼處理', need:['M1'] },
+    { q:'WTG-17 的 PT-203 為什麼一直復發，根因是什麼', need:['M1','M3','M4','M5'] }
+  ];
+  const ROUTE = { A:'A 不檢索', B:'B 單步檢索', C:'C 多步檢索' };
+
+  /* 規則模擬的分類器（非訓練模型） */
+  function classify(q){
+    const code = /[A-Za-z]{2}-\d{3}/.test(q), wtg = /WTG-\d+/i.test(q);
+    const why = /為什麼|為何|根因|復發|反覆|一直|趨勢|比較|是否/.test(q);
+    const how = /怎麼|如何|步驟|處理|排除|原因/.test(q);
+    if(why && (code || wtg)) return 'C';
+    if(code || how) return 'B';
+    return 'A';
+  }
+  /* 多步檢索的子查詢：手冊 → 工單 → CMS（以樣板產生，模擬模型每輪想到的查詢） */
+  function subQueries(q){
+    const code = (q.match(/[A-Za-z]{2}-\d{3}/) || [''])[0], wtg = (q.match(/WTG-\d+/i) || [''])[0];
+    return [code ? `OW-8 手冊 ${code}` : q, `${wtg} ${code} 工單`.trim(), `${wtg} 振動 CMS`.trim()];
+  }
+
+  let cur = { q:P[2].q, need:P[2].need }, mode = 'adaptive';
+
+  function run(){
+    const q = cur.q;
+    const label = classify(q);
+    const route = mode === 'adaptive' ? label : mode === 'single' ? 'B' : 'C';
+    let rounds = [];                       // [{sub, hits}]
+    if(route === 'B') rounds = [{ sub:q, hits:rt.searchVector(idx, q, 3) }];
+    if(route === 'C') rounds = subQueries(q).map(s => ({ sub:s, hits:rt.searchVector(idx, s, 2) }));
+    const seen = new Set(), got = [];
+    rounds.forEach(r => r.hits.forEach(h => { if(!seen.has(h.i)){ seen.add(h.i); got.push(D[h.i].id); } }));
+    const retr = rounds.length, llm = route === 'A' ? 1 : route === 'B' ? 1 : retr + 1;
+
+    let cover = '';
+    if(cur.need){
+      const ok = cur.need.filter(id => got.includes(id)).length;
+      const extra = got.filter(id => !cur.need.includes(id)).length;
+      cover = cur.need.length
+        ? `；必要資料涵蓋 ${ok} / ${cur.need.length}${ok < cur.need.length ? '（答案不完整）' : ''}，另有 ${extra} 份用不到的文件`
+        : (got.length ? `；這題不需要檢索，卻多查了 ${got.length} 份文件` : '；這題不需要檢索，剛好');
+    }
+    $('#stat').textContent = `分類器判為「${ROUTE[label]}」${mode === 'adaptive' ? '，依此路線' : `，但目前強制走「${ROUTE[route]}」`}；檢索 ${retr} 次、LLM 呼叫 ${llm} 次${cover}。`;
+
+    $('#hits').innerHTML = route === 'A'
+      ? '<div class="hit"><div class="meta"><span>不檢索</span></div><div>直接由模型回答，沒有取回任何文件。</div></div>'
+      : rounds.map((r, n) => `<div class="muted" style="font-size:13px">${route === 'C' ? `第 ${n+1} 輪` : '單步'}檢索：「${esc(r.sub)}」</div>` +
+          r.hits.map(h => {
+            const need = cur.need && cur.need.includes(D[h.i].id);
+            return `<div class="hit ${need ? 'top' : 'low'}"><div class="meta"><span>${esc(D[h.i].id)}．${esc(D[h.i].src)}${cur.need ? (need ? '　✔ 必要資料' : '　（用不到）') : ''}</span><span>相似度 ${h.score.toFixed(3)}</span></div><div>${rt.highlight(D[h.i].text, r.sub)}</div></div>`;
+          }).join('')).join('');
+
+    $('#answer').textContent = route === 'A'
+      ? '最終答案依據：模型自身知識（沒有檢索）。'
+      : '最終答案依據：\n' + got.map(id => { const d = D.find(x => x.id === id); return `${d.text}（來源：${d.src}）`; }).join('\n');
+  }
+
+  $('#presets').innerHTML = P.map((x, i) => `<button type="button" data-i="${i}" class="${i === 2 ? 'on' : ''}">${esc(x.q)}</button>`).join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return; cur = P[+b.dataset.i]; $('#qin').value = '';
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  const submit = () => { const v = $('#qin').value.trim(); if(!v) return; cur = { q:v, need:null };
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.remove('on')); run(); };
+  $('#go').onclick = submit;
+  $('#qin').addEventListener('keydown', e => { if(e.key === 'Enter') submit(); });
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => { mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); });
+  run();
+})();
+</script>
+</body>
+</html>
