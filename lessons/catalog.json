@@ -293,6 +293,20 @@
         "GraphRAG"
       ],
       "date": "2026-10-07"
+    },
+    {
+      "no": 18,
+      "slug": "colbert",
+      "file": "lessons/018-colbert.html",
+      "title": "ColBERT 延遲互動：逐詞向量比對",
+      "en": "ColBERT / Late Interaction",
+      "level": 3,
+      "summary": "單一向量把整段手冊壓成一點，PT-205 與 PT-203 這種只差一個代碼的段落會被混在一起。ColBERT 讓查詢與文件各自編碼成每個詞一個向量，文件端可離線預算，最後用 MaxSim 讓每個查詢詞找最像的文件詞再加總；代價是索引大、實作較複雜。",
+      "tags": [
+        "高階",
+        "ColBERT"
+      ],
+      "date": "2026-10-08"
     }
   ]
 }

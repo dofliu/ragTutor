@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ColBERT 延遲互動：逐詞向量比對｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂 ColBERT 延遲互動：文件與查詢各自編碼成「每個詞一個向量」，再用 MaxSim 讓每個查詢詞去找最相似的文件詞並加總，兼顧精細比對與可預先計算的效率。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 018 堂</span><span class="tag lv3">高階</span><span class="tag">約 18 分鐘</span></p>
+  <h1>ColBERT 延遲互動：逐詞向量比對</h1>
+  <p class="lead">技師查「PT-205 煞車間隙」，一般的向量檢索把<b>整段手冊壓成一個向量</b>，「PT-205」與「PT-203」這種只差一個數字的段落，向量會非常接近，關鍵細節被平均掉了。<b>ColBERT</b> 改成每個詞保留一個向量，查詢時讓<b>每個查詢詞各自去找文件裡最相似的詞</b>（MaxSim）再加總，比對更精細，而文件的詞向量仍可事先算好。這種「分開編碼、最後才互動」的做法叫<b>延遲互動</b>（late interaction）。</p>
+
+  <h2>🎬 動畫：從單一向量到逐詞 MaxSim</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="ColBERT 動畫：單一向量把整段文件壓成一點而分不清 PT-205 與 PT-203；ColBERT 為文件與查詢的每個詞各產生一個向量，每個查詢詞取與文件詞最大的相似度（MaxSim）後加總成分數，正確段落總分高、錯誤段落總分低；實務上先用近似搜尋找候選再完整計算 MaxSim">
+<rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 單一向量：整段壓成一點，細節被平均掉</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="1" data-to="1">② 離線：文件每個詞編碼成一個向量</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="2" data-to="2">③ 查詢時：查詢每個詞也各一個向量</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="3" data-to="3">④ 每個查詢詞，跟文件的每個詞都算相似度</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="4" data-to="4">⑤ MaxSim：每個查詢詞只取最高的那一個</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent-ink)" data-from="5" data-to="5">⑥ 加總成文件分數</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="6" data-to="6">⑦ 換一段 PT-203 的文件：多數查詢詞找不到對應</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 實務：先近似搜尋取候選，再對候選算完整 MaxSim</text>
+
+<g data-to="0">
+<rect x="24" y="128" width="270" height="62" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="36" y="152" font-size="12" font-weight="700" style="fill:var(--doc)">段落 A：PT-205 煞車異常</text>
+<text x="36" y="172" font-size="11" class="t-muted">檢查煞車線圈與煞車間隙</text>
+<rect x="24" y="228" width="270" height="62" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="36" y="252" font-size="12" font-weight="700" style="fill:var(--doc)">段落 B：PT-203 馬達過溫</text>
+<text x="36" y="272" font-size="11" class="t-muted">檢查冷卻風扇與風道</text>
+<path d="M294 159 L378 159" class="flow" style="fill:none;stroke:var(--vec);stroke-width:1.8"/>
+<path d="M294 259 L378 259" class="flow" style="fill:none;stroke:var(--vec);stroke-width:1.8"/>
+<circle cx="398" cy="159" r="14" style="fill:var(--vec)"/>
+<circle cx="398" cy="259" r="14" style="fill:var(--vec)"/>
+<text x="398" y="196" text-anchor="middle" font-size="11" class="t-muted">一個向量</text>
+<text x="398" y="296" text-anchor="middle" font-size="11" class="t-muted">一個向量</text>
+<circle cx="610" cy="209" r="14" style="fill:var(--query)"/>
+<text x="610" y="245" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--query)">查詢：PT-205 煞車間隙</text>
+<path d="M596 204 L416 163" style="fill:none;stroke:var(--muted);stroke-width:1.6;stroke-dasharray:4 4"/>
+<path d="M596 214 L416 255" style="fill:none;stroke:var(--muted);stroke-width:1.6;stroke-dasharray:4 4"/>
+<text x="760" y="198" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--bad)">兩段分數差不多</text>
+<text x="760" y="218" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--bad)">排名容易弄錯</text>
+</g>
+
+<g data-from="1" data-to="1">
+<rect x="24" y="160" width="230" height="82" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="36" y="184" font-size="12" font-weight="700" style="fill:var(--doc)">段落 A（離線處理）</text>
+<text x="36" y="204" font-size="11" class="t-muted">PT-205 旋角馬達煞車異常，</text>
+<text x="36" y="222" font-size="11" class="t-muted">檢查煞車線圈與間隙</text>
+<path d="M254 201 L296 201" class="flow" style="fill:none;stroke:var(--vec);stroke-width:1.8"/>
+</g>
+<g data-from="1" data-to="5">
+<g data-hot="1"><rect x="300" y="122" width="120" height="30" rx="15" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="360" y="142" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">PT-205</text></g>
+<g data-hot="1"><rect x="300" y="160" width="120" height="30" rx="15" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="360" y="180" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">旋角</text></g>
+<g data-hot="1"><rect x="300" y="198" width="120" height="30" rx="15" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="360" y="218" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">馬達</text></g>
+<g data-hot="1"><rect x="300" y="236" width="120" height="30" rx="15" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="360" y="256" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">煞車</text></g>
+<g data-hot="1"><rect x="300" y="274" width="120" height="30" rx="15" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="360" y="294" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">線圈</text></g>
+<g data-hot="1"><rect x="300" y="312" width="120" height="30" rx="15" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="360" y="332" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">間隙</text></g>
+</g>
+
+<g data-from="2" data-to="6">
+<g data-hot="2"><rect x="24" y="160" width="120" height="32" rx="16" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/><text x="84" y="181" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--query)">PT-205</text></g>
+<g data-hot="2"><rect x="24" y="210" width="120" height="32" rx="16" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/><text x="84" y="231" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--query)">煞車</text></g>
+<g data-hot="2"><rect x="24" y="260" width="120" height="32" rx="16" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/><text x="84" y="281" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--query)">間隙</text></g>
+<text x="84" y="146" text-anchor="middle" font-size="11" class="t-muted">查詢：PT-205 煞車間隙</text>
+</g>
+<g data-from="2" data-to="2">
+<rect x="24" y="304" width="120" height="26" rx="13" style="fill:none;stroke:var(--muted);stroke-width:1.4;stroke-dasharray:4 3"/>
+<text x="84" y="322" text-anchor="middle" font-size="11" class="t-muted">[MASK] 補位</text>
+</g>
+
+<g data-from="3" data-to="3">
+<g style="fill:none;stroke:var(--vec);stroke-width:1.1;opacity:.7">
+<path d="M144 176 L300 137"/><path d="M144 176 L300 175"/><path d="M144 176 L300 213"/><path d="M144 176 L300 251"/><path d="M144 176 L300 289"/><path d="M144 176 L300 327"/>
+<path d="M144 226 L300 137"/><path d="M144 226 L300 175"/><path d="M144 226 L300 213"/><path d="M144 226 L300 251"/><path d="M144 226 L300 289"/><path d="M144 226 L300 327"/>
+<path d="M144 276 L300 137"/><path d="M144 276 L300 175"/><path d="M144 276 L300 213"/><path d="M144 276 L300 251"/><path d="M144 276 L300 289"/><path d="M144 276 L300 327"/>
+</g>
+<text x="620" y="226" font-size="12" class="t-muted">3 個查詢詞 × 6 個文件詞</text>
+<text x="620" y="246" font-size="12" class="t-muted">= 18 個餘弦相似度</text>
+</g>
+
+<g data-from="4" data-to="5">
+<g class="flow" style="fill:none;stroke:var(--good);stroke-width:2.6"><path d="M144 176 L300 137"/><path d="M144 226 L300 251"/><path d="M144 276 L300 327"/></g>
+<text x="436" y="141" font-size="12" font-weight="700" style="fill:var(--good)">1.0</text>
+<text x="436" y="255" font-size="12" font-weight="700" style="fill:var(--good)">0.9</text>
+<text x="436" y="331" font-size="12" font-weight="700" style="fill:var(--good)">0.9</text>
+<text x="520" y="226" font-size="11" class="t-muted">（數值為示意）</text>
+</g>
+<g data-from="5" data-to="6">
+<rect x="600" y="140" width="296" height="74" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+<text x="616" y="164" font-size="12" font-weight="700" style="fill:var(--good)">段落 A（PT-205）</text>
+<text x="616" y="184" font-size="12">MaxSim 總分 = 1.0 + 0.9 + 0.9</text>
+<text x="616" y="204" font-size="12" font-weight="700" style="fill:var(--good)">= 2.8（高）</text>
+</g>
+
+<g data-from="6" data-to="6">
+<rect x="300" y="122" width="120" height="30" rx="15" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="360" y="142" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">PT-203</text>
+<rect x="300" y="160" width="120" height="30" rx="15" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="360" y="180" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">旋角</text>
+<rect x="300" y="198" width="120" height="30" rx="15" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="360" y="218" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">馬達</text>
+<rect x="300" y="236" width="120" height="30" rx="15" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="360" y="256" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">過溫</text>
+<rect x="300" y="274" width="120" height="30" rx="15" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="360" y="294" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">風扇</text>
+<rect x="300" y="312" width="120" height="30" rx="15" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="360" y="332" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">風道</text>
+<g style="fill:none;stroke:var(--warn);stroke-width:2.2"><path d="M144 176 L300 137" style="stroke-dasharray:6 4"/><path d="M144 226 L300 213" style="stroke-dasharray:2 5"/><path d="M144 276 L300 327" style="stroke-dasharray:2 5"/></g>
+<text x="436" y="141" font-size="12" font-weight="700" style="fill:var(--warn)">0.5</text>
+<text x="436" y="217" font-size="12" font-weight="700" style="fill:var(--warn)">0.3</text>
+<text x="436" y="331" font-size="12" font-weight="700" style="fill:var(--warn)">0.2</text>
+<text x="520" y="226" font-size="11" class="t-muted">（數值為示意）</text>
+<rect x="600" y="230" width="296" height="74" rx="8" style="fill:var(--panel);stroke:var(--warn);stroke-width:2"/>
+<text x="616" y="254" font-size="12" font-weight="700" style="fill:var(--warn)">段落 B（PT-203）</text>
+<text x="616" y="274" font-size="12">MaxSim 總分 = 0.5 + 0.3 + 0.2</text>
+<text x="616" y="294" font-size="12" font-weight="700" style="fill:var(--warn)">= 1.0（低）</text>
+</g>
+
+<g data-from="7">
+<rect x="24" y="130" width="196" height="76" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/>
+<text x="122" y="158" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--query)">查詢編碼</text>
+<text x="122" y="180" text-anchor="middle" font-size="11" class="t-muted">每個詞一個向量</text>
+<rect x="262" y="130" width="196" height="76" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.8"/>
+<text x="360" y="158" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">近似搜尋（ANN）</text>
+<text x="360" y="180" text-anchor="middle" font-size="11" class="t-muted">在全部詞向量中找候選</text>
+<rect x="500" y="130" width="196" height="76" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.8"/>
+<text x="598" y="158" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">完整 MaxSim 重排</text>
+<text x="598" y="180" text-anchor="middle" font-size="11" class="t-muted">只對候選文件計算</text>
+<rect x="738" y="130" width="158" height="76" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+<text x="817" y="158" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">Top-k 段落</text>
+<text x="817" y="180" text-anchor="middle" font-size="11" class="t-muted">PT-205 排第一</text>
+<g class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"><path d="M220 168 L262 168"/><path d="M458 168 L500 168"/><path d="M696 168 L738 168"/></g>
+<rect x="24" y="238" width="872" height="86" rx="8" style="fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:4 4"/>
+<text x="40" y="264" font-size="12" font-weight="700" style="fill:var(--doc)">代價：每個詞都要存一個向量，索引比單一向量大很多</text>
+<text x="40" y="286" font-size="12" class="t-muted">ColBERTv2 以「與最近質心的殘差」壓縮詞向量；PLAID 再用質心縮小需要計算的候選。</text>
+<text x="40" y="306" font-size="12" class="t-muted">文件向量可離線算好，查詢時只編碼查詢，所以比 cross-encoder 逐對重算便宜。</text>
+</g>
+
+<rect x="20" y="364" width="886" height="46" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+<g data-to="0"><text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--query)">問題：</tspan>PT-205 煞車間隙。段落 A、B 只差一個告警代碼與少數詞。</text><text x="34" y="401" font-size="11.5"><tspan font-weight="700" style="fill:var(--bad)">單一向量：</tspan>整段平均成一個點，差異被稀釋，兩段的相似度很接近。</text></g>
+<g data-from="1" data-to="1"><text x="34" y="384" font-size="11.5">ColBERT 用 BERT 編碼文件，<tspan font-weight="700" style="fill:var(--doc)">每個詞（token）輸出一個向量</tspan>，不再合併成一個。</text><text x="34" y="401" font-size="11.5" class="t-muted">這些詞向量可在建索引時就算好存起來，查詢時不必再讀文件全文。</text></g>
+<g data-from="2" data-to="2"><text x="34" y="384" font-size="11.5">查詢也編碼成<tspan font-weight="700" style="fill:var(--query)">每個詞一個向量</tspan>；查詢較短時，原論文用 [MASK] 補到固定長度。</text><text x="34" y="401" font-size="11.5" class="t-muted">兩邊各編碼各的、互不影響，這就是「延遲互動」：直到最後才互相比對。</text></g>
+<g data-from="3" data-to="3"><text x="34" y="384" font-size="11.5">每個查詢詞向量，與文件<tspan font-weight="700" style="fill:var(--vec)">每個詞向量</tspan>算餘弦相似度（向量長度正規化後即內積）。</text><text x="34" y="401" font-size="11.5" class="t-muted">這是一張 查詢詞數 × 文件詞數 的相似度表。</text></g>
+<g data-from="4" data-to="4"><text x="34" y="384" font-size="11.5">每個查詢詞只保留與它<tspan font-weight="700" style="fill:var(--good)">最相似的那個文件詞</tspan>（max），其餘相似度捨棄。</text><text x="34" y="401" font-size="11.5" class="t-muted">PT-205 對 PT-205、煞車對煞車、間隙對間隙；即使文件有很多詞，每個查詢詞只取一個。</text></g>
+<g data-from="5" data-to="5"><text x="34" y="384" font-size="11.5">把每個查詢詞的最高相似度<tspan font-weight="700" style="fill:var(--accent-ink)">相加</tspan>，得到這份文件的分數：Σ 對每個查詢詞取 max。</text><text x="34" y="401" font-size="11.5" class="t-muted">每個查詢詞都找到對應的詞，總分就高；有詞找不到對應，總分就被拉低。</text></g>
+<g data-from="6" data-to="6"><text x="34" y="384" font-size="11.5">段落 B 只有「PT-203」勉強像「PT-205」，<tspan font-weight="700" style="fill:var(--warn)">「煞車」「間隙」都找不到對應詞</tspan>。</text><text x="34" y="401" font-size="11.5" class="t-muted">單一向量被平均掉的差異，在逐詞比對下直接反映在總分上，排名因此正確。</text></g>
+<g data-from="7" data-to="7"><text x="34" y="384" font-size="11.5">不可能對全部文件逐一算 MaxSim：先用<tspan font-weight="700" style="fill:var(--good)">近似搜尋</tspan>取候選，再對候選精算並排序。</text><text x="34" y="401" font-size="11.5" class="t-muted">代價是索引大、實作比單一向量複雜；換來較細的比對與較好的精確詞命中。</text></g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>每個詞一個向量</b>ColBERT（Khattab 與 Zaharia，SIGIR 2020）用 BERT 為查詢與文件的每個 token 各產生一個向量，不像一般 bi-encoder 壓成單一向量。</div>
+    <div class="card"><b>MaxSim 加總</b>分數 = 對每個查詢 token，取它與所有文件 token 相似度的最大值，再全部相加。每個查詢詞都有人「認領」，分數才高。</div>
+    <div class="card"><b>延遲互動</b>查詢與文件分開編碼，文件向量可離線預算；相互比對留到最後一步，比 cross-encoder 把兩者串在一起逐對重算便宜。</div>
+    <div class="card"><b>代價是儲存</b>每份文件要存「詞數 × 維度」個數字。ColBERTv2（2022）用殘差壓縮縮小索引，PLAID 則加快檢索，但仍比單一向量大、也複雜。</div>
+  </div>
+
+  <h2>🧪 互動範例：單一向量 vs 逐詞 MaxSim</h2>
+  <div class="prose"><p>下面是虛構的《OW-8 運維手冊》8 個片段。<b>這裡的詞向量不是訓練出來的模型</b>，只是把每個詞的字元（單字與相鄰兩字）雜湊成 128 維向量，所以字面相近的詞向量也相近（例如 205 與 203）。單一向量是把詞向量平均後算餘弦；ColBERT 模式則真的在瀏覽器裡對每個查詢詞取 MaxSim 再加總。預設的 4 個查詢中，前 3 個（代碼加關鍵詞、單獨的料號）單一向量會把目標排到第 2 或第 3 名，ColBERT 模式排第 1；第 4 個兩種方式都答對，不是每個查詢都會有差別。真實的 ColBERT 詞向量帶有上下文語意，這裡只讓你看「逐詞比對」的機制。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><input type="text" id="qin" placeholder="輸入自己的查詢，例如：冷卻風扇" aria-label="自訂查詢"><button type="button" id="go">送出</button></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" class="on" data-mode="single">單一向量（詞向量平均）</button>
+      <button type="button" data-mode="colbert">ColBERT 逐詞 MaxSim</button>
+    </div>
+    <div class="row"><label for="kr">顯示前幾名：<b id="kv">3</b></label><input type="range" id="kr" min="1" max="5" value="3" style="flex:1;max-width:260px"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>先用 NumPy 寫出 MaxSim 的核心，看懂分數怎麼來；再用 <a href="https://github.com/AnswerDotAI/RAGatouille">RAGatouille</a> 套件載入 ColBERT 模型建索引與檢索（<code>pip install ragatouille anthropic numpy</code>），最後交給 <code>claude-sonnet-5</code> 回答。文件與問題皆為虛構。<code>colbert-ir/colbertv2.0</code> 主要以英文訓練，若手冊是繁體中文，請換成支援中文的多語言延遲互動模型。</p></div>
+<pre class="code"><code><span class="k">import</span> numpy <span class="k">as</span> np, anthropic
+<span class="k">from</span> ragatouille <span class="k">import</span> RAGPretrainedModel
+
+<span class="c"># 1) MaxSim 核心：q 為 (查詢詞數, 維度)，d 為 (文件詞數, 維度)，皆已 L2 正規化</span>
+<span class="k">def</span> <span class="f">maxsim</span>(q, d):
+    sim = q @ d.T                      <span class="c"># 查詢詞 × 文件詞 的餘弦相似度表</span>
+    <span class="k">return</span> sim.<span class="f">max</span>(axis=<span class="s">1</span>).<span class="f">sum</span>()      <span class="c"># 每個查詢詞取最大，再加總</span>
+
+<span class="c"># 2) 手冊片段（虛構）</span>
+docs = [
+    <span class="s">"PT-205 旋角馬達煞車異常：檢查煞車線圈電阻與煞車間隙，確認釋放時無拖滯。"</span>,
+    <span class="s">"PT-203 旋角馬達過溫：檢查冷卻風扇與風道，量測感測器阻值。"</span>,
+    <span class="s">"PT-MTR-02 旋角馬達備品，適用 OW-8，庫存位置為港區倉庫。"</span>,
+]
+
+<span class="c"># 3) 載入 ColBERT 模型並建索引（文件的詞向量在這一步算好存起來）</span>
+rag = RAGPretrainedModel.<span class="f">from_pretrained</span>(<span class="s">"colbert-ir/colbertv2.0"</span>)  <span class="c"># 中文請換多語言模型</span>
+rag.<span class="f">index</span>(collection=docs, index_name=<span class="s">"ow8_manual"</span>, split_documents=<span class="k">False</span>)
+
+<span class="c"># 4) 檢索：查詢只需編碼一次，再對候選文件算 MaxSim</span>
+question = <span class="s">"PT-205 煞車間隙怎麼檢查"</span>
+hits = rag.<span class="f">search</span>(question, k=<span class="s">2</span>)
+context = <span class="s">"\n"</span>.<span class="f">join</span>(h[<span class="s">"content"</span>] <span class="k">for</span> h <span class="k">in</span> hits)
+
+<span class="c"># 5) 生成答案</span>
+client = anthropic.<span class="f">Anthropic</span>()
+msg = client.messages.<span class="f">create</span>(
+    model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">500</span>,
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+        <span class="s">f"只根據下列手冊片段回答，沒寫到就說不知道。\n{context}\n\n問題：{question}"</span>}])
+<span class="f">print</span>(msg.content[<span class="s">0</span>].text)</code></pre>
+  <div class="prose"><p>注意：套件的參數與預設值會隨版本調整，請以官方文件為準。正式使用時，文件要先切塊（第 002 堂），因為 ColBERT 對每份文件有最大長度；並記得把索引大小與查詢延遲納入評估。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>向量檢索（第 003 堂）</th><th>混合檢索（第 004 堂）</th><th>重排序（第 005 堂）</th><th>ColBERT（本堂）</th></tr>
+    <tr><th>比對粒度</th><td>整段一個向量</td><td>關鍵字詞 + 整段向量</td><td>查詢與文件串在一起逐對讀</td><td>每個詞一個向量，逐詞 MaxSim</td></tr>
+    <tr><th>文件能否預算</th><td>能</td><td>能</td><td>不能，要逐對重算</td><td>能（詞向量）</td></tr>
+    <tr><th>精確詞（代碼、料號）</th><td>容易被平均掉</td><td>靠 BM25 補強</td><td>可修正前段的排序</td><td>逐詞比對，較不易被稀釋</td></tr>
+    <tr><th>儲存與成本</th><td>最小</td><td>小</td><td>索引不變，查詢時較貴</td><td>索引最大，需壓縮與專用索引</td></tr>
+  </table>
+  <div class="prose"><p>ColBERT 介於 bi-encoder 與 cross-encoder 之間：比單一向量細，又比 cross-encoder 便宜，因為文件端可以預先算好。它常被用來當第一階段檢索，也可以當作重排序器使用。</p></div>
+
+  <h2>⚠️ ColBERT 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>索引很大</b>：每個詞一個向量，儲存量約隨總詞數成長。語料大時要評估壓縮（ColBERTv2）與專用索引（PLAID）。</li>
+      <li><b>語言與領域要對</b>：預訓練模型主要以英文訓練，繁體中文手冊與「PT-205」這類專有代碼要選對模型，並用自己的資料驗證。</li>
+      <li><b>不是所有專有詞都會精確命中</b>：詞向量是學出來的，罕見代碼不一定被當成「完全相同」。需要保證精確比對時，仍要搭配 BM25（第 004 堂）。</li>
+      <li><b>文件有長度上限</b>：過長要先切塊；切塊策略仍會影響結果。</li>
+      <li><b>實作與維運較複雜</b>：不像單一向量能直接放進一般向量資料庫；選工具時要確認是否支援多向量（multi-vector）。</li>
+      <li><b>小語料不划算</b>：語料不大、查詢多半語意型時，向量檢索加重排序更簡單，先量測效果再決定要不要上。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的詞向量是字元雜湊的玩具模型，動畫中的相似度數值僅為示意，告警代碼與料號僅供教學示範。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Khattab 與 Zaharia，〈ColBERT: Efficient and Effective Passage Search via Contextualized Late Interaction over BERT〉（SIGIR 2020，arXiv:2004.12832）；Santhanam 等，〈ColBERTv2: Effective and Efficient Retrieval via Lightweight Late Interaction〉（NAACL 2022，arXiv:2112.01488）；Santhanam 等，〈PLAID: An Efficient Engine for Late Interaction Retrieval〉（CIKM 2022，arXiv:2205.09707）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>ColBERT 的 MaxSim 分數怎麼算？</b></p>
+    <button class="opt">A. 把查詢與文件各平均成一個向量，再算一次餘弦相似度</button>
+    <button class="opt">B. 對每個查詢詞，取它與所有文件詞相似度的最大值，再把這些最大值加總</button>
+    <button class="opt">C. 把查詢與文件串在一起丟進模型，直接輸出一個相關分數</button>
+    <div class="why">A 是單一向量的做法，C 是 cross-encoder。ColBERT 逐個查詢詞找最像的文件詞（max），再加總（sum）。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>為什麼叫「延遲互動」，而且比 cross-encoder 便宜？</b></p>
+    <button class="opt">A. 因為它延後到使用者提問時才建立文件索引</button>
+    <button class="opt">B. 因為它不使用任何神經網路，只比對字串</button>
+    <button class="opt">C. 因為查詢與文件分開編碼，文件的詞向量可預先算好，直到最後一步才互相比對</button>
+    <div class="why">cross-encoder 每個查詢都要和每份候選文件一起重新計算；ColBERT 的文件詞向量事先算好，查詢時只編碼查詢，再做輕量的 MaxSim。</div>
+  </div>
+
+  <nav class="pager" data-slug="colbert"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'單一向量：細節被平均掉', text:'查「PT-205 煞車間隙」，一般向量檢索把<b>整段壓成一個向量</b>。段落 A（PT-205）與段落 B（PT-203）只差少數詞，兩個向量很接近，<b>分數差不多，排名容易弄錯</b>。' },
+  { title:'文件：每個詞一個向量', text:'ColBERT 用 BERT 編碼文件，<b>每個詞（token）輸出一個向量</b>，不合併。這些詞向量在<b>建索引時就離線算好</b>存起來，查詢時不必再重算文件。' },
+  { title:'查詢：同樣每個詞一個向量', text:'查詢也編碼成<b>每個詞一個向量</b>；原論文把較短的查詢用 [MASK] 補到固定長度。查詢與文件<b>分開編碼</b>，直到最後才互相比對。' },
+  { title:'逐詞算相似度', text:'每個查詢詞向量都和文件<b>每個詞向量</b>算餘弦相似度，得到一張「查詢詞 × 文件詞」的相似度表。這裡 3 × 6 = 18 個值。' },
+  { title:'MaxSim：每個查詢詞取最高', text:'每個查詢詞<b>只保留與它最像的那個文件詞</b>（max）：PT-205 對到 PT-205、煞車對到煞車、間隙對到間隙。數值為示意。' },
+  { title:'加總成文件分數', text:'把每個查詢詞的最高分<b>相加</b>，得到段落 A 的分數：<b>每個查詢詞都找到對應詞，總分高</b>。這就是 Σ max 的 MaxSim 計分。' },
+  { title:'換成段落 B 就掉分', text:'段落 B 只有「PT-203」勉強像「PT-205」，<b>「煞車」「間隙」找不到對應詞</b>，總分低。被單一向量平均掉的差異，在逐詞比對下直接反映在分數上。' },
+  { title:'實務：先找候選，再精算', text:'不可能對全部文件逐一算 MaxSim，所以先用<b>近似搜尋</b>在詞向量中取候選，再對候選算完整 MaxSim 排序。ColBERTv2 的<b>殘差壓縮</b>與 PLAID 降低儲存與延遲，但索引仍比單一向量大。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 玩具詞向量：字元（單字、相鄰兩字、整詞）雜湊進 128 維，再 L2 正規化 */
+  const DIM = 128;
+  const fnv = s => { let h = 2166136261; for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; };
+  const tv = t => {
+    const v = new Float64Array(DIM), f = [...t];
+    for(let i = 0; i < t.length - 1; i++) f.push(t.slice(i, i + 2));
+    if(t.length > 2) f.push(t);
+    f.forEach(x => { const h = fnv(x); v[h % DIM] += ((h >>> 16) & 1) ? 1 : -1; });
+    return norm(v);
+  };
+  function norm(v){ let n = 0; for(const x of v) n += x * x; n = Math.sqrt(n) || 1; return v.map(x => x / n); }
+  const dot = (a, b) => { let s = 0; for(let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };
+  const mean = vs => { const s = new Float64Array(DIM); vs.forEach(v => { for(let i = 0; i < DIM; i++) s[i] += v[i]; }); return norm(s); };
+
+  const D = [
+    { id:'D1', src:'手冊 3.5', text:'PT-205 旋角馬達煞車異常：檢查煞車線圈電阻與煞車間隙，確認釋放時無拖滯。' },
+    { id:'D2', src:'手冊 3.4', text:'PT-203 旋角馬達過溫：檢查冷卻風扇與風道，量測感測器阻值。' },
+    { id:'D3', src:'手冊 3.6', text:'PT-230 旋角備援電源測試失敗：檢查電容模組電壓與充電迴路。' },
+    { id:'D4', src:'手冊 3.8', text:'PT-211 三支葉片角度偏差過大：檢查編碼器安裝與零點校正。' },
+    { id:'D5', src:'手冊 5.2', text:'YW-042 偏航誤差過大：檢查風向感測器校正與偏航軸承間隙。' },
+    { id:'D6', src:'手冊 6.1', text:'GB-117 齒輪箱高速軸軸承溫度過高：檢查潤滑油溫與油冷卻器。' },
+    { id:'D7', src:'備品料號表', text:'PT-MTR-02 旋角馬達備品，適用 OW-8，庫存位置為港區倉庫。' },
+    { id:'D8', src:'手冊 8.3', text:'CV-310 變流器功率模組過溫：檢查水冷迴路與散熱風扇。' }
+  ].map(d => { const toks = rt.tokenize(d.text); return { ...d, toks, vecs: toks.map(tv), one: null }; });
+  D.forEach(d => d.one = mean(d.vecs));
+
+  const P = [
+    { q:'PT-MTR-02', need:'D7' },
+    { q:'PT-211 零點', need:'D4' },
+    { q:'PT-211 校正', need:'D4' },
+    { q:'偏航校正', need:'D5' }
+  ];
+  let cur = P[0], mode = 'single';
+
+  function score(q){
+    const qt = rt.tokenize(q), qv = qt.map(tv), qm = mean(qv);
+    return D.map(d => {
+      const single = dot(qm, d.one);
+      let sum = 0; const pairs = qt.map((t, i) => {
+        let best = -2, bj = 0; d.vecs.forEach((v, j) => { const s = dot(qv[i], v); if(s > best){ best = s; bj = j; } });
+        sum += best; return { q:t, d:d.toks[bj], s:best };
+      });
+      return { d, single, colbert:sum, pairs, nq:qt.length };
+    });
+  }
+  function run(){
+    const k = +$('#kr').value; $('#kv').textContent = k;
+    const rs = score(cur.q).sort((a, b) => b[mode === 'single' ? 'single' : 'colbert'] - a[mode === 'single' ? 'single' : 'colbert']);
+    const top = rs.slice(0, k);
+    const rank = cur.need ? rs.findIndex(r => r.d.id === cur.need) + 1 : 0;
+    $('#stat').textContent = `${mode === 'single' ? '單一向量：詞向量平均後算餘弦。' : `ColBERT：${rs[0].nq} 個查詢詞，分數 = 各查詢詞最大相似度的總和（滿分約 ${rs[0].nq}）。`}${cur.need ? `目標段落 ${cur.need} 排第 ${rank} 名${rank === 1 ? '（正確）' : '（沒有排第一）'}。` : '自訂查詢沒有標準答案，請自行判讀。'}`;
+    const max = top[0][mode === 'single' ? 'single' : 'colbert'] || 1;
+    $('#hits').innerHTML = top.map((r, n) => {
+      const sc = r[mode === 'single' ? 'single' : 'colbert'];
+      const pairs = mode === 'colbert' ? `<div class="muted" style="font-size:12px;margin-top:6px">${r.pairs.map(p => `${esc(p.q)}→${esc(p.d)} <b>${p.s.toFixed(2)}</b>`).join('　')}</div>` : '';
+      return `<div class="hit ${cur.need ? (r.d.id === cur.need ? 'top' : 'low') : (n === 0 ? 'top' : '')}"><div class="meta"><span>#${n + 1}．${esc(r.d.id)}．${esc(r.d.src)}</span><span>${mode === 'single' ? '餘弦 ' : 'MaxSim '}${sc.toFixed(3)}</span></div><div>${rt.highlight(r.d.text, cur.q)}</div>${pairs}<div class="score-bar"><b style="width:${Math.max(0, sc / max * 100)}%"></b></div></div>`;
+    }).join('');
+  }
+
+  $('#presets').innerHTML = P.map((x, i) => `<button type="button" data-i="${i}" class="${i === 0 ? 'on' : ''}">${esc(x.q)}</button>`).join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return; cur = P[+b.dataset.i]; $('#qin').value = '';
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  const submit = () => { const v = $('#qin').value.trim(); if(!v) return; cur = { q:v, need:null };
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.remove('on')); run(); };
+  $('#go').onclick = submit;
+  $('#qin').addEventListener('keydown', e => { if(e.key === 'Enter') submit(); });
+  $('#kr').oninput = run;
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => { mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); });
+  run();
+})();
+</script>
+</body>
+</html>

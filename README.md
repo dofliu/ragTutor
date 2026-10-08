@@ -27,6 +27,7 @@
 | 016 | [RAPTOR：遞迴摘要樹檢索](https://dofliu.github.io/ragTutor/lessons/016-raptor.html) |
 | 🎯 關卡 4 | [測驗關卡 4：自我反思、修正與路由（第 013–016 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-4-self-correct-route.html) |
 | 017 | [GraphRAG：知識圖譜與社群摘要](https://dofliu.github.io/ragTutor/lessons/017-graphrag.html) |
+| 018 | [ColBERT 延遲互動：逐詞向量比對](https://dofliu.github.io/ragTutor/lessons/018-colbert.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 
