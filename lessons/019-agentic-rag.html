@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agentic RAG：讓代理人規劃多步檢索｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂 Agentic RAG：讓 LLM 代理人自己規劃、呼叫多個檢索工具（SCADA、手冊、備品、天候、工單），邊看結果邊決定下一步，直到資訊足夠才回答。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 019 堂</span><span class="tag lv3">高階</span><span class="tag">約 20 分鐘</span></p>
+  <h1>Agentic RAG：讓代理人規劃多步檢索</h1>
+  <p class="lead">遠端監控中心問：「WTG-17 的旋角告警何時能出海修？要備什麼料？」答案散在 SCADA 告警、運維手冊、備品表、天候預報裡，而且<b>後一步要查什麼，取決於前一步查到什麼</b>（先知道告警代碼，才能查手冊；先知道料號，才能查庫存）。一般 RAG 只用原問題檢索一次，做不到。<b>Agentic RAG</b> 把各種檢索包成<b>工具</b>，交給 LLM <b>代理人</b>（agent）自己規劃：思考還缺什麼、呼叫工具、讀結果，重複到資訊足夠才回答。</p>
+
+  <h2>🎬 動畫：代理人一步步把資訊湊齊</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="Agentic RAG 動畫：單次檢索只取回手冊片段而缺少庫存與天候；代理人以思考、行動、觀察的迴圈，依序呼叫 SCADA、手冊、備品表、天候預報與工單等工具，資訊足夠後彙整答案，代價是多次工具呼叫與延遲">
+<rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 單次檢索：一個問題只撈一次</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="1" data-to="1">② 代理人：思考 → 行動 → 觀察，重複</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="2" data-to="2">③ 第 1 步：先確認這台風機的告警</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="3" data-to="3">④ 第 2 步：用上一步的結果去查手冊</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="4" data-to="4">⑤ 第 3 步：手冊給了料號，查庫存</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="5" data-to="5">⑥ 第 4 步：手冊有風速限制，查天候</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="6" data-to="6">⑦ 第 5 步：順便查以前有沒有修過</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 資訊足夠，彙整答案；代價是多次呼叫</text>
+
+<g data-to="0">
+<rect x="24" y="140" width="210" height="76" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/>
+<text x="36" y="164" font-size="12" font-weight="700" style="fill:var(--query)">技師提問</text>
+<text x="36" y="184" font-size="11" class="t-muted">WTG-17 的旋角告警，</text>
+<text x="36" y="202" font-size="11" class="t-muted">何時能出海修？備什麼料？</text>
+<path d="M234 178 L292 178" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="292" y="140" width="150" height="76" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.8"/>
+<text x="367" y="174" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">檢索一次</text>
+<text x="367" y="196" text-anchor="middle" font-size="11" class="t-muted">Top-3 片段</text>
+<path d="M442 178 L500 178" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="500" y="140" width="190" height="76" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="512" y="164" font-size="12" font-weight="700" style="fill:var(--doc)">取回的內容</text>
+<text x="512" y="184" font-size="11" class="t-muted">手冊的更換步驟、</text>
+<text x="512" y="202" font-size="11" class="t-muted">別台風機的告警</text>
+<path d="M690 178 L748 178" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="748" y="140" width="148" height="76" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.8"/>
+<text x="822" y="174" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">LLM 回答</text>
+<text x="822" y="196" text-anchor="middle" font-size="11" class="t-muted">只能講手冊</text>
+<text x="40" y="262" font-size="12.5" font-weight="700" style="fill:var(--bad)">缺：這台風機現在是什麼告警、備品庫存、哪天能出海</text>
+<text x="40" y="286" font-size="12" class="t-muted">問題需要「先查甲、再用甲的結果查乙」，一次檢索做不到。</text>
+</g>
+
+<g data-from="1">
+<rect x="24" y="118" width="170" height="234" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:2"/>
+<text x="109" y="146" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--llm)">代理人（LLM）</text>
+<text x="109" y="176" text-anchor="middle" font-size="11.5">① 思考：還缺什麼</text>
+<text x="109" y="200" text-anchor="middle" font-size="11.5">② 行動：選工具、下查詢</text>
+<text x="109" y="224" text-anchor="middle" font-size="11.5">③ 觀察：讀回傳結果</text>
+<text x="109" y="248" text-anchor="middle" font-size="11.5">重複，直到夠了</text>
+<text x="109" y="290" text-anchor="middle" font-size="11" class="t-muted">設步數上限，</text>
+<text x="109" y="308" text-anchor="middle" font-size="11" class="t-muted">避免無限迴圈</text>
+<rect x="640" y="118" width="256" height="42" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="654" y="136" font-size="12" font-weight="700" style="fill:var(--doc)">SCADA 告警</text><text x="654" y="152" font-size="11" class="t-muted">即時告警紀錄</text>
+<rect x="640" y="166" width="256" height="42" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="654" y="184" font-size="12" font-weight="700" style="fill:var(--doc)">運維手冊</text><text x="654" y="200" font-size="11" class="t-muted">排除步驟、備品、限制</text>
+<rect x="640" y="214" width="256" height="42" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="654" y="232" font-size="12" font-weight="700" style="fill:var(--doc)">備品料號表</text><text x="654" y="248" font-size="11" class="t-muted">料號與庫存</text>
+<rect x="640" y="262" width="256" height="42" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="654" y="280" font-size="12" font-weight="700" style="fill:var(--doc)">天候與海象預報</text><text x="654" y="296" font-size="11" class="t-muted">風速、浪高</text>
+<rect x="640" y="310" width="256" height="42" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/><text x="654" y="328" font-size="12" font-weight="700" style="fill:var(--doc)">維修工單</text><text x="654" y="344" font-size="11" class="t-muted">歷史處理紀錄</text>
+</g>
+<g data-from="2" data-to="6" data-hot="2">
+<path d="M194 139 L212 139" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/><path d="M628 139 L640 139" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<text x="420" y="135" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">查：WTG-17 目前的告警</text>
+<text x="420" y="152" text-anchor="middle" font-size="11.5">→ PT-205 旋角馬達煞車異常（葉片 2）</text></g>
+<g data-from="3" data-to="6" data-hot="3">
+<path d="M194 187 L212 187" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/><path d="M628 187 L640 187" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<text x="420" y="183" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">查：PT-205 排除步驟與備品</text>
+<text x="420" y="200" text-anchor="middle" font-size="11.5">→ 換煞車線圈 PT-BRK-05；風速須低於 12 m/s</text></g>
+<g data-from="4" data-to="6" data-hot="4">
+<path d="M194 235 L212 235" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/><path d="M628 235 L640 235" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<text x="420" y="231" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">查：PT-BRK-05 庫存</text>
+<text x="420" y="248" text-anchor="middle" font-size="11.5">→ 港區倉庫有 2 件</text></g>
+<g data-from="5" data-to="6" data-hot="5">
+<path d="M194 283 L212 283" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/><path d="M628 283 L640 283" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<text x="420" y="279" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">查：風速低於 12 m/s 的出海時段</text>
+<text x="420" y="296" text-anchor="middle" font-size="11.5">→ 10/12 上午：風 9 m/s、浪 0.8 m</text></g>
+<g data-from="6" data-to="6" data-hot="6">
+<path d="M194 331 L212 331" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/><path d="M628 331 L640 331" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<text x="420" y="327" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">查：WTG-17 的 PT-205 歷史工單</text>
+<text x="420" y="344" text-anchor="middle" font-size="11.5">→ WO-2026-0412：8 月才換過煞車線圈</text></g>
+<g data-from="7">
+<rect x="212" y="118" width="416" height="234" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+<text x="228" y="144" font-size="12.5" font-weight="700" style="fill:var(--good)">答案（附各工具出處）</text>
+<text x="228" y="172" font-size="12">WTG-17：PT-205 旋角馬達煞車異常（葉片 2）</text>
+<text x="228" y="194" font-size="12">建議 10/12 上午出海：風 9 m/s、浪 0.8 m</text>
+<text x="228" y="216" font-size="12">備品 PT-BRK-05 港區倉庫有 2 件</text>
+<text x="228" y="238" font-size="12">8 月才換過同一零件，需一併查原因</text>
+<path d="M228 254 L612 254" style="fill:none;stroke:var(--line);stroke-width:1.5"/>
+<text x="228" y="278" font-size="12" font-weight="700" style="fill:var(--warn)">代價：5 次工具呼叫、多輪 LLM 延遲與花費</text>
+<text x="228" y="300" font-size="11.5" class="t-muted">要設步數上限與停止條件；每步都可能查錯</text>
+<text x="228" y="320" font-size="11.5" class="t-muted">簡單問題用單次檢索就夠</text>
+</g>
+
+<rect x="20" y="364" width="886" height="46" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+<g data-to="0"><text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--query)">問題：</tspan>一句話牽涉告警現況、手冊、備品庫存與天候，資料分散在不同系統。</text><text x="34" y="401" font-size="11.5"><tspan font-weight="700" style="fill:var(--bad)">單次 RAG：</tspan>只用原問題撈一次，後面要查什麼取決於前面查到什麼，它辦不到。</text></g>
+<g data-from="1" data-to="1"><text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--llm)">Agentic RAG</tspan> 把檢索變成「工具」，由 LLM 決定先查哪個、查什麼、何時停。</text><text x="34" y="401" font-size="11.5" class="t-muted">這個「思考、行動、觀察」的迴圈源自 ReAct 的做法；每種資料源各是一個工具。</text></g>
+<g data-from="2" data-to="2"><text x="34" y="384" font-size="11.5">問題只有風機編號，代理人先<tspan font-weight="700" style="fill:var(--query)">查 SCADA</tspan>，得知它現在報的是 PT-205。</text><text x="34" y="401" font-size="11.5" class="t-muted">這個告警代碼原問題裡沒有，單次檢索根本不知道要拿它去查。</text></g>
+<g data-from="3" data-to="3"><text x="34" y="384" font-size="11.5">用「PT-205」<tspan font-weight="700" style="fill:var(--query)">查手冊</tspan>：得到更換煞車線圈的步驟、料號，以及進輪轂的風速限制。</text><text x="34" y="401" font-size="11.5" class="t-muted">觀察結果裡出現了新線索（料號、風速門檻），決定接下來要查什麼。</text></g>
+<g data-from="4" data-to="4"><text x="34" y="384" font-size="11.5">拿手冊給的料號<tspan font-weight="700" style="fill:var(--query)">查備品表</tspan>：港區倉庫有 2 件，不用緊急採購。</text><text x="34" y="401" font-size="11.5" class="t-muted">工具的輸入來自上一步的輸出，這就是多步檢索（multi-hop）。</text></g>
+<g data-from="5" data-to="5"><text x="34" y="384" font-size="11.5">手冊限制風速低於 12 m/s，所以<tspan font-weight="700" style="fill:var(--query)">查天候預報</tspan>：10/12 上午符合。</text><text x="34" y="401" font-size="11.5" class="t-muted">下午風 13 m/s、10/13 風 16 m/s 都超過，代理人比對門檻後選出時段。</text></g>
+<g data-from="6" data-to="6"><text x="34" y="384" font-size="11.5">再<tspan font-weight="700" style="fill:var(--query)">查工單</tspan>：同一台 8 月才換過同一個零件，值得先找原因。</text><text x="34" y="401" font-size="11.5" class="t-muted">代理人判斷「還需要什麼」；這一步不是原問題要求的，但對決策有幫助。</text></g>
+<g data-from="7" data-to="7"><text x="34" y="384" font-size="11.5">資訊夠了就<tspan font-weight="700" style="fill:var(--good)">停止呼叫工具、彙整回答</tspan>，並附上各工具的出處。</text><text x="34" y="401" font-size="11.5" class="t-muted">代價：呼叫次數與延遲都比單次檢索高，所以要設步數上限，簡單問題別用。</text></g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>檢索變成工具</b>每種資料源（SCADA、手冊、備品表、天候、工單）是一個工具，有名稱、說明與參數；LLM 依說明決定要不要呼叫、怎麼下查詢。</div>
+    <div class="card"><b>思考、行動、觀察迴圈</b>每一輪根據目前已知資訊決定下一步，把結果加進上下文再繼續；這個交錯推理與行動的做法在 ReAct 論文中提出。</div>
+    <div class="card"><b>解決多步（multi-hop）問題</b>後一步的查詢常來自前一步的結果；代理人也能在查不到時改寫查詢、換工具，或判斷資訊已足夠而停止。</div>
+    <div class="card"><b>用彈性換成本與風險</b>呼叫次數、延遲與花費都較高，也可能查錯或繞圈；需要步數上限、停止條件與紀錄，簡單問題仍用單次檢索。</div>
+  </div>
+
+  <h2>🧪 互動範例：單次 RAG vs 代理人迴圈</h2>
+  <div class="prose"><p>下面有 5 個虛構的資料源（SCADA、手冊、備品表、天候、工單）。<b>這裡的「代理人」不是真的 LLM</b>，而是一段寫死的規劃規則：它依「還缺哪項資訊」選工具，用 BM25 在該工具的資料裡檢索，並從上一步的結果解析出告警代碼、料號與風速門檻，再組出下一步的查詢。單次 RAG 則把所有資料混在一起，用原問題檢索一次，取前 3 筆。請切換問題與模式，調整「步數上限」，看必要資訊湊齊了幾項。真實代理人由 LLM 決定每一步，行為會更有彈性，也更難預測。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" class="on" data-mode="single">單次 RAG（混合資料，取前 3）</button>
+      <button type="button" data-mode="agent">代理人迴圈（多工具）</button>
+    </div>
+    <div class="row" id="budgetRow"><label for="kr">步數上限：<b id="kv">6</b></label><input type="range" id="kr" min="1" max="6" value="6" style="flex:1;max-width:260px"></div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>用 <code>anthropic</code> SDK 的工具呼叫（tool use）寫出最小的代理人迴圈：把每個資料源宣告成工具，模型回傳 <code>tool_use</code> 就執行並把結果送回，直到它不再呼叫工具為止（<code>pip install anthropic</code>）。資料與問題皆為虛構，檢索用最簡單的關鍵字比對代替真正的檢索系統。</p></div>
+<pre class="code"><code><span class="k">import</span> anthropic
+
+client = anthropic.<span class="f">Anthropic</span>()
+MAX_STEPS = <span class="s">6</span>                                   <span class="c"># 步數上限：防止無限迴圈</span>
+
+<span class="c"># 1) 虛構資料源：每個工具對應一份資料</span>
+SOURCES = {
+    <span class="s">"search_scada"</span>: [<span class="s">"2026-10-11 06:12 WTG-17 PT-205 旋角馬達煞車異常，葉片 2"</span>],
+    <span class="s">"search_manual"</span>: [<span class="s">"PT-205 煞車異常：更換煞車線圈 PT-BRK-05；進輪轂須風速低於 12 m/s"</span>],
+    <span class="s">"search_parts"</span>: [<span class="s">"PT-BRK-05 旋角馬達煞車線圈，港區倉庫庫存 2 件"</span>],
+    <span class="s">"search_weather"</span>: [<span class="s">"2026-10-12 上午 風速 9 m/s 浪高 0.8 m"</span>, <span class="s">"2026-10-13 全日 風速 16 m/s 浪高 2.3 m"</span>],
+}
+TOOLS = [{
+    <span class="s">"name"</span>: name,
+    <span class="s">"description"</span>: <span class="s">f"在「{name[7:]}」資料中用關鍵字檢索，回傳符合的紀錄"</span>,
+    <span class="s">"input_schema"</span>: {<span class="s">"type"</span>: <span class="s">"object"</span>, <span class="s">"properties"</span>: {<span class="s">"query"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>}}, <span class="s">"required"</span>: [<span class="s">"query"</span>]},
+} <span class="k">for</span> name <span class="k">in</span> SOURCES]
+
+<span class="k">def</span> <span class="f">run_tool</span>(name, query):
+    words = query.<span class="f">split</span>()
+    hits = [d <span class="k">for</span> d <span class="k">in</span> SOURCES[name] <span class="k">if</span> <span class="f">any</span>(w <span class="k">in</span> d <span class="k">for</span> w <span class="k">in</span> words)]
+    <span class="k">return</span> <span class="s">"
+"</span>.<span class="f">join</span>(hits) <span class="k">or</span> <span class="s">"查無資料"</span>
+
+<span class="c"># 2) 代理人迴圈：思考 → 行動（呼叫工具）→ 觀察（結果送回）</span>
+messages = [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+    <span class="s">"WTG-17 的旋角告警何時能出海修？要備什麼料？請先用工具查證，再回答並註明出處。"</span>}]
+<span class="k">for</span> step <span class="k">in</span> <span class="f">range</span>(MAX_STEPS):
+    resp = client.messages.<span class="f">create</span>(model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">1024</span>,
+                                  tools=TOOLS, messages=messages)
+    <span class="k">if</span> resp.stop_reason != <span class="s">"tool_use"</span>:               <span class="c"># 模型認為資訊夠了，直接回答</span>
+        <span class="f">print</span>(resp.content[<span class="s">0</span>].text)
+        <span class="k">break</span>
+    messages.<span class="f">append</span>({<span class="s">"role"</span>: <span class="s">"assistant"</span>, <span class="s">"content"</span>: resp.content})
+    results = [{<span class="s">"type"</span>: <span class="s">"tool_result"</span>, <span class="s">"tool_use_id"</span>: b.id,
+                <span class="s">"content"</span>: <span class="f">run_tool</span>(b.name, b.input[<span class="s">"query"</span>])}
+               <span class="k">for</span> b <span class="k">in</span> resp.content <span class="k">if</span> b.type == <span class="s">"tool_use"</span>]
+    messages.<span class="f">append</span>({<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: results})
+<span class="k">else</span>:
+    <span class="f">print</span>(<span class="s">"步數用完仍未收斂：改請人工處理或回報目前已知資訊"</span>)</code></pre>
+  <div class="prose"><p>注意：上面的關鍵字比對只是為了讓程式能直接跑；實務上每個工具背後可以是向量檢索、混合檢索（第 004 堂）或資料庫查詢。也要記錄每一步的工具與查詢，方便事後檢查代理人為什麼這樣查。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>基本 RAG（第 001 堂）</th><th>Self-RAG / CRAG（第 013、014 堂）</th><th>Adaptive RAG（第 015 堂）</th><th>Agentic RAG（本堂）</th></tr>
+    <tr><th>誰決定流程</th><td>固定：檢索一次再生成</td><td>固定流程，加上評估與修正</td><td>分類器依問題難度挑流程</td><td>LLM 每一步自己決定</td></tr>
+    <tr><th>資料來源</th><td>單一知識庫</td><td>知識庫，可補網路搜尋</td><td>知識庫或多步流程</td><td>多個工具，彼此串接</td></tr>
+    <tr><th>能否用上一步結果查下一步</th><td>不能</td><td>有限（改寫查詢重查）</td><td>多步流程可以</td><td>可以，是主要用途</td></tr>
+    <tr><th>成本與可預測性</th><td>最低、最穩定</td><td>中</td><td>依分類結果而定</td><td>最高，步數與花費不固定</td></tr>
+  </table>
+  <div class="prose"><p>可以把它們看成光譜：流程越固定越便宜、越好測試；交給 LLM 決定越多越有彈性，也越難控管。能用固定流程解決的問題，不必上代理人。</p></div>
+
+  <h2>⚠️ Agentic RAG 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>延遲與花費變成好幾倍</b>：每一輪都是一次 LLM 呼叫，加上工具執行。現場技師要的是幾秒內的答案時，要評估是否值得。</li>
+      <li><b>可能繞圈或查錯方向</b>：重複下同樣的查詢、被無關結果帶偏。要設步數上限、偵測重複呼叫，並在用完步數時誠實回報「尚未查清」。</li>
+      <li><b>工具描述寫不好就選錯工具</b>：工具名稱、用途與參數說明要清楚，且彼此職責不重疊。</li>
+      <li><b>錯誤會一路累積</b>：第一步查錯風機或告警，後面全部建立在錯的前提上。關鍵識別（風機編號、料號）要在輸出中明確顯示，必要時請人確認。</li>
+      <li><b>有副作用的工具要把關</b>：查詢類工具可放手讓它跑；建立工單、調整參數這類會改變系統的動作，應該人工確認，且不要在現場安全相關決策上由代理人自行拍板。</li>
+      <li><b>難以測試與重現</b>：同一個問題可能走出不同路徑。要記錄完整軌跡，並用評估集檢查（見後續的 RAG 評估）。</li>
+      <li><b>簡單問題不需要</b>：「PT-205 是什麼告警」查一次手冊即可，用單次檢索或第 015 堂的路由更划算。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的「代理人」是寫死的規則而非 LLM，風速門檻、庫存、預報與工單皆為虛構示範，不可作為實際出海或維修決策依據。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Yao 等，〈ReAct: Synergizing Reasoning and Acting in Language Models〉（ICLR 2023，arXiv:2210.03629）；Singh 等，〈<a href="https://arxiv.org/abs/2501.09136">Agentic Retrieval-Augmented Generation: A Survey on Agentic RAG</a>〉（arXiv:2501.09136）；Anthropic，〈Building effective agents〉（2024，建議從簡單的固定流程開始，確有需要才增加代理人的自主程度）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="2">
+    <p><b>下列哪種問題最適合用 Agentic RAG，而不是單次檢索？</b></p>
+    <button class="opt">A. 「PT-205 是什麼告警？」</button>
+    <button class="opt">B. 「OW-8 的葉片有幾支？」</button>
+    <button class="opt">C. 「WTG-17 現在的告警該怎麼修、庫存夠不夠、哪天能出海？」</button>
+    <div class="why">C 需要先查現況告警，再用結果查手冊、備品與天候，下一步取決於上一步的結果。A、B 查一次就能答，單次檢索更快更便宜。</div>
+  </div>
+  <div class="quiz card" data-answer="0">
+    <p><b>部署代理人式的檢索時，下列哪項做法最合理？</b></p>
+    <button class="opt">A. 設定步數上限與停止條件，記錄每一步的工具與查詢，會改變系統的動作要人工確認</button>
+    <button class="opt">B. 讓代理人無限次呼叫工具，直到它自己滿意為止</button>
+    <button class="opt">C. 為了省事，所有資料源合併成一個工具，由代理人一次查完</button>
+    <div class="why">代理人可能繞圈、查錯或累積錯誤，所以要限制步數、保留軌跡並把關有副作用的動作。把資料源合併成單一工具就失去「依結果規劃下一步」的意義。</div>
+  </div>
+
+  <nav class="pager" data-slug="agentic-rag"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'單次檢索辦不到', text:'問題牽涉<b>告警現況、手冊、備品庫存、天候</b>，而且後一步要查什麼取決於前一步的結果。單次 RAG 只用原問題撈一次，<b>缺了庫存與出海時段</b>，還可能撈到別台風機的告警。' },
+  { title:'把檢索變成工具，交給代理人', text:'每個資料源是一個<b>工具</b>。LLM 代理人反覆<b>思考還缺什麼、呼叫工具、讀取結果</b>（ReAct 式迴圈），直到資訊足夠；並設<b>步數上限</b>避免無限迴圈。' },
+  { title:'第 1 步：確認現況', text:'問題只有風機編號，代理人先<b>查 SCADA</b>，得知 WTG-17 現在報的是 <b>PT-205</b>。這個告警代碼原問題裡沒有，單次檢索不知道要用它去查。' },
+  { title:'第 2 步：查手冊', text:'用 PT-205 <b>查手冊</b>，得到更換煞車線圈的步驟、料號 <b>PT-BRK-05</b>，以及進輪轂須<b>風速低於 12 m/s</b>（虛構）。結果裡出現的新線索，決定下一步查什麼。' },
+  { title:'第 3 步：查庫存', text:'把手冊給的<b>料號</b>拿去查備品表：港區倉庫有 2 件。工具的輸入來自上一步的輸出，這就是<b>多步檢索</b>（multi-hop）。' },
+  { title:'第 4 步：查天候', text:'手冊限制風速低於 12 m/s，代理人<b>查預報</b>並比對門檻：10/12 上午風 9 m/s 可出海，下午 13 m/s、10/13 的 16 m/s 都超過。數值為虛構。' },
+  { title:'第 5 步：補查歷史', text:'代理人判斷還缺什麼，再<b>查工單</b>：同一台 8 月才換過同一個零件。這一步不是問題直接要求的，卻影響決策，是依結果動態規劃的好處。' },
+  { title:'彙整答案，也要看代價', text:'資訊夠了就<b>停止呼叫工具並回答</b>，附各工具出處。代價是 5 次工具呼叫與多輪 LLM 延遲；所以要設<b>步數上限與停止條件</b>，簡單問題仍用單次檢索。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 全部為虛構資料。facts：這筆資料能提供哪些必要資訊 */
+  const SRC = {
+    scada:{ name:'SCADA 告警', docs:[
+      { text:'2026-10-11 06:12 WTG-17 PT-205 旋角馬達煞車異常，葉片 2，今日第 3 次', facts:['alarm'] },
+      { text:'2026-10-11 05:40 WTG-05 CV-310 變流器功率模組過溫，已自動降載' },
+      { text:'2026-10-11 04:55 WTG-31 YW-042 偏航誤差過大，已自動復歸' },
+      { text:'2026-10-10 22:10 WTG-09 PT-203 旋角馬達過溫，已復歸' } ] },
+    manual:{ name:'運維手冊', docs:[
+      { text:'PT-205 旋角馬達煞車異常：量測煞車線圈電阻與間隙；線圈故障時更換煞車線圈，料號 PT-BRK-05；進入輪轂作業須風速低於 12 m/s，並先執行上鎖掛牌。', facts:['steps'] },
+      { text:'PT-203 旋角馬達過溫：檢查冷卻風扇與風道，量測感測器阻值；更換風扇料號 PT-FAN-01。' },
+      { text:'PT-230 旋角備援電源測試失敗：檢查電容模組電壓與充電迴路。' },
+      { text:'上鎖掛牌（LOTO）：作業前確認能量隔離，掛牌、上鎖並驗證零能量狀態。' } ] },
+    parts:{ name:'備品料號表', docs:[
+      { text:'PT-BRK-05 旋角馬達煞車線圈，適用 OW-8，港區倉庫庫存 2 件', facts:['stock'] },
+      { text:'PT-FAN-01 旋角馬達冷卻風扇，適用 OW-8，港區倉庫庫存 5 件' },
+      { text:'PT-MTR-02 旋角馬達，適用 OW-8，港區倉庫庫存 1 件' } ] },
+    weather:{ name:'天候與海象預報', docs:[
+      { text:'2026-10-12 上午 風速 9 m/s 浪高 0.8 m 預報可出海', facts:['window'], wind:9 },
+      { text:'2026-10-12 下午 風速 13 m/s 浪高 1.4 m', wind:13 },
+      { text:'2026-10-13 全日 風速 16 m/s 浪高 2.3 m', wind:16 },
+      { text:'2026-10-14 上午 風速 10 m/s 浪高 1.0 m 預報可出海', facts:['window'], wind:10 } ] },
+    wo:{ name:'維修工單', docs:[
+      { text:'WO-2026-0412 WTG-17 葉片 2 旋角煞車線圈 PT-BRK-05 更換，2026-08-19 完成', facts:['history'] },
+      { text:'WO-2026-0388 WTG-05 變流器水冷迴路排氣，完成' },
+      { text:'WO-2026-0401 WTG-09 旋角馬達冷卻風扇清潔，完成' } ] }
+  };
+  Object.values(SRC).forEach(s => s.index = rt.buildIndex(s.docs));
+  const ALL = []; Object.entries(SRC).forEach(([k, s]) => s.docs.forEach(d => ALL.push({ ...d, tool:k })));
+  const ALLIDX = rt.buildIndex(ALL);
+
+  const FACT = { alarm:'目前告警', steps:'排除步驟', stock:'備品庫存', window:'出海時段', history:'歷史工單' };
+  const ORDER = ['alarm', 'steps', 'stock', 'window', 'history'];
+  const P = [
+    { q:'WTG-17 現在有什麼告警？該怎麼處理？', need:['alarm', 'steps'] },
+    { q:'WTG-17 的旋角告警何時能出海修？要備什麼料？', need:['alarm', 'steps', 'stock', 'window'] },
+    { q:'WTG-17 這個告警以前發生過嗎？換過什麼？', need:['alarm', 'history'] }
+  ];
+  let cur = P[0], mode = 'single';
+
+  function single(p){
+    const hits = rt.searchBM25(ALLIDX, p.q, 3);
+    const got = new Set(); hits.forEach(h => (h.doc.facts || []).forEach(f => got.add(f)));
+    return { hits, got };
+  }
+
+  /* 規則式「代理人」：依缺少的資訊選工具，並從上一步結果解析下一步的查詢 */
+  function agent(p, budget){
+    const turb = (p.q.match(/WTG-\d+/i) || [''])[0].toUpperCase();
+    const got = new Set(), trace = []; const st = {};
+    const find = (tool, q, k) => rt.searchBM25(SRC[tool].index, q, k || 1);
+    while(trace.length < budget){
+      const f = ORDER.find(x => p.need.includes(x) && !got.has(x));
+      if(!f) break;
+      let step;
+      if(f === 'alarm'){
+        const h = find('scada', turb)[0]; st.alarm = (h.doc.text.match(/[A-Z]{2}-\d{3}/) || [''])[0];
+        step = { tool:'scada', thought:`問題只給了風機編號，先確認 ${turb} 現在的告警`, query:turb, obs:[h.doc], ok:true };
+      } else if(f === 'steps'){
+        const h = find('manual', st.alarm + ' 排除 步驟')[0]; const m = h.doc.text.match(/料號 ([A-Z]{2}-[A-Z]{3}-\d{2})/), w = h.doc.text.match(/風速低於 (\d+)/);
+        st.part = m && m[1]; st.thr = w && +w[1];
+        step = { tool:'manual', thought:`告警是 ${st.alarm}，去手冊查排除步驟與備品`, query:st.alarm + ' 排除 步驟', obs:[h.doc], ok:true };
+      } else if(f === 'stock'){
+        const h = find('parts', st.part)[0];
+        step = { tool:'parts', thought:`手冊指定料號 ${st.part}，查庫存`, query:st.part, obs:[h.doc], ok:true };
+      } else if(f === 'window'){
+        const hs = find('weather', '出海 風速 浪高 預報', 4).sort((a, b) => a.i - b.i);
+        const ok = hs.filter(h => h.doc.wind < st.thr);
+        step = { tool:'weather', thought:`手冊要求風速低於 ${st.thr} m/s，查預報哪一段可出海`, query:'出海 風速 浪高 預報', obs:hs.map(h => h.doc), ok:true, pick:ok.length ? ok[0].doc.text : '' };
+      } else {
+        const h = find('wo', turb + ' ' + st.alarm)[0];
+        step = { tool:'wo', thought:`查 ${turb} 的 ${st.alarm} 以前處理過沒`, query:turb + ' ' + st.alarm, obs:[h.doc], ok:true };
+      }
+      got.add(f); trace.push(step);
+    }
+    return { trace, got };
+  }
+
+  function run(){
+    const budget = +$('#kr').value; $('#kv').textContent = budget;
+    $('#budgetRow').style.display = mode === 'agent' ? '' : 'none';
+    let got, html;
+    if(mode === 'single'){
+      const r = single(cur); got = r.got;
+      html = r.hits.map((h, n) => `<div class="hit ${(h.doc.facts || []).length ? 'top' : 'low'}"><div class="meta"><span>#${n + 1}．${esc(SRC[h.doc.tool || ALL[h.i].tool].name)}</span><span>BM25 ${h.score.toFixed(2)}</span></div><div>${rt.highlight(h.doc.text, cur.q)}</div></div>`).join('');
+    } else {
+      const r = agent(cur, budget); got = r.got;
+      html = r.trace.map((s, n) => `<div class="hit top"><div class="meta"><span>步驟 ${n + 1}．工具：${esc(SRC[s.tool].name)}</span><span>查詢：${esc(s.query)}</span></div><div class="muted" style="font-size:12.5px">思考：${esc(s.thought)}</div>${s.obs.map(d => `<div>${esc(d.text)}</div>`).join('')}${s.pick ? `<div style="margin-top:4px"><b>→ 符合風速門檻的第一段：${esc(s.pick)}</b></div>` : ''}</div>`).join('');
+      const done = cur.need.every(f => got.has(f));
+      html += `<div class="hit ${done ? 'top' : 'low'}"><div class="meta"><span>${done ? '資訊足夠，停止並回答' : '步數用完，資訊仍不足'}</span></div></div>`;
+    }
+    const n = cur.need.filter(f => got.has(f)).length;
+    $('#stat').innerHTML = `<b>${esc(cur.q)}</b><br>必要資訊：${cur.need.map(f => `${got.has(f) ? '✓' : '✗'} ${FACT[f]}`).join('　')}（${n}/${cur.need.length}）。${mode === 'single' ? '工具呼叫 1 次。' : `工具呼叫 ${html.split('步驟 ').length - 1} 次。`}`;
+    $('#hits').innerHTML = html;
+  }
+
+  $('#presets').innerHTML = P.map((x, i) => `<button type="button" data-i="${i}" class="${i === 0 ? 'on' : ''}">${esc(x.q)}</button>`).join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return; cur = P[+b.dataset.i];
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#kr').oninput = run;
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => { mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); });
+  run();
+})();
+</script>
+</body>
+</html>

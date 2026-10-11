@@ -307,6 +307,20 @@
         "ColBERT"
       ],
       "date": "2026-10-08"
+    },
+    {
+      "no": 19,
+      "slug": "agentic-rag",
+      "file": "lessons/019-agentic-rag.html",
+      "title": "Agentic RAG：讓代理人規劃多步檢索",
+      "en": "Agentic RAG",
+      "level": 3,
+      "summary": "一個問題常牽涉告警、手冊、備品與天候，後一步要查什麼取決於前一步的結果，單次檢索做不到。Agentic RAG 把各資料源包成工具，讓 LLM 代理人以思考、行動、觀察的迴圈自己規劃多步檢索，資訊夠了才回答；代價是延遲、花費與繞圈、查錯的風險，需設步數上限。",
+      "tags": [
+        "高階",
+        "Agentic RAG"
+      ],
+      "date": "2026-10-11"
     }
   ]
 }
