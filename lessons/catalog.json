@@ -321,6 +321,34 @@
         "Agentic RAG"
       ],
       "date": "2026-10-11"
+    },
+    {
+      "no": 20,
+      "slug": "multimodal-rag",
+      "file": "lessons/020-multimodal-rag.html",
+      "title": "多模態 RAG：圖片、表格與 PDF 版面",
+      "en": "Multimodal RAG",
+      "level": 3,
+      "summary": "手冊的答案常藏在表格、配線圖與巡檢照片裡，純文字抽取會讓表格錯位、圖片消失。多模態 RAG 有兩條路：把表格逐列補欄名、圖片請視覺模型寫圖說後走文字索引；或像 ColPali 直接把整頁影像編成多向量檢索，命中後再讓視覺模型看圖回答。前者便宜好控管，後者保留版面但成本較高。",
+      "tags": [
+        "高階",
+        "多模態"
+      ],
+      "date": "2026-10-12"
+    },
+    {
+      "type": "quiz",
+      "quiz": 5,
+      "slug": "quiz-5-graph-agent-multimodal",
+      "file": "lessons/quiz-5-graph-agent-multimodal.html",
+      "title": "測驗關卡 5：圖譜、逐詞比對、代理人與多模態",
+      "en": "Checkpoint 5 · Lessons 017–020",
+      "level": 0,
+      "summary": "第 017–020 堂複習：GraphRAG、ColBERT、Agentic RAG、多模態 RAG。8 題，答完立即看解析，答錯會指向該回頭複習的課程。",
+      "tags": [
+        "測驗關卡"
+      ],
+      "date": "2026-10-12"
     }
   ]
 }

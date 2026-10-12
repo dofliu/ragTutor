@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>多模態 RAG：圖片、表格與 PDF 版面｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂多模態 RAG：手冊裡的表格、配線圖與巡檢照片，如何轉成文字再索引，或直接嵌入整頁影像（ColPali 一類做法），讓圖表裡的答案也檢索得到。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 020 堂</span><span class="tag lv3">高階</span><span class="tag">約 20 分鐘</span></p>
+  <h1>多模態 RAG：圖片、表格與 PDF 版面</h1>
+  <p class="lead">技師問：「旋角馬達的煞車線圈接在哪個端子？」答案只畫在手冊的<b>配線圖</b>上；問「PT-211 代表什麼」，答案在<b>告警代碼表格</b>裡；問葉片前緣的缺陷，答案在<b>巡檢照片</b>上。純文字 RAG 抽文字時，表格的欄列會錯位，圖與照片則整個消失。<b>多模態 RAG</b>（multimodal RAG）有兩條路：把表格與圖<b>先轉成文字</b>再索引，或<b>直接嵌入整頁影像</b>，命中後把原圖交給視覺語言模型（VLM）回答。</p>
+
+  <h2>🎬 動畫：圖表裡的答案怎麼檢索</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="多模態 RAG 動畫：純文字抽取會讓表格錯位、圖片與照片消失；路線 A 把表格逐列補欄名、圖片由視覺模型寫圖說後再索引；路線 B 把整頁影像編碼成多向量，用 MaxSim 檢索，命中後把頁面圖交給視覺模型回答；兩條路線各有取捨，常並用">
+<defs><pattern id="cells" x="474" y="162" width="38" height="28" patternUnits="userSpaceOnUse"><rect x="2" y="2" width="32" height="22" rx="3" style="fill:var(--vec);opacity:.35"/></pattern></defs>
+<rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 只抽文字：表格走樣、圖與照片消失</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="1" data-to="1">② 路線 A：每種元素先轉成文字</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="2" data-to="2">③ 表格：整張保留、逐列補上欄名</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="3" data-to="3">④ 圖片：用視覺模型寫圖說</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="4" data-to="4">⑤ 路線 B：直接嵌入整頁影像</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="5" data-to="5">⑥ 命中後把頁面圖交給視覺模型</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="6">⑦ 兩條路線各有取捨，常並用</text>
+
+<g data-to="5">
+<rect x="24" y="112" width="190" height="244" rx="6" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="36" y="132" font-size="11" font-weight="700" style="fill:var(--doc)">OW-8 手冊 4.3 節</text>
+<path d="M36 146 L202 146 M36 156 L190 156" style="fill:none;stroke:var(--line);stroke-width:2"/>
+<g data-hot="2">
+<rect x="36" y="166" width="166" height="60" style="fill:var(--panel);stroke:var(--muted);stroke-width:1"/>
+<rect x="36" y="166" width="166" height="20" style="fill:var(--soft);stroke:var(--muted);stroke-width:1"/>
+<path d="M96 166 L96 226 M36 206 L202 206" style="fill:none;stroke:var(--muted);stroke-width:1"/>
+<text x="44" y="180" font-size="11" font-weight="700">代碼</text><text x="104" y="180" font-size="11" font-weight="700">意義</text>
+<text x="44" y="200" font-size="11">PT-203</text><text x="104" y="200" font-size="11">過溫</text>
+<text x="44" y="220" font-size="11">PT-205</text><text x="104" y="220" font-size="11">煞車異常</text>
+</g>
+<g data-hot="3">
+<rect x="36" y="238" width="166" height="106" rx="4" style="fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3"/>
+<text x="44" y="256" font-size="11" font-weight="700">圖 4-2 配線圖</text>
+<circle cx="68" cy="300" r="16" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.5"/><text x="68" y="304" text-anchor="middle" font-size="11">M</text>
+<path d="M84 300 L128 300" style="fill:none;stroke:var(--muted);stroke-width:1.5"/>
+<rect x="128" y="284" width="66" height="32" rx="3" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.5"/><text x="161" y="304" text-anchor="middle" font-size="11">控制器</text>
+<text x="44" y="334" font-size="11" class="t-muted">K1　X1　X2　X3</text>
+</g>
+</g>
+
+<g data-to="0">
+<path d="M214 235 L262 235" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="262" y="190" width="190" height="90" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.8"/>
+<text x="357" y="220" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">純文字抽取</text>
+<text x="357" y="242" text-anchor="middle" font-size="11" class="t-muted">PDF 轉文字、OCR</text>
+<text x="357" y="262" text-anchor="middle" font-size="11" class="t-muted">只拿得到「字」</text>
+<path d="M452 235 L500 235" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="500" y="130" width="396" height="210" rx="8" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.8"/>
+<text x="516" y="156" font-size="12" font-weight="700" style="fill:var(--bad)">LLM 實際看到的內容</text>
+<text x="516" y="184" font-size="11.5">✗ 表格：欄與列黏在一起，對不上</text>
+<text x="516" y="208" font-size="11.5">✗ 配線圖：只剩 M、K1、X3 這類零散標籤</text>
+<text x="516" y="232" font-size="11.5">✗ 巡檢照片：沒有文字，等於不存在</text>
+<path d="M516 250 L880 250" style="fill:none;stroke:var(--line);stroke-width:1.5"/>
+<text x="516" y="276" font-size="11.5" font-weight="700" style="fill:var(--query)">問：煞車線圈接在哪個端子？</text>
+<text x="516" y="304" font-size="11.5" font-weight="700" style="fill:var(--bad)">手冊明明有答案，卻檢索不到</text>
+</g>
+
+<g data-from="1" data-to="1">
+<path d="M214 152 L262 152 M214 212 L262 212 M214 272 L262 272" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="262" y="128" width="318" height="48" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="276" y="150" font-size="12" font-weight="700" style="fill:var(--doc)">文字段落</text><text x="276" y="167" font-size="11" class="t-muted">直接切塊（第 002 堂）</text>
+<rect x="262" y="188" width="318" height="48" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/>
+<text x="276" y="210" font-size="12" font-weight="700" style="fill:var(--query)">表格</text><text x="276" y="227" font-size="11" class="t-muted">轉成 Markdown 或逐列句子，補上欄名</text>
+<rect x="262" y="248" width="318" height="48" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.8"/>
+<text x="276" y="270" font-size="12" font-weight="700" style="fill:var(--llm)">圖片、照片</text><text x="276" y="287" font-size="11" class="t-muted">視覺模型寫說明，附頁碼與圖號</text>
+<path d="M580 152 L640 190 M580 212 L640 214 M580 272 L640 238" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="640" y="140" width="256" height="148" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<text x="768" y="170" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)">文字索引</text>
+<text x="768" y="194" text-anchor="middle" font-size="11" class="t-muted">嵌入向量 + BM25</text>
+<text x="768" y="214" text-anchor="middle" font-size="11" class="t-muted">（第 003、004 堂）</text>
+<text x="768" y="244" text-anchor="middle" font-size="11.5">照常檢索、照常生成</text>
+<text x="768" y="266" text-anchor="middle" font-size="11" class="t-muted">圖說與原圖路徑一起存</text>
+</g>
+
+<g data-from="2" data-to="2">
+<path d="M214 196 L246 196" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="250" y="128" width="312" height="118" rx="8" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.8"/>
+<text x="266" y="152" font-size="12" font-weight="700" style="fill:var(--bad)">✗ 照字數硬切</text>
+<text x="266" y="178" font-size="11.5" class="t-mono">塊 1：…PT-203 過溫 PT-2</text>
+<text x="266" y="198" font-size="11.5" class="t-mono">塊 2：05 煞車異常…</text>
+<text x="266" y="226" font-size="11.5" class="t-muted">欄名與數值被切散，失去意義</text>
+<rect x="584" y="128" width="312" height="118" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<text x="600" y="152" font-size="12" font-weight="700" style="fill:var(--good)">✓ 整張表一塊，逐列補欄名</text>
+<text x="600" y="178" font-size="11.5" class="t-mono">告警代碼 PT-205，</text>
+<text x="600" y="198" font-size="11.5" class="t-mono">意義 旋角馬達煞車異常，</text>
+<text x="600" y="218" font-size="11.5" class="t-mono">處置 見 4.3.2</text>
+<text x="266" y="284" font-size="11.5">表格轉成 Markdown 或逐列句子，並整張保留在同一塊。</text>
+<text x="266" y="306" font-size="11.5" class="t-muted">也可請 LLM 為整張表另寫一句摘要，輔助檢索。</text>
+</g>
+
+<g data-from="3" data-to="3">
+<path d="M214 288 L262 288" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<text x="262" y="240" font-size="11" class="t-muted">輸入：圖片 + 提示</text>
+<rect x="262" y="250" width="150" height="76" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.8"/>
+<text x="337" y="282" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">視覺模型（VLM）</text>
+<text x="337" y="304" text-anchor="middle" font-size="11" class="t-muted">看圖寫說明</text>
+<path d="M412 288 L450 288" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="450" y="128" width="446" height="214" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<text x="466" y="152" font-size="12" font-weight="700" style="fill:var(--good)">圖說（模型產生，進索引）</text>
+<text x="466" y="180" font-size="11.5">圖 4-2（第 37 頁）旋角馬達配線圖</text>
+<text x="466" y="202" font-size="11.5">馬達電源接端子 X1、X2；</text>
+<text x="466" y="224" font-size="11.5">煞車線圈 K1 接端子 X3；PE 為接地</text>
+<text x="466" y="246" font-size="11.5" class="t-mono t-muted">原圖：figs/p37_fig2.png</text>
+<path d="M466 262 L880 262" style="fill:none;stroke:var(--line);stroke-width:1.5"/>
+<text x="466" y="288" font-size="11.5" font-weight="700" style="fill:var(--warn)">模型可能看漏或看錯，要抽樣人工核對</text>
+<text x="466" y="312" font-size="11.5" class="t-muted">圖說與原圖一起存：命中後把原圖交給模型</text>
+</g>
+
+<g data-from="4" data-to="4" data-hot="4">
+<path d="M214 200 L250 200" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="250" y="140" width="170" height="120" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.8"/>
+<text x="335" y="172" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">視覺語言模型</text>
+<text x="335" y="196" text-anchor="middle" font-size="11.5">把整頁影像編碼</text>
+<text x="335" y="220" text-anchor="middle" font-size="11" class="t-muted">不經 OCR、</text>
+<text x="335" y="238" text-anchor="middle" font-size="11" class="t-muted">不解析版面</text>
+<path d="M420 200 L456 200" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="456" y="128" width="250" height="190" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.8"/>
+<text x="581" y="150" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">每個區塊一個向量</text>
+<rect x="474" y="162" width="228" height="112" style="fill:url(#cells)"/>
+<rect x="588" y="192" width="32" height="22" rx="3" class="pulse" style="fill:var(--good);opacity:.85"/>
+<text x="581" y="300" text-anchor="middle" font-size="11" class="t-muted">多向量表示（示意）</text>
+<path d="M730 200 L706 200" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="730" y="140" width="166" height="120" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/>
+<text x="813" y="166" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--query)">查詢</text>
+<text x="813" y="190" text-anchor="middle" font-size="11.5">煞車線圈接</text>
+<text x="813" y="208" text-anchor="middle" font-size="11.5">哪個端子？</text>
+<text x="813" y="236" text-anchor="middle" font-size="11" class="t-muted">也編成逐詞向量</text>
+<text x="250" y="342" font-size="11.5">MaxSim：每個查詢詞在頁面區塊裡找最像的，加總成整頁分數（第 018 堂）</text>
+</g>
+
+<g data-from="5" data-to="5">
+<path d="M214 200 L250 200" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="250" y="140" width="200" height="84" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.8"/>
+<text x="350" y="168" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">命中：第 37 頁</text>
+<text x="350" y="190" text-anchor="middle" font-size="11" class="t-muted">分數最高的頁面影像</text>
+<path d="M450 182 L490 182" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="490" y="140" width="170" height="84" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.8"/>
+<text x="575" y="168" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">VLM 看圖回答</text>
+<text x="575" y="190" text-anchor="middle" font-size="11" class="t-muted">輸入：頁面圖 + 問題</text>
+<path d="M660 182 L700 182" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="700" y="128" width="196" height="130" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+<text x="716" y="154" font-size="12" font-weight="700" style="fill:var(--good)">答案</text>
+<text x="716" y="180" font-size="11.5">煞車線圈 K1</text>
+<text x="716" y="200" font-size="11.5">接端子 X3</text>
+<text x="716" y="232" font-size="11" class="t-muted">出處：第 37 頁圖 4-2</text>
+<text x="250" y="292" font-size="11.5">VLM 直接看原圖，不受 OCR 與圖說品質限制。</text>
+<text x="250" y="314" font-size="11.5" class="t-muted">代價：每次回答都要送圖，token 與延遲較高。</text>
+<text x="250" y="336" font-size="11.5" class="t-muted">答案仍要附頁碼，方便人工回頭核對。</text>
+</g>
+
+<g data-from="6">
+<rect x="24" y="112" width="872" height="240" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+<path d="M460 126 L460 262" style="fill:none;stroke:var(--line);stroke-width:1.5"/>
+<text x="42" y="140" font-size="12.5" font-weight="700" style="fill:var(--doc)">路線 A：轉成文字再索引</text>
+<text x="42" y="168" font-size="11.5">✓ 沿用既有文字索引與混合檢索（第 004 堂）</text>
+<text x="42" y="190" font-size="11.5">✓ 便宜、可解釋，命中片段看得懂</text>
+<text x="42" y="212" font-size="11.5">✗ 轉換會漏資訊，圖說品質決定上限</text>
+<text x="42" y="234" font-size="11.5">✗ 要維護 OCR、表格解析與圖說流程</text>
+<text x="480" y="140" font-size="12.5" font-weight="700" style="fill:var(--vec)">路線 B：整頁影像嵌入</text>
+<text x="480" y="168" font-size="11.5">✓ 省掉 OCR 與版面解析，圖表一起編碼</text>
+<text x="480" y="190" font-size="11.5">✓ 保留版面，圖表密集的頁面特別適合</text>
+<text x="480" y="212" font-size="11.5">✗ 多向量索引較大，比對成本高</text>
+<text x="480" y="234" font-size="11.5">✗ 回答時要把圖送給 VLM，成本較高</text>
+<path d="M42 276 L878 276" style="fill:none;stroke:var(--line);stroke-width:1.5"/>
+<text x="42" y="304" font-size="12" font-weight="700" style="fill:var(--good)">實務：先以路線 A 建立基線，圖表密集的頁面再評估路線 B，</text>
+<text x="42" y="326" font-size="12" font-weight="700" style="fill:var(--good)">兩者也可並用；不論哪條路，都要留下頁碼與原圖供核對。</text>
+</g>
+
+<rect x="20" y="364" width="886" height="46" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+<g data-to="0"><text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--query)">問題：</tspan>手冊的答案常畫在表格、配線圖與照片裡，不是一般段落文字。</text><text x="34" y="401" font-size="11.5"><tspan font-weight="700" style="fill:var(--bad)">只抽文字：</tspan>表格欄列錯位，圖只剩零散標籤，照片完全不見，問什麼都撈不到。</text></g>
+<g data-from="1" data-to="1"><text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--llm)">路線 A</tspan>：每種元素各用適合的方式轉成文字，再放進既有的文字索引。</text><text x="34" y="401" font-size="11.5" class="t-muted">好處是整套檢索流程（切塊、混合檢索、重排序）都能原封不動沿用。</text></g>
+<g data-from="2" data-to="2"><text x="34" y="384" font-size="11.5">表格<tspan font-weight="700" style="fill:var(--query)">不要從中間切開</tspan>，逐列補上欄名，讓每一列單獨看也有意義。</text><text x="34" y="401" font-size="11.5" class="t-muted">否則「PT-205」和它的意義被切到兩個塊，檢索與生成都會出錯。</text></g>
+<g data-from="3" data-to="3"><text x="34" y="384" font-size="11.5">圖片交給<tspan font-weight="700" style="fill:var(--llm)">視覺模型寫圖說</tspan>，進索引的是這段文字，並記下頁碼與原圖路徑。</text><text x="34" y="401" font-size="11.5" class="t-muted">圖說沒寫到的細節就檢索不到，所以提示要求寫出零件、端子與對應關係。</text></g>
+<g data-from="4" data-to="4"><text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--vec)">路線 B</tspan>：不轉文字，整頁影像直接編成多個向量（ColPali 即屬此類）。</text><text x="34" y="401" font-size="11.5" class="t-muted">檢索時沿用第 018 堂的延遲互動：查詢的每個詞對頁面區塊做 MaxSim。</text></g>
+<g data-from="5" data-to="5"><text x="34" y="384" font-size="11.5">命中的是<tspan font-weight="700" style="fill:var(--vec)">頁面影像</tspan>，生成時把圖和問題一起交給 VLM，答案直接從圖上讀。</text><text x="34" y="401" font-size="11.5" class="t-muted">模型看得到原圖，所以不被轉文字的品質卡住，但要付較高的 token 成本。</text></g>
+<g data-from="6" data-to="6"><text x="34" y="384" font-size="11.5">兩條路線都有取捨：<tspan font-weight="700" style="fill:var(--good)">轉文字便宜好控管，影像嵌入保留版面與圖表</tspan>。</text><text x="34" y="401" font-size="11.5" class="t-muted">先用能達成目標的最簡單做法，再用評估集（見後續的 RAG 評估）決定要不要升級。</text></g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>答案不一定在文字裡</b>表格、配線圖、爆炸圖與巡檢照片常帶有關鍵資訊；只抽文字會讓表格欄列錯位、圖片整個消失。</div>
+    <div class="card"><b>路線 A：先轉成文字</b>表格整張保留並逐列補欄名，圖片用視覺模型寫圖說（附頁碼、原圖路徑），再進既有的文字索引，檢索流程不必改。</div>
+    <div class="card"><b>路線 B：嵌入整頁影像</b>ColPali 一類做法把頁面影像編成多向量、用延遲互動比對，省掉 OCR 與版面解析；回答時再把頁面圖交給 VLM。</div>
+    <div class="card"><b>留下可核對的出處</b>不論哪條路線，答案都應附頁碼與圖號並保留原圖；圖說可能看錯，要抽樣人工核對。</div>
+  </div>
+
+  <h2>🧪 互動範例：只抽文字 vs 轉成文字（含圖說品質）</h2>
+  <div class="prose"><p>下面是虛構《OW-8 運維手冊》旋角系統幾頁的內容：文字段落、告警表格、兩張圖、一張巡檢照片。<b>「純文字抽取」</b>只拿得到一般 PDF 轉文字的結果（表格欄列黏在一起、圖只剩零散標籤、照片沒有文字）；<b>「轉成文字」</b>則把表格逐列補欄名，並依你選的<b>圖說品質</b>替圖片與照片補上說明。檢索用 BM25，取前 3 筆。請切換設定與問題，看答案有沒有被撈到、撈到的內容讀不讀得懂。這裡只模擬路線 A；路線 B 需要真正的視覺模型，無法在瀏覽器裡示範。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" class="on" data-mode="raw">純文字抽取</button>
+      <button type="button" data-mode="rich">轉成文字（表格逐列 + 圖說）</button>
+    </div>
+    <div class="row seg" id="capSeg" style="display:none"><span class="muted" style="font-size:13px">圖說品質：</span>
+      <button type="button" data-cap="0">無圖說</button>
+      <button type="button" data-cap="1">簡短圖說</button>
+      <button type="button" class="on" data-cap="2">詳細圖說</button>
+    </div>
+    <div class="muted" id="stat" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>用 <code>anthropic</code> SDK 做路線 A：表格逐列補欄名、圖片請模型寫圖說，每個元素存成一筆（含頁碼與原圖路徑）；回答時把命中的原圖一併交給模型（<code>pip install anthropic</code>）。文字與表格皆為虛構，<code>figs/p37_fig2.png</code> 請換成你自己的圖；檢索用最簡單的二字詞重疊代替真正的向量檢索。</p></div>
+<pre class="code"><code><span class="k">import</span> base64
+<span class="k">import</span> anthropic
+
+client = anthropic.<span class="f">Anthropic</span>()
+MODEL = <span class="s">"claude-sonnet-5"</span>
+
+<span class="c"># 1) 虛構的手冊元素：表格列與一張配線圖（圖片路徑請換成自己的檔案）</span>
+TABLE = [(<span class="s">"PT-203"</span>, <span class="s">"旋角馬達過溫"</span>, <span class="s">"4.3.1"</span>), (<span class="s">"PT-205"</span>, <span class="s">"旋角馬達煞車異常"</span>, <span class="s">"4.3.2"</span>)]
+FIGURES = [{<span class="s">"page"</span>: <span class="s">37</span>, <span class="s">"path"</span>: <span class="s">"figs/p37_fig2.png"</span>, <span class="s">"hint"</span>: <span class="s">"圖 4-2 旋角馬達配線圖"</span>}]
+
+<span class="k">def</span> <span class="f">image_block</span>(path):
+    data = base64.<span class="f">standard_b64encode</span>(<span class="f">open</span>(path, <span class="s">"rb"</span>).<span class="f">read</span>()).<span class="f">decode</span>()
+    <span class="k">return</span> {<span class="s">"type"</span>: <span class="s">"image"</span>, <span class="s">"source"</span>: {<span class="s">"type"</span>: <span class="s">"base64"</span>, <span class="s">"media_type"</span>: <span class="s">"image/png"</span>, <span class="s">"data"</span>: data}}
+
+<span class="k">def</span> <span class="f">describe</span>(path, hint):                       <span class="c"># 圖 → 可檢索的說明文字</span>
+    prompt = <span class="s">f"這是《OW-8 運維手冊》的{hint}。請用繁體中文寫出零件名稱、端子或編號與對應關係；看不清楚請寫「無法辨識」，不要猜。"</span>
+    resp = client.messages.<span class="f">create</span>(model=MODEL, max_tokens=<span class="s">400</span>, messages=[
+        {<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: [<span class="f">image_block</span>(path), {<span class="s">"type"</span>: <span class="s">"text"</span>, <span class="s">"text"</span>: prompt}]}])
+    <span class="k">return</span> resp.content[<span class="s">0</span>].text
+
+<span class="c"># 2) 建索引：每個元素一筆，附頁碼與原圖路徑</span>
+items = [{<span class="s">"page"</span>: <span class="s">36</span>, <span class="s">"text"</span>: <span class="s">"進入輪轂前須完成上鎖掛牌並確認風速"</span>, <span class="s">"image"</span>: <span class="k">None</span>}]
+items += [{<span class="s">"page"</span>: <span class="s">36</span>, <span class="s">"text"</span>: <span class="s">f"告警代碼 {c}，意義 {m}，處置 見 {s}"</span>, <span class="s">"image"</span>: <span class="k">None</span>}   <span class="c"># 表格逐列補欄名</span>
+          <span class="k">for</span> c, m, s <span class="k">in</span> TABLE]
+items += [{<span class="s">"page"</span>: f[<span class="s">"page"</span>], <span class="s">"text"</span>: <span class="f">describe</span>(f[<span class="s">"path"</span>], f[<span class="s">"hint"</span>]), <span class="s">"image"</span>: f[<span class="s">"path"</span>]} <span class="k">for</span> f <span class="k">in</span> FIGURES]
+
+<span class="k">def</span> <span class="f">bigrams</span>(s):
+    s = <span class="s">""</span>.<span class="f">join</span>(s.<span class="f">split</span>())
+    <span class="k">return</span> {s[i:i + <span class="s">2</span>] <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(s) - <span class="s">1</span>)}
+
+<span class="k">def</span> <span class="f">search</span>(query, k=<span class="s">3</span>):                          <span class="c"># 簡化的檢索：二字詞重疊數</span>
+    qg = <span class="f">bigrams</span>(query)
+    scored = [(<span class="f">len</span>(qg &amp; <span class="f">bigrams</span>(it[<span class="s">"text"</span>])), it) <span class="k">for</span> it <span class="k">in</span> items]
+    <span class="k">return</span> [it <span class="k">for</span> n, it <span class="k">in</span> <span class="f">sorted</span>(scored, key=<span class="k">lambda</span> x: -x[<span class="s">0</span>])[:k] <span class="k">if</span> n &gt; <span class="s">0</span>]
+
+<span class="c"># 3) 生成：命中的元素若有原圖，連圖一起交給模型</span>
+<span class="k">def</span> <span class="f">answer</span>(question):
+    content = []
+    <span class="k">for</span> it <span class="k">in</span> <span class="f">search</span>(question):
+        content.<span class="f">append</span>({<span class="s">"type"</span>: <span class="s">"text"</span>, <span class="s">"text"</span>: <span class="s">f"[第 {it['page']} 頁] {it['text']}"</span>})
+        <span class="k">if</span> it[<span class="s">"image"</span>]:
+            content.<span class="f">append</span>(<span class="f">image_block</span>(it[<span class="s">"image"</span>]))
+    content.<span class="f">append</span>({<span class="s">"type"</span>: <span class="s">"text"</span>, <span class="s">"text"</span>: <span class="s">f"只根據以上資料回答，並註明頁碼：{question}"</span>})
+    resp = client.messages.<span class="f">create</span>(model=MODEL, max_tokens=<span class="s">512</span>, messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: content}])
+    <span class="k">return</span> resp.content[<span class="s">0</span>].text
+
+<span class="f">print</span>(<span class="f">answer</span>(<span class="s">"旋角馬達的煞車線圈接在哪個端子？"</span>))</code></pre>
+  <div class="prose"><p>注意：路線 B（整頁影像嵌入）需要專用的多向量檢索模型與索引，例如論文提出的 ColPali，不是幾行程式能示範的；有興趣可從該論文與其開源實作開始。無論哪條路線，圖說或回答都要保留頁碼，讓人能回到原頁核對。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>基本 RAG（第 001 堂）</th><th>ColBERT（第 018 堂）</th><th>轉成文字（本堂路線 A）</th><th>整頁影像嵌入（本堂路線 B）</th></tr>
+    <tr><th>索引的是什麼</th><td>文字塊的單一向量</td><td>文字塊的逐詞向量</td><td>文字、表格列與圖說，再走文字索引</td><td>頁面影像的區塊向量（多向量）</td></tr>
+    <tr><th>表格與圖片</th><td>抽文字時走樣或消失</td><td>同左，仍只處理文字</td><td>靠轉換品質；沒寫進圖說的細節找不到</td><td>連同版面一起編碼，不需轉換</td></tr>
+    <tr><th>索引與查詢成本</th><td>最低</td><td>索引大、比對較貴</td><td>索引小；建索引時要呼叫 VLM 寫圖說</td><td>索引大；回答時要把圖送給 VLM</td></tr>
+    <tr><th>主要風險</th><td>漏掉圖表中的答案</td><td>儲存與實作複雜度</td><td>圖說看錯或漏看</td><td>需要專用模型與基礎設施，圖上小字可能看不清</td></tr>
+  </table>
+  <div class="prose"><p>路線 B 的比對方式其實就是第 018 堂的延遲互動，只是被比對的單位從「文字詞」換成「頁面影像的區塊」。先確認文字索引做不到，再考慮升級。</p></div>
+
+  <h2>⚠️ 多模態 RAG 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>表格被切斷</b>：切塊時把表格從中間切開，欄名與數值分家。表格要整張保留、逐列補欄名，太長的表可分段並在每段重複表頭。</li>
+      <li><b>圖說看錯或漏看</b>：模型可能把端子編號讀錯。提示要要求「看不清楚就寫無法辨識」，並抽樣與原圖比對；安全相關的接線資訊一律以原圖與原廠手冊為準。</li>
+      <li><b>只存圖說、不存原圖</b>：命中後沒有原圖可看，就無法核對。索引要記頁碼、圖號與原圖路徑，必要時生成時把原圖一併送給模型。</li>
+      <li><b>掃描品質不佳</b>：歪斜、模糊、手寫註記會讓 OCR 與視覺模型都出錯；先確認輸入品質，再談檢索方法。</li>
+      <li><b>成本被低估</b>：用 VLM 替每張圖寫說明、或每次回答都送圖，成本都比純文字高；先用評估集確認值不值得。</li>
+      <li><b>圖片多半是裝飾</b>：若手冊的圖大多只是示意、關鍵資訊都有寫在文字裡，轉文字就夠了，不必上多模態。</li>
+      <li><b>不要拿答案去當現場作業依據</b>：配線、扭力、安全步驟等資訊，模型讀圖的結果只能當檢索線索，作業前要回到原圖與規範確認。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例中的頁碼、圖號、端子與巡檢結果都是虛構示範，不可作為實際接線或維修依據。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Faysse 等，〈<a href="https://arxiv.org/abs/2407.01449">ColPali: Efficient Document Retrieval with Vision Language Models</a>〉（arXiv:2407.01449，提出直接嵌入頁面影像的檢索與 ViDoRe 視覺文件檢索基準）；Radford 等，〈Learning Transferable Visual Models From Natural Language Supervision〉（CLIP，arXiv:2103.00020，把圖與文字映射到同一個向量空間）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>用一般 PDF 轉文字建立索引，下列哪項最可能發生？</b></p>
+    <button class="opt">A. 所有表格與配線圖都會被完整轉成可檢索的文字</button>
+    <button class="opt">B. 表格的欄與列可能錯位，配線圖與照片裡的資訊則檢索不到</button>
+    <button class="opt">C. 文字段落會因此無法切塊</button>
+    <div class="why">純文字抽取只拿得到「字」：表格結構容易跑掉，圖片與照片多半只剩零散標籤或完全沒有文字。文字段落反而是它最擅長的。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>「整頁影像嵌入」（ColPali 一類做法）和「轉成文字」相比，主要差別是什麼？</b></p>
+    <button class="opt">A. 前者一定比較便宜，因為不用呼叫模型</button>
+    <button class="opt">B. 前者完全不需要視覺語言模型</button>
+    <button class="opt">C. 前者省掉 OCR 與版面解析，把頁面影像編成多向量檢索，回答時再讓 VLM 看圖；代價是索引較大、成本較高</button>
+    <div class="why">影像嵌入直接處理頁面影像，不必先轉成文字，但仍需要視覺語言模型來編碼與回答，多向量索引也比單一向量大。</div>
+  </div>
+
+  <nav class="pager" data-slug="multimodal-rag"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'只抽文字，圖表裡的答案就消失了', text:'手冊的答案常在<b>表格、配線圖、照片</b>裡。一般 PDF 轉文字只拿得到「字」：<b>表格欄列錯位、圖只剩零散標籤、照片完全沒有文字</b>，問「煞車線圈接哪個端子」撈不到。' },
+  { title:'路線 A：每種元素先轉成文字', text:'<b>文字段落</b>照常切塊，<b>表格</b>轉成結構化文字，<b>圖片</b>由視覺模型寫成說明，全部放進<b>既有的文字索引</b>，切塊、混合檢索與重排序都能沿用。' },
+  { title:'表格：整張保留、逐列補欄名', text:'表格<b>不要從中間切開</b>。轉成 Markdown 或逐列句子，每列補上欄名，例如「告警代碼 PT-205，意義 旋角馬達煞車異常」，單獨看一列也讀得懂。' },
+  { title:'圖片：用視覺模型寫圖說', text:'請 <b>VLM 看圖寫說明</b>（零件、端子、對應關係），連同<b>頁碼與原圖路徑</b>一起進索引。看不清楚要寫「無法辨識」；圖說可能出錯，需<b>抽樣核對</b>。' },
+  { title:'路線 B：直接嵌入整頁影像', text:'不轉文字，用視覺語言模型把<b>整頁影像編成多個向量</b>，查詢也編成逐詞向量，以<b>延遲互動（MaxSim）</b>比對。ColPali 屬於這類做法，省掉 OCR 與版面解析。' },
+  { title:'命中後把頁面圖交給 VLM', text:'檢索得到的是<b>頁面影像</b>。生成時把圖和問題一起交給 VLM，答案直接從圖上讀出，並<b>附頁碼與圖號</b>。代價是每次回答都要送圖，成本與延遲較高。' },
+  { title:'兩條路線各有取捨，常並用', text:'<b>轉文字</b>便宜、好控管，但受圖說品質限制；<b>影像嵌入</b>保留版面與圖表，但索引大、成本高。先用簡單做法建基線，再用<b>評估集</b>決定是否升級。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 全部為虛構。raw：一般 PDF 轉文字的結果；rich：表格逐列補欄名；short／detail：圖說（品質由低到高） */
+  const E = [
+    { id:'t1', page:35, type:'文字', raw:'4.2 旋角系統概述：旋角系統依風速調整葉片角度，異常時可順槳停機。' },
+    { id:'t2', page:36, type:'文字', raw:'4.3 旋角馬達煞車：出現煞車異常告警時，先依告警表確認代碼，再按對應章節處置。進入輪轂前須完成上鎖掛牌並確認風速。' },
+    { id:'tb', page:36, type:'表格',
+      raw:'告警代碼 意義 處置 PT-203 PT-205 PT-211 PT-230 旋角馬達過溫 旋角馬達煞車異常 三支葉片角度偏差過大 備援電源測試失敗 4.3.1 4.3.2 4.3.3 4.3.4',
+      rich:'告警代碼 PT-203，意義 旋角馬達過溫，處置 見 4.3.1。告警代碼 PT-205，意義 旋角馬達煞車異常，處置 見 4.3.2。告警代碼 PT-211，意義 三支葉片角度偏差過大，處置 見 4.3.3。告警代碼 PT-230，意義 備援電源測試失敗，處置 見 4.3.4。' },
+    { id:'f1', page:37, type:'圖', raw:'圖 4-2 M K1 X1 X2 X3 PE',
+      short:'旋角馬達煞車與電源配線圖',
+      detail:'圖 4-2（第 37 頁）旋角馬達配線圖：馬達電源接端子 X1、X2，煞車線圈 K1 接端子 X3，PE 為接地。' },
+    { id:'f2', page:38, type:'圖', raw:'圖 4-3 1 2 3 4 5 6',
+      short:'旋角馬達爆炸圖',
+      detail:'圖 4-3（第 38 頁）旋角馬達爆炸圖：零件 5 為冷卻風扇，零件 6 為編碼器。' },
+    { id:'t3', page:39, type:'文字', raw:'4.5 保養：每年檢查旋角馬達冷卻風扇與風道，清除積塵。' },
+    { id:'ph', page:40, type:'照片', raw:'',
+      short:'WTG-17 葉片 2 前緣巡檢照片',
+      detail:'WTG-17 葉片 2 前緣巡檢照片：前緣有侵蝕與細小裂紋，2026-09-30 無人機巡檢。' },
+    { id:'t4', page:41, type:'文字', raw:'6.1 葉片巡檢：以無人機巡檢葉片前緣、後緣與表面，發現缺陷時拍照並填寫巡檢報告。' }
+  ];
+  const Q = [
+    { q:'進入輪轂前要先做什麼？', el:'t2', ans:'上鎖掛牌' },
+    { q:'PT-211 代表什麼？', el:'tb', ans:'PT-211，意義 三支葉片角度偏差過大' },
+    { q:'煞車線圈接在哪個端子？', el:'f1', ans:'接端子 X3' },
+    { q:'爆炸圖中冷卻風扇是幾號零件？', el:'f2', ans:'零件 5 為冷卻風扇' },
+    { q:'WTG-17 葉片 2 前緣有什麼缺陷？', el:'ph', ans:'侵蝕與細小裂紋' }
+  ];
+  let mode = 'raw', cap = 2, cur = 0;
+
+  function textOf(e){
+    if(mode === 'raw') return e.raw;
+    if(e.rich) return e.rich;
+    if(e.type === '文字') return e.raw;
+    return cap === 0 ? e.raw : cap === 1 ? e.raw + ' ' + e.short : e.raw + ' ' + e.detail;
+  }
+  function search(q){
+    const docs = E.map(e => ({ id:e.id, page:e.page, type:e.type, text:textOf(e) }));
+    const idx = rt.buildIndex(docs);
+    return rt.searchBM25(idx, q.q, 3).filter(h => h.score > 0);
+  }
+  function verdict(q){
+    const hits = search(q);
+    const found = hits.some(h => h.doc.text.includes(q.ans));
+    const partial = !found && hits.some(h => h.doc.id === q.el);
+    return { hits, state: found ? 'ok' : partial ? 'part' : 'miss' };
+  }
+  const MARK = { ok:'✓', part:'△', miss:'✗' };
+  const MSG = { ok:'取回，且內容含答案', part:'取回了相關元素，但內容不含答案（走樣或說明太簡略）', miss:'沒有取回答案所在的元素' };
+
+  function run(){
+    $('#capSeg').style.display = mode === 'rich' ? '' : 'none';
+    const q = Q[cur], v = verdict(q);
+    const all = Q.map(x => verdict(x).state);
+    const okN = all.filter(s => s === 'ok').length;
+    $('#stat').innerHTML = `<b>${esc(q.q)}</b><br>${MARK[v.state]} ${MSG[v.state]}。<br>目前設定下 5 題的結果：${all.map((s, i) => `Q${i + 1} ${MARK[s]}`).join('　')}（取回且含答案 ${okN} / 5）。`;
+    $('#hits').innerHTML = v.hits.length ? v.hits.map((h, n) => {
+      const good = h.doc.text.includes(q.ans);
+      const body = h.doc.text ? rt.highlight(h.doc.text, q.q) : '<span class="muted">（沒有可抽取的文字）</span>';
+      return `<div class="hit ${good ? 'top' : 'low'}"><div class="meta"><span>#${n + 1}．第 ${h.doc.page} 頁．${esc(h.doc.type)}</span><span>BM25 ${h.score.toFixed(2)}</span></div><div>${body}</div></div>`;
+    }).join('') : '<div class="hit low"><div class="meta"><span>沒有任何片段符合</span></div></div>';
+  }
+
+  $('#presets').innerHTML = Q.map((x, i) => `<button type="button" data-i="${i}" class="${i === 0 ? 'on' : ''}">${esc(x.q)}</button>`).join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return; cur = +b.dataset.i;
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => { mode = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); });
+  $('#capSeg').querySelectorAll('button').forEach(b => b.onclick = () => { cap = +b.dataset.cap;
+    $('#capSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); });
+  run();
+})();
+</script>
+</body>
+</html>

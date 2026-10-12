@@ -29,6 +29,8 @@
 | 017 | [GraphRAG：知識圖譜與社群摘要](https://dofliu.github.io/ragTutor/lessons/017-graphrag.html) |
 | 018 | [ColBERT 延遲互動：逐詞向量比對](https://dofliu.github.io/ragTutor/lessons/018-colbert.html) |
 | 019 | [Agentic RAG：讓代理人規劃多步檢索](https://dofliu.github.io/ragTutor/lessons/019-agentic-rag.html) |
+| 020 | [多模態 RAG：圖片、表格與 PDF 版面](https://dofliu.github.io/ragTutor/lessons/020-multimodal-rag.html) |
+| 🎯 關卡 5 | [測驗關卡 5：圖譜、逐詞比對、代理人與多模態（第 017–020 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-5-graph-agent-multimodal.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 
