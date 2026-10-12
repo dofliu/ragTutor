@@ -158,8 +158,7 @@ TOOLS = [{
 <span class="k">def</span> <span class="f">run_tool</span>(name, query):
     words = query.<span class="f">split</span>()
     hits = [d <span class="k">for</span> d <span class="k">in</span> SOURCES[name] <span class="k">if</span> <span class="f">any</span>(w <span class="k">in</span> d <span class="k">for</span> w <span class="k">in</span> words)]
-    <span class="k">return</span> <span class="s">"
-"</span>.<span class="f">join</span>(hits) <span class="k">or</span> <span class="s">"查無資料"</span>
+    <span class="k">return</span> <span class="s">"\n"</span>.<span class="f">join</span>(hits) <span class="k">or</span> <span class="s">"查無資料"</span>
 
 <span class="c"># 2) 代理人迴圈：思考 → 行動（呼叫工具）→ 觀察（結果送回）</span>
 messages = [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
