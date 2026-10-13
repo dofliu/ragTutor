@@ -31,6 +31,7 @@
 | 019 | [Agentic RAG：讓代理人規劃多步檢索](https://dofliu.github.io/ragTutor/lessons/019-agentic-rag.html) |
 | 020 | [多模態 RAG：圖片、表格與 PDF 版面](https://dofliu.github.io/ragTutor/lessons/020-multimodal-rag.html) |
 | 🎯 關卡 5 | [測驗關卡 5：圖譜、逐詞比對、代理人與多模態（第 017–020 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-5-graph-agent-multimodal.html) |
+| 021 | [RAG 評估：忠實度、答案相關性、檢索召回](https://dofliu.github.io/ragTutor/lessons/021-rag-evaluation.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 

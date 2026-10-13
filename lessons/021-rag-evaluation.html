@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAG 評估：忠實度、答案相關性、檢索召回｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例看懂 RAG 評估：建立評估集，把檢索與生成分開量測，用召回、精確、忠實度與答案相關性找出問題出在哪一段，再對症調整。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 021 堂</span><span class="tag lv2">進階</span><span class="tag">約 20 分鐘</span></p>
+  <h1>RAG 評估：忠實度、答案相關性、檢索召回</h1>
+  <p class="lead">你把切塊大小從 500 字改成 300 字，換了嵌入模型，又改了提示詞，「感覺」答案變好了。但<b>變好了多少？哪一題變差了？問題出在檢索還是生成？</b>只靠試幾題沒有答案。<b>RAG 評估</b>先建一份有標準答案的評估集，再把系統拆成<b>檢索</b>與<b>生成</b>兩段分別打分：檢索看<b>召回</b>（該找的找到了嗎）與<b>精確</b>（找到的有用嗎），生成看<b>忠實度</b>（有沒有超出依據亂說）與<b>答案相關性</b>（有沒有答非所問）。</p>
+
+  <h2>🎬 動畫：從「感覺不錯」到可量測</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="RAG 評估動畫：只憑感覺調整系統無法得知好壞；先建立含標準相關段落的評估集；把檢索與生成分開量測；依序計算檢索召回、檢索精確、忠實度與答案相關性；最後依哪項分數低來決定調整檢索或生成">
+<rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 沒有評估：只憑感覺調整</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="1" data-to="1">② 先建評估集：問題＋標準答案依據</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="2" data-to="2">③ 拆成兩段：檢索與生成分開量</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="3" data-to="3">④ 檢索召回 Recall：該找的找到了嗎</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="4" data-to="4">⑤ 檢索精確 Precision：找到的有用嗎</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="5" data-to="5">⑥ 忠實度 Faithfulness：有沒有亂補</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="6" data-to="6">⑦ 答案相關性 Answer Relevancy：有沒有離題</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 看哪項分數低，就修哪一段</text>
+
+<!-- 0 沒有評估 -->
+<g data-to="0">
+<rect x="24" y="130" width="196" height="64" rx="8" style="fill:var(--panel);stroke:var(--muted);stroke-width:1.6"/>
+<text x="122" y="168" text-anchor="middle" font-size="12" font-weight="700">改切塊大小</text>
+<rect x="256" y="130" width="196" height="64" rx="8" style="fill:var(--panel);stroke:var(--muted);stroke-width:1.6"/>
+<text x="354" y="168" text-anchor="middle" font-size="12" font-weight="700">換嵌入模型</text>
+<rect x="488" y="130" width="196" height="64" rx="8" style="fill:var(--panel);stroke:var(--muted);stroke-width:1.6"/>
+<text x="586" y="168" text-anchor="middle" font-size="12" font-weight="700">改提示詞</text>
+<path d="M684 162 L732 162" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="732" y="130" width="164" height="64" rx="8" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.8"/>
+<text x="814" y="168" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--warn)">試 3 題，感覺不錯</text>
+<text x="40" y="244" font-size="12.5" font-weight="700" style="fill:var(--bad)">上線後技師回報：撈到別台風機的告警、答案混入手冊沒寫的內容</text>
+<text x="40" y="272" font-size="12" class="t-muted">是檢索撈錯，還是模型亂補？是哪一次修改造成的？完全說不清。</text>
+<text x="40" y="296" font-size="12" class="t-muted">每次改動都只能再憑感覺賭一次。</text>
+</g>
+
+<!-- 1 評估集 -->
+<g data-from="1" data-to="1">
+<rect x="24" y="118" width="872" height="30" rx="6" style="fill:var(--soft);stroke:var(--line);stroke-width:1.2"/>
+<text x="40" y="138" font-size="11.5" font-weight="700" style="fill:var(--query)">問題</text>
+<text x="360" y="138" font-size="11.5" font-weight="700" style="fill:var(--doc)">應該被找到的段落（標準依據）</text>
+<text x="632" y="138" font-size="11.5" font-weight="700" style="fill:var(--good)">參考答案要點</text>
+<rect x="24" y="156" width="872" height="44" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/>
+<text x="40" y="183" font-size="12">HY-120 液壓壓力過低怎麼處理？</text>
+<text x="360" y="183" font-size="12">HY-120 處理步驟、安全注意事項</text>
+<text x="632" y="183" font-size="12">查油位與蓄壓器；先洩壓掛牌</text>
+<rect x="24" y="208" width="872" height="44" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/>
+<text x="40" y="235" font-size="12">更換蓄壓器要備什麼料？</text>
+<text x="360" y="235" font-size="12">備品料號表（HY-ACC-01）</text>
+<text x="632" y="235" font-size="12">料號與庫存件數</text>
+<rect x="24" y="260" width="872" height="44" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/>
+<text x="40" y="287" font-size="12">液壓煞車摩擦片何時要換？</text>
+<text x="360" y="287" font-size="12">停機煞車章節</text>
+<text x="632" y="287" font-size="12">低於厚度下限；先順槳鎖轉子</text>
+<text x="40" y="332" font-size="12" class="t-muted">評估集 ＝ 問題 ＋ 標準依據 ＋ 參考答案要點；幾十題就能開始，要涵蓋常見與難答的題目。</text>
+</g>
+
+<!-- 2 兩段 -->
+<g data-from="2" data-to="2">
+<rect x="24" y="130" width="130" height="64" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/>
+<text x="89" y="168" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--query)">問題</text>
+<path d="M154 162 L206 162" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="206" y="130" width="170" height="64" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.8"/>
+<text x="291" y="168" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">檢索</text>
+<path d="M376 162 L428 162" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="428" y="130" width="170" height="64" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="513" y="168" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">取回的段落</text>
+<path d="M598 162 L650 162" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="650" y="130" width="120" height="64" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.8"/>
+<text x="710" y="168" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">LLM 生成</text>
+<path d="M770 162 L800 162" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="800" y="130" width="96" height="64" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<text x="848" y="168" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">答案</text>
+<rect x="206" y="222" width="392" height="82" rx="8" style="fill:none;stroke:var(--vec);stroke-width:1.6;stroke-dasharray:5 4"/>
+<text x="402" y="250" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--vec)">檢索指標</text>
+<text x="402" y="274" text-anchor="middle" font-size="12">召回（找齊了嗎）、精確（雜訊多嗎）</text>
+<text x="402" y="294" text-anchor="middle" font-size="11" class="t-muted">對照「標準依據」就能算</text>
+<rect x="640" y="222" width="256" height="82" rx="8" style="fill:none;stroke:var(--llm);stroke-width:1.6;stroke-dasharray:5 4"/>
+<text x="768" y="250" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--llm)">生成指標</text>
+<text x="768" y="274" text-anchor="middle" font-size="12">忠實度、答案相關性</text>
+<text x="768" y="294" text-anchor="middle" font-size="11" class="t-muted">看答案與取回段落、問題的關係</text>
+<text x="40" y="336" font-size="12" class="t-muted">只看最終答案好不好，無法分辨是檢索還是生成出了問題，所以兩段分開量。</text>
+</g>
+
+<!-- 3,4 召回/精確 共用版面 -->
+<g data-from="3" data-to="4">
+<text x="24" y="124" font-size="11.5" font-weight="700" style="fill:var(--doc)">標準依據（應該找到）</text>
+<text x="330" y="124" font-size="11.5" font-weight="700" style="fill:var(--vec)">實際取回 Top-3</text>
+<rect x="24" y="134" width="266" height="38" rx="6" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/>
+<text x="38" y="158" font-size="12">HY-120 處理步驟</text>
+<rect x="24" y="178" width="266" height="38" rx="6" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.8"/>
+<text x="38" y="202" font-size="12">HY-120 安全注意事項</text>
+<text x="278" y="202" text-anchor="end" font-size="11.5" font-weight="700" style="fill:var(--bad)">漏掉</text>
+<rect x="330" y="134" width="310" height="38" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<text x="344" y="158" font-size="12">HY-120 處理步驟</text>
+<text x="628" y="158" text-anchor="end" font-size="11.5" font-weight="700" style="fill:var(--good)">命中</text>
+<rect x="330" y="178" width="310" height="38" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.4"/>
+<text x="344" y="202" font-size="12">HY-121 液壓油溫過高</text>
+<text x="628" y="202" text-anchor="end" font-size="11.5" class="t-muted">無關</text>
+<rect x="330" y="222" width="310" height="38" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.4"/>
+<text x="344" y="246" font-size="12">YW-042 偏航誤差過大</text>
+<text x="628" y="246" text-anchor="end" font-size="11.5" class="t-muted">無關</text>
+<path d="M290 153 L330 153" class="flow" style="fill:none;stroke:var(--good);stroke-width:1.8"/>
+</g>
+<g data-from="3" data-to="3">
+<rect x="672" y="134" width="224" height="126" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:2"/>
+<text x="784" y="162" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--vec)">召回 Recall</text>
+<text x="784" y="196" text-anchor="middle" font-size="22" font-weight="700" class="pulse">1 / 2 ＝ 50%</text>
+<text x="784" y="224" text-anchor="middle" font-size="11" class="t-muted">標準依據中，被取回的比例</text>
+<text x="784" y="244" text-anchor="middle" font-size="11" class="t-muted">低 → 答案缺料</text>
+<text x="40" y="304" font-size="12" font-weight="700" style="fill:var(--bad)">漏掉安全注意事項：技師拿到步驟，卻沒被提醒要先洩壓掛牌。</text>
+<text x="40" y="326" font-size="12" class="t-muted">可試：加大 k、混合檢索（第 004 堂）、改寫查詢（第 006 堂）。</text>
+</g>
+<g data-from="4" data-to="4">
+<rect x="672" y="134" width="224" height="126" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:2"/>
+<text x="784" y="162" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--vec)">精確 Precision</text>
+<text x="784" y="196" text-anchor="middle" font-size="22" font-weight="700" class="pulse">1 / 3 ＝ 33%</text>
+<text x="784" y="224" text-anchor="middle" font-size="11" class="t-muted">取回的段落中，有用的比例</text>
+<text x="784" y="244" text-anchor="middle" font-size="11" class="t-muted">低 → 雜訊多</text>
+<text x="40" y="304" font-size="12" font-weight="700" style="fill:var(--bad)">多撈 2 段無關內容：佔用上下文，也可能把模型帶偏。</text>
+<text x="40" y="326" font-size="12" class="t-muted">可試：重排序（第 005 堂）、中繼資料過濾（第 011 堂）、減小 k。</text>
+</g>
+
+<!-- 5 忠實度 -->
+<g data-from="5" data-to="5">
+<rect x="24" y="118" width="276" height="186" rx="8" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.8"/>
+<text x="38" y="142" font-size="12" font-weight="700" style="fill:var(--doc)">取回的段落（依據）</text>
+<text x="38" y="168" font-size="11.5">HY-120 處理步驟：</text>
+<text x="38" y="188" font-size="11.5" class="t-muted">檢查油位、蓄壓器預充壓力；</text>
+<text x="38" y="208" font-size="11.5" class="t-muted">確認液壓泵運轉</text>
+<text x="38" y="236" font-size="11.5">HY-120 安全注意事項：</text>
+<text x="38" y="256" font-size="11.5" class="t-muted">拆卸蓄壓器前先洩壓、</text>
+<text x="38" y="276" font-size="11.5" class="t-muted">上鎖掛牌</text>
+<text x="330" y="124" font-size="11.5" font-weight="700" style="fill:var(--llm)">答案拆成 4 個論述，逐一檢查是否有依據</text>
+<rect x="330" y="134" width="566" height="34" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/>
+<text x="344" y="156" font-size="12">先檢查油位與蓄壓器預充壓力</text><text x="882" y="156" text-anchor="end" font-size="12" font-weight="700" style="fill:var(--good)">✓ 有依據</text>
+<rect x="330" y="174" width="566" height="34" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/>
+<text x="344" y="196" font-size="12">確認液壓泵運轉</text><text x="882" y="196" text-anchor="end" font-size="12" font-weight="700" style="fill:var(--good)">✓ 有依據</text>
+<rect x="330" y="214" width="566" height="34" rx="6" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/>
+<text x="344" y="236" font-size="12">拆卸蓄壓器前先洩壓並上鎖掛牌</text><text x="882" y="236" text-anchor="end" font-size="12" font-weight="700" style="fill:var(--good)">✓ 有依據</text>
+<rect x="330" y="254" width="566" height="34" rx="6" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+<text x="344" y="276" font-size="12">更換蓄壓器約需 2 小時</text><text x="882" y="276" text-anchor="end" font-size="12" font-weight="700" style="fill:var(--bad)">✗ 段落找不到</text>
+<text x="330" y="324" font-size="13" font-weight="700" class="pulse" style="fill:var(--warn)">忠實度 ＝ 3 / 4 ＝ 75%</text>
+<text x="500" y="324" font-size="11.5" class="t-muted">低 → 模型在補自己的猜測（幻覺）</text>
+</g>
+
+<!-- 6 答案相關性 -->
+<g data-from="6" data-to="6">
+<rect x="24" y="118" width="872" height="40" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/>
+<text x="40" y="143" font-size="12.5" font-weight="700" style="fill:var(--query)">問題：HY-120 液壓壓力過低怎麼處理？</text>
+<rect x="24" y="176" width="426" height="128" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<text x="40" y="200" font-size="12" font-weight="700" style="fill:var(--good)">答案 A：對焦</text>
+<text x="40" y="224" font-size="11.5">先查油位與蓄壓器預充壓力，</text>
+<text x="40" y="244" font-size="11.5">確認液壓泵運轉；拆卸前先洩壓、</text>
+<text x="40" y="264" font-size="11.5">上鎖掛牌。</text>
+<text x="40" y="290" font-size="12" font-weight="700" style="fill:var(--good)">句句回應問題 → 相關性高</text>
+<rect x="470" y="176" width="426" height="128" rx="8" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.8"/>
+<text x="486" y="200" font-size="12" font-weight="700" style="fill:var(--bad)">答案 B：離題</text>
+<text x="486" y="224" font-size="11.5">液壓系統由泵、閥、蓄壓器與管路</text>
+<text x="486" y="244" font-size="11.5">組成……（冗長的原理介紹）另外，</text>
+<text x="486" y="264" font-size="11.5">油溫過高時也要檢查散熱器。</text>
+<text x="486" y="290" font-size="12" font-weight="700" style="fill:var(--bad)">內容沒錯但沒答到 → 相關性低</text>
+<text x="40" y="334" font-size="12" class="t-muted">答案 B 的每句話可能都有依據（忠實度高），所以兩個指標要一起看。</text>
+</g>
+
+<!-- 7 診斷 -->
+<g data-from="7">
+<text x="24" y="124" font-size="11.5" font-weight="700" style="fill:var(--warn)">症狀</text>
+<text x="170" y="124" font-size="11.5" font-weight="700" style="fill:var(--good)">先試什麼</text>
+<rect x="24" y="134" width="540" height="38" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.4"/>
+<text x="38" y="158" font-size="12" font-weight="700" style="fill:var(--vec)">召回低</text><text x="170" y="158" font-size="12">改切塊、混合檢索、改寫查詢</text>
+<rect x="24" y="178" width="540" height="38" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.4"/>
+<text x="38" y="202" font-size="12" font-weight="700" style="fill:var(--vec)">精確低</text><text x="170" y="202" font-size="12">重排序、過濾條件、減小 k</text>
+<rect x="24" y="222" width="540" height="38" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.4"/>
+<text x="38" y="246" font-size="12" font-weight="700" style="fill:var(--llm)">忠實度低</text><text x="170" y="246" font-size="12">限定「只依據段落」、要求附出處</text>
+<rect x="24" y="266" width="540" height="38" rx="6" style="fill:var(--panel);stroke:var(--line);stroke-width:1.4"/>
+<text x="38" y="290" font-size="12" font-weight="700" style="fill:var(--llm)">相關性低</text><text x="170" y="290" font-size="12">調整提示詞、釐清使用者問題</text>
+<rect x="590" y="134" width="306" height="170" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+<text x="604" y="160" font-size="12.5" font-weight="700" style="fill:var(--good)">同一份評估集，改版前 → 後</text>
+<text x="604" y="190" font-size="12">召回　50% → 100%</text>
+<text x="604" y="214" font-size="12">精確　33% → 67%</text>
+<text x="604" y="238" font-size="12">忠實度　75% → 100%</text>
+<text x="604" y="268" font-size="11" class="t-muted">示意數字（虛構）。改一處、重跑一次，</text>
+<text x="604" y="286" font-size="11" class="t-muted">看是進步還是退步。</text>
+<text x="40" y="334" font-size="12" class="t-muted">每次調整都跑同一份評估集；評審模型也會出錯，要抽樣人工校對。</text>
+</g>
+
+<rect x="20" y="364" width="886" height="46" rx="8" style="fill:var(--panel);stroke:var(--line);stroke-width:1.5"/>
+<g data-to="0"><text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--bad)">問題：</tspan>改了切塊、模型、提示詞，只憑試幾題的「感覺」判斷好壞。</text><text x="34" y="401" font-size="11.5" class="t-muted">出了錯也不知道是檢索還是生成，下次改動又是一次賭博。</text></g>
+<g data-from="1" data-to="1"><text x="34" y="384" font-size="11.5">先建一份<tspan font-weight="700" style="fill:var(--query)">評估集</tspan>：每題附上「應該被找到的段落」與參考答案要點。</text><text x="34" y="401" font-size="11.5" class="t-muted">有了固定的考卷，每次改動才能公平比較。</text></g>
+<g data-from="2" data-to="2"><text x="34" y="384" font-size="11.5">把 RAG 拆成<tspan font-weight="700" style="fill:var(--vec)">檢索</tspan>與<tspan font-weight="700" style="fill:var(--llm)">生成</tspan>兩段，各用不同指標量測。</text><text x="34" y="401" font-size="11.5" class="t-muted">這樣分數一低，就知道該去修哪一段。</text></g>
+<g data-from="3" data-to="3"><text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--vec)">召回</tspan>：標準依據有 2 段，只取回 1 段，召回 50%；漏掉的安全注意事項最危險。</text><text x="34" y="401" font-size="11.5" class="t-muted">檢索階段沒找到的資料，後面的模型再強也補不回來。</text></g>
+<g data-from="4" data-to="4"><text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--vec)">精確</tspan>：取回 3 段只有 1 段有用，精確 33%；其餘是占位置的雜訊。</text><text x="34" y="401" font-size="11.5" class="t-muted">召回與精確要一起看：k 加大，召回通常上升、精確通常下降。</text></g>
+<g data-from="5" data-to="5"><text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--llm)">忠實度</tspan>：把答案拆成論述，檢查每句能否在取回的段落找到依據。</text><text x="34" y="401" font-size="11.5" class="t-muted">找不到依據的句子（例如憑空冒出的工時）就是幻覺，要扣分。</text></g>
+<g data-from="6" data-to="6"><text x="34" y="384" font-size="11.5"><tspan font-weight="700" style="fill:var(--llm)">答案相關性</tspan>：答案有沒有真的回應問題，離題、冗長、答非所問都會扣分。</text><text x="34" y="401" font-size="11.5" class="t-muted">它不檢查對錯，只看有沒有對焦，因此要搭配忠實度與召回。</text></g>
+<g data-from="7" data-to="7"><text x="34" y="384" font-size="11.5">依<tspan font-weight="700" style="fill:var(--good)">哪項分數低</tspan>決定調整檢索或生成，改完用同一份評估集重測。</text><text x="34" y="401" font-size="11.5" class="t-muted">指標只是輔助，上線前仍要看實際失敗案例，並持續補充新的難題。</text></g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>先有評估集，再談好壞</b>每題包含問題、應該被找到的段落與參考答案要點。固定的評估集讓每次調整都能公平比較，也能抓出「改好一題、弄壞三題」。</div>
+    <div class="card"><b>檢索與生成分開量</b>召回看標準依據有沒有被找到，精確看取回的段落有多少有用；這兩項只需要標準依據，不需要 LLM 就能算。</div>
+    <div class="card"><b>忠實度與答案相關性看生成</b>忠實度檢查答案的每個論述是否有取回段落作依據；答案相關性檢查答案是否回應問題。兩者通常要用 LLM 當評審。</div>
+    <div class="card"><b>指標是診斷，不是目的</b>分數低的那一項指出該修哪一段；但評審模型會有偏差，要抽樣人工校對，並持續把線上的失敗案例補進評估集。</div>
+  </div>
+
+  <h2>🧪 互動範例：調整檢索設定，看四個指標怎麼變</h2>
+  <div class="prose"><p>下面有 8 段虛構的《OW-8 運維手冊》內容與 4 題評估題，每題都標好「標準依據」（應該被找到的段落）與一份<b>預先寫好的答案</b>，答案已拆成幾個論述。<b>這裡沒有真的 LLM 評審</b>：召回與精確直接對照標準依據計算；忠實度用規則代替——某個論述若它所依據的段落有被取回就算「有依據」，沒有依據的論述（例如憑空冒出的工時）永遠算不到；答案相關性則是預先標好「有沒有答到問題」的論述比例。請切換檢索方式、調整取回數量 k，看分數如何變動，並讀最下方的診斷。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" class="on" data-mode="bm25">BM25 關鍵字檢索</button>
+      <button type="button" data-mode="vec">向量檢索（TF-IDF 模擬）</button>
+    </div>
+    <div class="row"><label for="kr">取回數量 k：<b id="kv">3</b></label><input type="range" id="kr" min="1" max="5" value="3" style="flex:1;max-width:260px"></div>
+    <div class="hits" id="meters"></div>
+    <div class="muted" id="diag" style="font-size:13px"></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono)">取回的段落</div>
+    <div class="hits" id="hits"></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono)">答案的論述檢查</div>
+    <div class="hits" id="claims"></div>
+    <div class="muted" id="macro" style="font-size:13px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>最小的評估流程：檢索指標直接用標準依據計算；忠實度請 LLM 逐一判斷「這個論述能否由段落推得」。用 <code>anthropic</code> SDK（<code>pip install anthropic</code>）。評估集、段落與問題皆為虛構；論述拆解在這裡寫死，實務上可再請 LLM 從答案中抽出。</p></div>
+<pre class="code"><code><span class="k">import</span> json, anthropic
+
+client = anthropic.<span class="f">Anthropic</span>()
+
+<span class="c"># 1) 虛構評估集：問題 + 標準依據 + 這次系統的答案（已拆成論述）</span>
+EVAL_SET = [{
+    <span class="s">"question"</span>: <span class="s">"HY-120 液壓壓力過低怎麼處理？"</span>,
+    <span class="s">"gold_ids"</span>: [<span class="s">"hy120-steps"</span>, <span class="s">"hy120-safety"</span>],      <span class="c"># 應該被找到的段落</span>
+    <span class="s">"retrieved"</span>: {                                 <span class="c"># 檢索系統這次取回的 Top-3</span>
+        <span class="s">"hy120-steps"</span>: <span class="s">"檢查油位與蓄壓器預充壓力；確認液壓泵運轉。"</span>,
+        <span class="s">"hy121-temp"</span>: <span class="s">"HY-121 液壓油溫過高：檢查散熱器。"</span>,
+        <span class="s">"yw042"</span>: <span class="s">"YW-042 偏航誤差過大：校正風向感測器。"</span>,
+    },
+    <span class="s">"claims"</span>: [<span class="s">"先檢查油位與蓄壓器預充壓力"</span>, <span class="s">"確認液壓泵運轉"</span>, <span class="s">"更換蓄壓器約需 2 小時"</span>],
+}]
+
+<span class="c"># 2) 檢索指標：不需要 LLM</span>
+<span class="k">def</span> <span class="f">recall</span>(retrieved_ids, gold_ids):
+    <span class="k">return</span> <span class="f">len</span>(<span class="f">set</span>(retrieved_ids) &amp; <span class="f">set</span>(gold_ids)) / <span class="f">len</span>(gold_ids)
+
+<span class="k">def</span> <span class="f">precision</span>(retrieved_ids, gold_ids):
+    <span class="k">return</span> <span class="f">len</span>(<span class="f">set</span>(retrieved_ids) &amp; <span class="f">set</span>(gold_ids)) / <span class="f">len</span>(retrieved_ids)
+
+<span class="c"># 3) 忠實度：LLM 當評審，逐一判斷論述是否能由段落推得</span>
+<span class="k">def</span> <span class="f">is_supported</span>(claim, context):
+    resp = client.messages.<span class="f">create</span>(
+        model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">20</span>,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+            <span class="s">f"段落：\n{context}\n\n論述：{claim}\n"</span>
+            <span class="s">"只根據段落判斷，論述是否能被段落支持？只回答 yes 或 no。"</span>}])
+    <span class="k">return</span> resp.content[<span class="s">0</span>].text.<span class="f">strip</span>().<span class="f">lower</span>().<span class="f">startswith</span>(<span class="s">"yes"</span>)
+
+<span class="k">def</span> <span class="f">faithfulness</span>(claims, context):
+    <span class="k">return</span> <span class="f">sum</span>(<span class="f">is_supported</span>(c, context) <span class="k">for</span> c <span class="k">in</span> claims) / <span class="f">len</span>(claims)
+
+<span class="c"># 4) 跑整份評估集，輸出平均分數</span>
+rows = []
+<span class="k">for</span> item <span class="k">in</span> EVAL_SET:
+    ids = <span class="f">list</span>(item[<span class="s">"retrieved"</span>])
+    context = <span class="s">"\n"</span>.<span class="f">join</span>(item[<span class="s">"retrieved"</span>].<span class="f">values</span>())
+    rows.<span class="f">append</span>({<span class="s">"recall"</span>: <span class="f">recall</span>(ids, item[<span class="s">"gold_ids"</span>]),
+                 <span class="s">"precision"</span>: <span class="f">precision</span>(ids, item[<span class="s">"gold_ids"</span>]),
+                 <span class="s">"faithfulness"</span>: <span class="f">faithfulness</span>(item[<span class="s">"claims"</span>], context)})
+<span class="k">for</span> m <span class="k">in</span> rows[<span class="s">0</span>]:
+    <span class="f">print</span>(m, <span class="f">round</span>(<span class="f">sum</span>(r[m] <span class="k">for</span> r <span class="k">in</span> rows) / <span class="f">len</span>(rows), <span class="s">2</span>))</code></pre>
+  <div class="prose"><p>答案相關性的做法類似：請評審判斷「答案有沒有回應問題」，或像 Ragas 論文那樣，讓 LLM 從答案反推可能的問題，再與原問題比較相似度。實務上建議把評審的提示詞固定下來，並抽樣與人工判斷對照，確認評審沒有系統性偏差。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>憑感覺試題</th><th>檢索指標（召回、精確）</th><th>LLM 評審（忠實度、相關性）</th><th>人工逐題審查</th></tr>
+    <tr><th>量什麼</th><td>整體印象</td><td>該找的段落有沒有被取回</td><td>答案有沒有依據、有沒有答到問題</td><td>以上全部，還有語氣與可用性</td></tr>
+    <tr><th>需要什麼</th><td>幾個問題</td><td>每題標好標準依據（人工標註）</td><td>評審提示詞與評審模型的呼叫費用</td><td>專家時間</td></tr>
+    <tr><th>主要缺點</th><td>不可重現，看不出哪段壞了</td><td>標註成本；依據可能不只一份</td><td>評審有偏差、分數有波動</td><td>慢、貴、難大量重跑</td></tr>
+    <tr><th>適合用在</th><td>剛起步的快速確認</td><td>調切塊、嵌入、重排序（第 002～005 堂）時的每次迴歸測試</td><td>調提示詞、壓縮、Self-RAG（第 012～013 堂）等影響生成的改動</td><td>建立評估集、校準評審、處理高風險題目</td></tr>
+  </table>
+  <div class="prose"><p>實務上會混用：評估集用人工建立，檢索指標每次改動都跑，LLM 評審跑在同一份評估集上，再定期抽樣人工複核評審的結果。</p></div>
+
+  <h2>⚠️ RAG 評估常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>評估集太小或太簡單</b>：只有十幾題簡單題，分數永遠漂亮。要涵蓋常見題、難題、查不到的題目（正確回答應是「手冊沒寫」），並把線上的失敗案例補進去。</li>
+      <li><b>只看平均分數</b>：平均 90% 可能藏著一類題目全軍覆沒。要依題型（告警代碼、安全規範、備品）分組看，並檢視最差的幾題。</li>
+      <li><b>把評審模型當真理</b>：LLM 評審可能偏好較長的答案或較早出現的選項，也會被措辭誤導（見 Zheng 等人對 LLM-as-a-judge 偏差的討論）。要抽樣與人工判斷對照，評審提示詞固定後才能比較。</li>
+      <li><b>標準依據不只一份</b>：同一個答案可能散在多段，或不同段落都能回答。標註時要容許多個可接受的依據，不然召回會被低估。</li>
+      <li><b>為指標而優化</b>：反覆針對同一份評估集調整，會過度貼合它。要留一份不看的測試題，定期更新。</li>
+      <li><b>忠實不等於正確</b>：答案若忠實引用了「過期的手冊」，忠實度仍是滿分。資料版本管理與來源品質要另外把關。</li>
+      <li><b>安全關鍵內容不能只靠分數</b>：高處作業、上鎖掛牌這類題目，要有專家逐題審查，不能因為平均分數高就放行。</li>
+      <li><b>沒有評估集就不必急著上複雜流程</b>：連基本的召回都沒量過，就不要先導入更複雜的技術；先量出瓶頸在哪一段。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的段落、標準依據、論述與分數皆為虛構示範，忠實度以規則模擬而非真正的 LLM 評審，不可作為實際維修決策依據。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Es 等，〈<a href="https://arxiv.org/abs/2309.15217">RAGAS: Automated Evaluation of Retrieval Augmented Generation</a>〉（arXiv:2309.15217，提出免參考答案的忠實度、答案相關性與上下文相關性等指標）；Saad-Falcon 等，〈<a href="https://arxiv.org/abs/2311.09476">ARES: An Automated Evaluation Framework for Retrieval-Augmented Generation Systems</a>〉（arXiv:2311.09476）；Zheng 等，〈<a href="https://arxiv.org/abs/2306.05685">Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</a>〉（arXiv:2306.05685）。各評估框架對指標的定義與所需欄位會隨版本調整，使用前請查閱當前文件。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>評估集的標準依據有 2 段，系統取回 4 段，其中只有 1 段是標準依據。召回與精確各是多少？</b></p>
+    <button class="opt">A. 召回 25%、精確 50%</button>
+    <button class="opt">B. 召回 50%、精確 25%</button>
+    <button class="opt">C. 召回 100%、精確 25%</button>
+    <div class="why">召回 ＝ 命中的標準依據 ÷ 標準依據總數 ＝ 1/2；精確 ＝ 命中的段落 ÷ 取回的段落 ＝ 1/4。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>檢索召回 100%，但答案裡有一句「更換約需 2 小時」在取回的段落中找不到。哪個指標最先反映問題？該先檢查哪一段？</b></p>
+    <button class="opt">A. 召回偏低；檢查檢索</button>
+    <button class="opt">B. 精確偏低；檢查重排序</button>
+    <button class="opt">C. 忠實度偏低；檢查生成（提示詞是否限定只依據段落）</button>
+    <div class="why">該找的都找到了，檢索沒問題；多出來的論述沒有依據，是模型自己補的，屬於忠實度問題，應從生成端的提示詞與約束著手。</div>
+  </div>
+
+  <nav class="pager" data-slug="rag-evaluation"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'只憑感覺調整', text:'改了切塊、換了模型、調了提示詞，試 3 題「感覺不錯」就上線。出錯時<b>分不出是檢索還是生成的問題</b>，也不知道是哪次修改造成的。' },
+  { title:'先建評估集', text:'每題附上<b>問題、應該被找到的段落（標準依據）、參考答案要點</b>。有了固定的「考卷」，每次改動才能公平比較；幾十題就能開始（內容為虛構）。' },
+  { title:'檢索與生成分開量', text:'RAG 拆成<b>檢索</b>與<b>生成</b>兩段：檢索看<b>召回與精確</b>，生成看<b>忠實度與答案相關性</b>。分開量，分數一低就知道該修哪一段。' },
+  { title:'檢索召回', text:'標準依據有 2 段，只取回 1 段，<b>召回 1/2 ＝ 50%</b>。漏掉的是安全注意事項；檢索階段沒找到的資料，後面的模型再強也補不回來。' },
+  { title:'檢索精確', text:'取回 3 段只有 1 段有用，<b>精確 1/3 ＝ 33%</b>。其餘是占位置的雜訊。<b>k 加大通常召回上升、精確下降</b>，兩者要一起看。' },
+  { title:'忠實度', text:'把答案拆成 4 個<b>論述</b>，逐一檢查能否在取回的段落找到依據。3 句有依據、1 句憑空冒出，<b>忠實度 3/4 ＝ 75%</b>；找不到依據的句子就是幻覺。' },
+  { title:'答案相關性', text:'檢查答案有沒有<b>真的回應問題</b>。答案 B 每句話或許都有依據，卻在介紹原理、答非所問，相關性低。它不判斷對錯，要與忠實度、召回<b>搭配</b>。' },
+  { title:'對症調整、重跑評估集', text:'<b>召回低</b>改檢索，<b>精確低</b>加重排序，<b>忠實度低</b>限制生成。每次調整都用<b>同一份評估集</b>重測；評審也會出錯，要抽樣人工校對（示意數字為虛構）。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 全部為虛構的《OW-8 運維手冊》段落 */
+  const DOCS = [
+    { id:'hy120-steps', text:'HY-120 液壓系統壓力過低 處理步驟：檢查液壓油位與蓄壓器預充壓力，確認液壓泵運轉；油位低於下限時補充指定液壓油後再試。' },
+    { id:'hy120-safety', text:'HY-120 安全注意事項：蓄壓器內有殘餘壓力，拆卸前須先洩壓並執行上鎖掛牌，作業時佩戴護目鏡。' },
+    { id:'hy121', text:'HY-121 液壓油溫過高：檢查冷卻風扇與散熱器是否堵塞，油溫降至正常範圍後復歸。' },
+    { id:'yw042', text:'YW-042 偏航誤差過大：檢查風向感測器校正與偏航煞車間隙，必要時重新校正風向計。' },
+    { id:'cv310', text:'CV-310 變流器功率模組過溫：檢查水冷迴路流量與散熱風扇，確認冷卻液液位。' },
+    { id:'parts', text:'備品料號表：HY-ACC-01 蓄壓器，適用 OW-8，港區倉庫庫存 1 件；HY-OIL-02 液壓油 20 公升桶，庫存 12 桶。' },
+    { id:'brake', text:'停機煞車：液壓煞車卡鉗摩擦片厚度低於下限須更換，料號 BK-PAD-03；更換前須先讓葉片順槳並鎖定轉子。' },
+    { id:'height', text:'高處作業規範：登塔前確認天候與風速限制，超過限制不得進行機艙外部作業。' }
+  ];
+  const IDX = rt.buildIndex(DOCS);
+  const ix = id => DOCS.findIndex(d => d.id === id);
+
+  /* gold：標準依據；claims.sup：支持該論述的段落；on：該論述是否回應問題（預先標註） */
+  const QS = [
+    { q:'HY-120 液壓壓力過低怎麼處理？', gold:['hy120-steps', 'hy120-safety'], claims:[
+      { t:'先檢查油位與蓄壓器預充壓力', sup:['hy120-steps'], on:true },
+      { t:'確認液壓泵是否運轉', sup:['hy120-steps'], on:true },
+      { t:'拆卸蓄壓器前先洩壓並上鎖掛牌', sup:['hy120-safety'], on:true },
+      { t:'更換蓄壓器約需 2 小時', sup:[], on:true },
+      { t:'油溫過高時也要檢查散熱器', sup:['hy121'], on:false } ] },
+    { q:'更換蓄壓器要備什麼料？庫存夠嗎？', gold:['parts', 'hy120-safety'], claims:[
+      { t:'備品料號是 HY-ACC-01', sup:['parts'], on:true },
+      { t:'港區倉庫庫存 1 件', sup:['parts'], on:true },
+      { t:'拆卸前須先洩壓並上鎖掛牌', sup:['hy120-safety'], on:true } ] },
+    { q:'液壓煞車摩擦片什麼時候要換？', gold:['brake'], claims:[
+      { t:'厚度低於下限時須更換', sup:['brake'], on:true },
+      { t:'摩擦片料號是 BK-PAD-03', sup:['brake'], on:true },
+      { t:'更換前先讓葉片順槳並鎖定轉子', sup:['brake'], on:true },
+      { t:'建議每 6 個月固定更換', sup:[], on:true } ] },
+    { q:'WTG-12 偏航誤差過大怎麼辦？', gold:['yw042'], claims:[
+      { t:'檢查風向感測器校正', sup:['yw042'], on:true },
+      { t:'檢查偏航煞車間隙', sup:['yw042'], on:true },
+      { t:'必要時重新校正風向計', sup:['yw042'], on:true } ] }
+  ];
+  let qi = 0, method = 'bm25';
+
+  function evalQ(Q, k){
+    const hits = method === 'bm25' ? rt.searchBM25(IDX, Q.q, k) : rt.searchVector(IDX, Q.q, k);
+    const ids = new Set(hits.map(h => DOCS[h.i].id));
+    const hitGold = Q.gold.filter(g => ids.has(g)).length;
+    const relHits = hits.filter(h => Q.gold.includes(DOCS[h.i].id)).length;
+    const claims = Q.claims.map(c => ({ ...c, ok:c.sup.some(s => ids.has(s)) }));
+    return { hits, ids, recall:hitGold / Q.gold.length, precision:relHits / hits.length,
+      faith:claims.filter(c => c.ok).length / claims.length,
+      rel:Q.claims.filter(c => c.on).length / Q.claims.length, claims };
+  }
+  const pct = v => Math.round(v * 100) + '%';
+  const NAMES = [['recall', '召回 Recall'], ['precision', '精確 Precision'], ['faith', '忠實度 Faithfulness'], ['rel', '答案相關性']];
+
+  function run(){
+    const k = +$('#kr').value; $('#kv').textContent = k;
+    const Q = QS[qi], r = evalQ(Q, k);
+    $('#meters').innerHTML = NAMES.map(([key, name]) => `<div class="hit ${r[key] >= 1 ? 'top' : r[key] >= .6 ? '' : 'low'}"><div class="meta"><span>${name}</span><span>${pct(r[key])}</span></div><div class="score-bar"><b style="width:${r[key] * 100}%"></b></div></div>`).join('');
+    let d;
+    if(r.recall < 1) d = '診斷：召回不足，標準依據沒被找齊，問題在<b>檢索</b>（可加大 k、換檢索方式或改寫查詢）。';
+    else if(r.faith < 1) d = '診斷：檢索找齊了，但答案有論述沒有依據，問題在<b>生成</b>（限定只依據段落、要求附出處）。';
+    else if(r.rel < 1) d = '診斷：答案有依據，卻有論述沒回應問題，問題在<b>答案對焦</b>（調整提示詞）。';
+    else d = '診斷：四項指標都沒有明顯問題。';
+    if(r.recall >= 1 && r.precision < .5) d += ' 另外精確偏低：取回的雜訊較多，可考慮重排序或減小 k。';
+    $('#diag').innerHTML = d;
+    $('#hits').innerHTML = r.hits.map((h, n) => { const dd = DOCS[h.i], g = Q.gold.includes(dd.id);
+      return `<div class="hit ${g ? 'top' : 'low'}"><div class="meta"><span>#${n + 1}．${g ? '標準依據 ✓' : '無關'}</span><span>${esc(dd.id)}．分數 ${h.score.toFixed(2)}</span></div><div>${rt.highlight(dd.text, Q.q)}</div></div>`; }).join('')
+      + Q.gold.filter(g => !r.ids.has(g)).map(g => `<div class="hit low"><div class="meta"><span>漏掉的標準依據 ✗</span><span>${esc(g)}</span></div><div>${esc(DOCS[ix(g)].text)}</div></div>`).join('');
+    $('#claims').innerHTML = r.claims.map(c => `<div class="hit ${c.ok ? 'top' : 'low'}"><div class="meta"><span>${c.ok ? '✓ 有依據' : (c.sup.length ? '✗ 依據段落沒被取回' : '✗ 手冊中找不到依據')}</span><span>${c.on ? '回應問題' : '離題'}</span></div><div>${esc(c.t)}</div></div>`).join('');
+    const all = QS.map(x => evalQ(x, k)), avg = key => all.reduce((a, x) => a + x[key], 0) / all.length;
+    $('#macro').innerHTML = `<b>4 題平均（${method === 'bm25' ? 'BM25' : '向量'}，k=${k}）</b>：召回 ${pct(avg('recall'))}　精確 ${pct(avg('precision'))}　忠實度 ${pct(avg('faith'))}　答案相關性 ${pct(avg('rel'))}`;
+  }
+
+  $('#presets').innerHTML = QS.map((x, i) => `<button type="button" data-i="${i}" class="${i === 0 ? 'on' : ''}">${esc(x.q)}</button>`).join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return; qi = +b.dataset.i;
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#kr').oninput = run;
+  $('#modeSeg').querySelectorAll('button').forEach(b => b.onclick = () => { method = b.dataset.mode;
+    $('#modeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); });
+  run();
+})();
+</script>
+</body>
+</html>
