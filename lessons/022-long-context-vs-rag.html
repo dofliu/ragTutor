@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>長上下文 vs RAG：何時該用哪個｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例比較「整本資料塞進長上下文」與「只檢索相關片段」：看資料量、問題型態、成本與位置效應如何影響選擇，並認識先 RAG、不足再全文的混合路由。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 022 堂</span><span class="tag lv2">進階</span><span class="tag">約 20 分鐘</span></p>
+  <h1>長上下文 vs RAG：何時該用哪個</h1>
+  <p class="lead">模型的上下文視窗越來越大，有人會問：<b>乾脆把整本《OW-8 運維手冊》丟進去，還需要 RAG 嗎？</b>答案是「看情況」。資料小、問題需要通盤閱讀時，<b>長上下文（Long Context）</b>最單純；資料大、常更新、每次只查一小段時，<b>RAG</b> 更省、更好追溯。這堂課比較兩種做法的取捨，並介紹<b>先 RAG、不足再全文</b>的混合路由。</p>
+
+  
+  <h2>🎬 動畫：整本塞進去，還是只撈相關的？</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="長上下文與 RAG 比較動畫：資料遠大於視窗時放不下；資料小時可整份放入；長上下文每次重送全文且中段資訊容易被忽略；RAG 只送片段；RAG 對分散的全局問題可能漏檢索；依資料量、問題型態、更新頻率與成本取捨；混合路由先 RAG 再視情況改用全文">
+<rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 資料遠大於視窗：整本放不下</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="1" data-to="1">② 資料夠小：整份直接放進長上下文</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="2" data-to="2">③ 長上下文的代價：成本、延遲、位置效應</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="3" data-to="3">④ RAG：只送最相關的幾個片段</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="4" data-to="4">⑤ RAG 的代價：分散的全局問題可能漏檢索</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="5" data-to="5">⑥ 四個取捨維度</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="6" data-to="6">⑦ 混合路由：先 RAG，不夠再全文</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 依情境選：不是二選一</text>
+
+<!-- 0 放不下 -->
+<g data-to="0">
+<text x="24" y="130" font-size="12" font-weight="700">全部資料（約 385K tokens，虛構）</text>
+<rect x="24" y="142" width="110" height="44" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/>
+<text x="79" y="169" text-anchor="middle" font-size="11.5">OW-8 手冊 55K</text>
+<rect x="134" y="142" width="70" height="44" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/>
+<text x="169" y="169" text-anchor="middle" font-size="11.5">通報 35K</text>
+<rect x="204" y="142" width="110" height="44" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/>
+<text x="210" y="169" font-size="11.5">OW-6 55K</text>
+<rect x="314" y="142" width="300" height="44" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/>
+<text x="464" y="169" text-anchor="middle" font-size="11.5">一年的維修工單 150K</text>
+<rect x="614" y="142" width="180" height="44" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/>
+<text x="704" y="169" text-anchor="middle" font-size="11.5">巡檢報告 90K</text>
+<path d="M280 128 L280 200" class="pulse" style="fill:none;stroke:var(--bad);stroke-width:2.4;stroke-dasharray:6 4"/>
+<text x="290" y="216" font-size="12" font-weight="700" style="fill:var(--bad)">假設視窗 128K 只到這裡，右邊的放不下</text>
+<text x="24" y="262" font-size="12.5" font-weight="700" style="fill:var(--bad)">技師問「WTG-12 今年有哪幾張旋角工單？」</text>
+<text x="24" y="290" font-size="12" class="t-muted">資料量超過視窗，只能截斷或分批，答案所需的工單可能剛好被截掉。</text>
+<text x="24" y="314" font-size="12" class="t-muted">就算放得下，每次查詢都重送這麼多內容，也很貴、很慢。</text>
+</g>
+
+<!-- 1 資料夠小 -->
+<g data-from="1" data-to="1">
+<text x="24" y="130" font-size="12" font-weight="700">視窗 128K（示意）</text>
+<rect x="24" y="142" width="256" height="44" rx="4" style="fill:none;stroke:var(--accent);stroke-width:1.8"/>
+<rect x="24" y="142" width="110" height="44" style="fill:var(--panel);stroke:var(--good);stroke-width:2"/>
+<text x="79" y="169" text-anchor="middle" font-size="11.5">OW-8 手冊 55K</text>
+<path d="M280 164 L330 164" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="330" y="142" width="110" height="44" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.8"/>
+<text x="385" y="169" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">LLM</text>
+<path d="M440 164 L490 164" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="490" y="142" width="130" height="44" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<text x="555" y="169" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">答案</text>
+<text x="24" y="238" font-size="12.5" font-weight="700" style="fill:var(--good)">✓ 流程單純：不用切塊、不用建索引、不用調檢索</text>
+<text x="24" y="266" font-size="12.5" font-weight="700" style="fill:var(--good)">✓ 全文都在眼前：「旋角系統有哪些保養項目」這類跨章節問題一次看完</text>
+<text x="24" y="294" font-size="12.5" font-weight="700" style="fill:var(--good)">✓ 不會因為檢索漏掉而答不出來</text>
+<text x="24" y="334" font-size="12" class="t-muted">前提是資料放得進視窗，而且查詢量不大。</text>
+</g>
+
+<!-- 2 長上下文代價 -->
+<g data-from="2" data-to="2">
+<text x="24" y="124" font-size="11.5" font-weight="700" class="t-muted">模型對各位置資訊的利用程度（示意，非實測數據）</text>
+<path d="M24 150 C150 160 200 214 344 216 C488 214 538 160 664 150" style="fill:none;stroke:var(--warn);stroke-width:2.4"/>
+<text x="24" y="146" font-size="11" class="t-muted">高</text>
+<text x="24" y="226" font-size="11" class="t-muted">低</text>
+<rect x="24" y="240" width="640" height="34" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/>
+<text x="44" y="262" font-size="11.5">開頭</text>
+<text x="620" y="262" font-size="11.5">結尾</text>
+<rect x="304" y="240" width="80" height="34" style="fill:var(--panel);stroke:var(--bad);stroke-width:2.2"/>
+<text x="344" y="262" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">證據在中段</text>
+<text x="24" y="306" font-size="12.5" font-weight="700" style="fill:var(--bad)">答案所需的段落落在長上下文中間，較容易被忽略</text>
+<text x="24" y="334" font-size="12" class="t-muted">每次查詢都重送全文：輸入量大，費用與延遲隨長度上升（可用提示快取降低重複成本）。</text>
+<text x="24" y="358" font-size="12" class="t-muted">資料一更新，整份都要重新送。</text>
+</g>
+
+<!-- 3 RAG -->
+<g data-from="3" data-to="3">
+<rect x="24" y="130" width="150" height="26" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.4"/>
+<rect x="24" y="160" width="150" height="26" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.4"/>
+<rect x="24" y="190" width="150" height="26" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.4"/>
+<text x="99" y="148" text-anchor="middle" font-size="11.5">手冊、工單、通報…</text>
+<text x="99" y="178" text-anchor="middle" font-size="11.5">共 385K（已建索引）</text>
+<path d="M174 173 L214 173" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="214" y="146" width="110" height="54" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.8"/>
+<text x="269" y="178" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">檢索 Top-3</text>
+<path d="M324 173 L364 173" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="364" y="130" width="150" height="26" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<rect x="364" y="160" width="150" height="26" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<rect x="364" y="190" width="150" height="26" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<text x="439" y="148" text-anchor="middle" font-size="11.5">PT-203 排除步驟</text>
+<text x="439" y="178" text-anchor="middle" font-size="11.5">PT-203 安全注意</text>
+<text x="439" y="208" text-anchor="middle" font-size="11.5">備品料號 PT-MTR-02</text>
+<path d="M514 173 L554 173" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="554" y="146" width="110" height="54" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.8"/>
+<text x="609" y="178" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">LLM</text>
+<path d="M664 173 L704 173" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="704" y="146" width="192" height="54" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<text x="800" y="178" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">答案＋出處</text>
+<text x="24" y="262" font-size="12.5" font-weight="700" style="fill:var(--good)">每次只送約 1.5K tokens（虛構），不管資料庫多大都一樣</text>
+<text x="24" y="290" font-size="12" class="t-muted">資料更新只需重建受影響的片段；答案能附上來自哪一段，方便技師核對。</text>
+<text x="24" y="314" font-size="12" class="t-muted">資料量可以遠超過視窗，這是長上下文做不到的。</text>
+</g>
+
+<!-- 4 RAG 漏檢索 -->
+<g data-from="4" data-to="4">
+<text x="24" y="124" font-size="11.5" font-weight="700" style="fill:var(--doc)">問題：旋角系統有哪些定期保養項目？</text>
+<rect x="24" y="136" width="240" height="34" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/>
+<text x="38" y="158" font-size="11.5">保養①：馬達與減速機潤滑</text>
+<rect x="24" y="178" width="240" height="34" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/>
+<text x="38" y="200" font-size="11.5">保養②：備援電源檢測</text>
+<rect x="24" y="220" width="240" height="34" style="fill:var(--panel);stroke:var(--bad);stroke-width:2"/>
+<text x="38" y="242" font-size="11.5">保養③：軸承與齒圈檢查</text>
+<text x="330" y="124" font-size="11.5" font-weight="700" style="fill:var(--vec)">實際取回（Top-2）</text>
+<rect x="330" y="136" width="250" height="34" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<text x="344" y="158" font-size="11.5">保養①：馬達與減速機潤滑</text>
+<rect x="330" y="178" width="250" height="34" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<text x="344" y="200" font-size="11.5">保養②：備援電源檢測</text>
+<rect x="330" y="220" width="250" height="34" style="fill:none;stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/>
+<text x="344" y="242" font-size="11.5" style="fill:var(--bad)">保養③沒被取回 ✗</text>
+<path d="M264 153 L330 153" class="flow" style="fill:none;stroke:var(--good);stroke-width:1.8"/>
+<path d="M264 195 L330 195" class="flow" style="fill:none;stroke:var(--good);stroke-width:1.8"/>
+<text x="24" y="298" font-size="12.5" font-weight="700" style="fill:var(--bad)">答案看似完整，其實少了一項，而且使用者不會察覺</text>
+<text x="24" y="326" font-size="12" class="t-muted">答案散在很多段、需要「全部列出」或「通盤比較」時，Top-k 很容易漏。</text>
+<text x="24" y="350" font-size="12" class="t-muted">長上下文把整節放在眼前，就沒有這個問題。</text>
+</g>
+
+<!-- 5 取捨 -->
+<g data-from="5" data-to="5">
+<rect x="24" y="112" width="180" height="28" style="fill:var(--soft);stroke:var(--line)"/>
+<text x="38" y="131" font-size="12" font-weight="700">維度</text>
+<rect x="204" y="112" width="330" height="28" style="fill:var(--soft);stroke:var(--line)"/>
+<text x="218" y="131" font-size="12" font-weight="700" style="fill:var(--accent-ink)">偏向長上下文</text>
+<rect x="534" y="112" width="362" height="28" style="fill:var(--soft);stroke:var(--line)"/>
+<text x="548" y="131" font-size="12" font-weight="700" style="fill:var(--vec)">偏向 RAG</text>
+<rect x="24" y="140" width="180" height="46" style="fill:var(--panel);stroke:var(--line)"/><text x="38" y="168" font-size="12" font-weight="700">資料量</text>
+<rect x="204" y="140" width="330" height="46" style="fill:var(--panel);stroke:var(--line)"/><text x="218" y="168" font-size="12">整份放得進視窗（例如單本手冊）</text>
+<rect x="534" y="140" width="362" height="46" style="fill:var(--panel);stroke:var(--line)"/><text x="548" y="168" font-size="12">遠超過視窗（手冊＋工單＋報告）</text>
+<rect x="24" y="186" width="180" height="46" style="fill:var(--panel);stroke:var(--line)"/><text x="38" y="214" font-size="12" font-weight="700">問題型態</text>
+<rect x="204" y="186" width="330" height="46" style="fill:var(--panel);stroke:var(--line)"/><text x="218" y="214" font-size="12">全局、跨章節、需要通盤比較</text>
+<rect x="534" y="186" width="362" height="46" style="fill:var(--panel);stroke:var(--line)"/><text x="548" y="214" font-size="12">單點查找（一個告警代碼、一個料號）</text>
+<rect x="24" y="232" width="180" height="46" style="fill:var(--panel);stroke:var(--line)"/><text x="38" y="260" font-size="12" font-weight="700">更新頻率</text>
+<rect x="204" y="232" width="330" height="46" style="fill:var(--panel);stroke:var(--line)"/><text x="218" y="260" font-size="12">很少更新，可搭配提示快取重用</text>
+<rect x="534" y="232" width="362" height="46" style="fill:var(--panel);stroke:var(--line)"/><text x="548" y="260" font-size="12">常更新，只重建異動的片段</text>
+<rect x="24" y="278" width="180" height="46" style="fill:var(--panel);stroke:var(--line)"/><text x="38" y="306" font-size="12" font-weight="700">成本與可追溯</text>
+<rect x="204" y="278" width="330" height="46" style="fill:var(--panel);stroke:var(--line)"/><text x="218" y="306" font-size="12">每次輸入量大；出處需另外要求</text>
+<rect x="534" y="278" width="362" height="46" style="fill:var(--panel);stroke:var(--line)"/><text x="548" y="306" font-size="12">輸入量小；片段天然可標示出處</text>
+<text x="24" y="356" font-size="12" class="t-muted">四個維度常常指向不同方向，所以實務上要依自己的資料與查詢量權衡。</text>
+</g>
+
+<!-- 6 混合路由 -->
+<g data-from="6" data-to="6">
+<rect x="24" y="170" width="100" height="44" rx="8" style="fill:var(--panel);stroke:var(--query);stroke-width:1.8"/>
+<text x="74" y="197" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--query)">問題</text>
+<path d="M124 192 L156 192" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="156" y="170" width="110" height="44" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.8"/>
+<text x="211" y="197" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">RAG 取片段</text>
+<path d="M266 192 L298 192" class="flow" style="fill:none;stroke:var(--muted);stroke-width:1.8"/>
+<rect x="298" y="162" width="190" height="60" rx="8" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.8"/>
+<text x="393" y="188" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">LLM 看片段判斷</text>
+<text x="393" y="208" text-anchor="middle" font-size="12">答得出來嗎？</text>
+<path d="M488 180 L540 140 L580 140" class="flow" style="fill:none;stroke:var(--good);stroke-width:1.8"/>
+<text x="506" y="146" font-size="11.5" font-weight="700" style="fill:var(--good)">可以</text>
+<rect x="580" y="118" width="316" height="44" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<text x="738" y="145" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">直接作答（便宜，多數問題在此結束）</text>
+<path d="M488 204 L540 262 L580 262" class="flow" style="fill:none;stroke:var(--bad);stroke-width:1.8"/>
+<text x="506" y="266" font-size="11.5" font-weight="700" style="fill:var(--bad)">不夠</text>
+<rect x="580" y="240" width="316" height="44" rx="8" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.8"/>
+<text x="738" y="267" text-anchor="middle" font-size="12" font-weight="700">改送全文給長上下文（貴，但少數）</text>
+<text x="24" y="330" font-size="12.5" font-weight="700" style="fill:var(--llm)">這是 Li 等人 Self-Route 的概念：讓模型自我判斷，把全文留給真正需要的問題</text>
+<text x="24" y="356" font-size="12" class="t-muted">省下的比例取決於資料與問題分布，要用自己的評估集量（見第 021 堂）。</text>
+</g>
+
+<!-- 7 結論 -->
+<g data-from="7">
+<rect x="24" y="116" width="284" height="190" rx="8" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.8"/>
+<text x="166" y="142" text-anchor="middle" font-size="12.5" font-weight="700">直接長上下文</text>
+<text x="40" y="172" font-size="12">資料放得進視窗</text>
+<text x="40" y="196" font-size="12">很少更新</text>
+<text x="40" y="220" font-size="12">問題偏全局、跨章節</text>
+<text x="40" y="244" font-size="12">查詢量不大</text>
+<text x="40" y="280" font-size="11.5" class="t-muted">例：單本 OW-8 手冊問答</text>
+<rect x="318" y="116" width="284" height="190" rx="8" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.8"/>
+<text x="460" y="142" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--vec)">RAG</text>
+<text x="334" y="172" font-size="12">資料遠超過視窗</text>
+<text x="334" y="196" font-size="12">常更新、版本多</text>
+<text x="334" y="220" font-size="12">問題多為單點查找</text>
+<text x="334" y="244" font-size="12">查詢量大、要附出處</text>
+<text x="334" y="280" font-size="11.5" class="t-muted">例：手冊＋工單＋巡檢報告</text>
+<rect x="612" y="116" width="284" height="190" rx="8" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/>
+<text x="754" y="142" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--good)">混合路由</text>
+<text x="628" y="172" font-size="12">兩種問題都很常見</text>
+<text x="628" y="196" font-size="12">想壓成本又怕漏檢索</text>
+<text x="628" y="220" font-size="12">先 RAG，不夠再全文</text>
+<text x="628" y="244" font-size="12">用評估集驗證路由</text>
+<text x="628" y="280" font-size="11.5" class="t-muted">例：值班中心的全方位問答</text>
+<text x="24" y="346" font-size="12.5" font-weight="700" style="fill:var(--good)">視窗變大，只是讓「直接全文」的適用範圍變大，並沒有讓 RAG 消失</text>
+</g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>資料量先決定可不可行</b>整份資料放不進視窗，長上下文就不是選項。放得進去時，還要再看查詢量與更新頻率；視窗大小依模型而異，請以所用模型的文件為準。</div>
+    <div class="card"><b>問題型態決定準不準</b>單點查找（一個告警代碼）RAG 又快又準；全局、跨章節或要「全部列出」的問題，Top-k 容易漏，長上下文較穩。</div>
+    <div class="card"><b>長上下文不是無限好用</b>研究顯示相關資訊落在長輸入中段時，表現常比在開頭或結尾差；也有研究指出，模型實際能有效利用的長度可能短於它宣稱的視窗。</div>
+    <div class="card"><b>混合路由兩邊都顧</b>先用 RAG 取片段，讓模型判斷夠不夠；不夠才送全文。是否划算要用自己的評估集量，不要直接套別人的結論。</div>
+  </div>
+
+  <h2>🧪 互動範例：改變資料量、視窗與方式，看輸入量與證據涵蓋</h2>
+  <div class="prose"><p>下面是一批虛構的《OW-8 運維手冊》與相關文件，每份標有<b>虛構的 token 數</b>（單位 K）。選一個問題，切換<b>資料範圍</b>、<b>視窗大小</b>與<b>做法</b>：「全文塞入」會依序把文件放進視窗，放不下的部分被截掉；「RAG」用 BM25 取回 Top-k 片段（每個片段假設約 0.5K tokens）。看<b>每次查詢的輸入量</b>與<b>標準依據有沒有進到模型眼前</b>。試試「旋角系統有哪些保養項目？」把 k 調小，再把資料範圍調大。這裡<b>沒有真的呼叫模型</b>，只比較「證據有沒有被放進去」。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row seg" id="scopeSeg">
+      <button type="button" class="on" data-v="0">只有 OW-8 手冊（約 55K）</button>
+      <button type="button" data-v="1">＋OW-6 手冊與通報（約 145K）</button>
+      <button type="button" data-v="2">＋工單與巡檢報告（約 385K）</button>
+    </div>
+    <div class="row seg" id="winSeg">
+      <button type="button" data-v="32">視窗 32K</button>
+      <button type="button" class="on" data-v="128">視窗 128K</button>
+      <button type="button" data-v="200">視窗 200K</button>
+      <button type="button" data-v="1000">視窗 1M</button>
+    </div>
+    <div class="row seg" id="modeSeg">
+      <button type="button" class="on" data-mode="full">全文塞入（長上下文）</button>
+      <button type="button" data-mode="rag">RAG（BM25 Top-k）</button>
+    </div>
+    <div class="row"><label for="kr">RAG 取回數量 k：<b id="kv">3</b></label><input type="range" id="kr" min="1" max="6" value="3" style="flex:1;max-width:260px"></div>
+    <div class="hits" id="meters"></div>
+    <div class="muted" id="diag" style="font-size:13px"></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono)">標準依據的狀態</div>
+    <div class="hits" id="gold"></div>
+    <div class="muted" id="cmp" style="font-size:13px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>一個最小的「混合路由」：先算全文的 token 數，放得進預算就直接長上下文；放不進去就先 RAG，並讓模型回報「依據不足」時才退回全文（Self-Route 的簡化版）。用 <code>anthropic</code> SDK（<code>pip install anthropic</code>）。章節內容為虛構；檢索用字元二連詞重疊代替，實務請換成第 003～004 堂的向量或混合檢索。</p></div>
+<pre class="code"><code><span class="k">import</span> anthropic
+
+client = anthropic.<span class="f">Anthropic</span>()
+MODEL = <span class="s">"claude-sonnet-5"</span>
+
+<span class="c"># 虛構的《OW-8 運維手冊》章節（實務上是整本手冊切成的章節）</span>
+SECTIONS = {
+    <span class="s">"PT-203"</span>: <span class="s">"PT-203 旋角馬達過溫：檢查冷卻風扇與濾網，量測繞組溫度，降溫後復歸。"</span>,
+    <span class="s">"保養-潤滑"</span>: <span class="s">"旋角系統定期保養：馬達與減速機潤滑，補充指定潤滑脂並檢查漏油。"</span>,
+    <span class="s">"保養-電源"</span>: <span class="s">"旋角系統定期保養：備援電源檢測，量測電容電壓並執行備援電源測試。"</span>,
+    <span class="s">"保養-軸承"</span>: <span class="s">"旋角系統定期保養：旋角軸承與齒圈檢查，目視磨損並抽查螺栓扭力。"</span>,
+}
+FULL_TEXT = <span class="s">"\n\n"</span>.<span class="f">join</span>(<span class="s">f"## {k}\n{v}"</span> <span class="k">for</span> k, v <span class="k">in</span> SECTIONS.<span class="f">items</span>())
+
+<span class="c"># 1) 全文有多少 token？用官方的計數端點，不要自己用字數估</span>
+<span class="k">def</span> <span class="f">count_tokens</span>(text):
+    r = client.messages.<span class="f">count_tokens</span>(
+        model=MODEL, messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: text}])
+    <span class="k">return</span> r.input_tokens
+
+<span class="c"># 2) 玩具檢索：字元二連詞重疊（請換成向量／混合檢索）</span>
+<span class="k">def</span> <span class="f">grams</span>(t):
+    <span class="k">return</span> {t[i:i+<span class="s">2</span>] <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(t) - <span class="s">1</span>)}
+
+<span class="k">def</span> <span class="f">retrieve</span>(question, k=<span class="s">2</span>):
+    q = <span class="f">grams</span>(question)
+    ranked = <span class="f">sorted</span>(SECTIONS.<span class="f">items</span>(), key=<span class="k">lambda</span> kv: -<span class="f">len</span>(q &amp; <span class="f">grams</span>(kv[<span class="s">1</span>])))
+    <span class="k">return</span> <span class="s">"\n\n"</span>.<span class="f">join</span>(<span class="s">f"## {k}\n{v}"</span> <span class="k">for</span> k, v <span class="k">in</span> ranked[:k])
+
+<span class="c"># 3) 回答：只依據提供的內容；不夠就明說，方便路由判斷</span>
+<span class="k">def</span> <span class="f">answer</span>(question, context):
+    resp = client.messages.<span class="f">create</span>(
+        model=MODEL, max_tokens=<span class="s">600</span>,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+            <span class="s">f"手冊內容：\n{context}\n\n問題：{question}\n"</span>
+            <span class="s">"只根據手冊內容回答；若內容不足以完整回答，只輸出 INSUFFICIENT。"</span>}])
+    <span class="k">return</span> resp.content[<span class="s">0</span>].text.<span class="f">strip</span>()
+
+<span class="c"># 4) 混合路由</span>
+<span class="k">def</span> <span class="f">route</span>(question, budget=<span class="s">150_000</span>):
+    fits = <span class="f">count_tokens</span>(FULL_TEXT) &lt;= budget
+    <span class="k">if</span> fits <span class="k">and</span> LOW_QUERY_VOLUME:               <span class="c"># 資料小、查詢量低：直接全文</span>
+        <span class="k">return</span> <span class="f">answer</span>(question, FULL_TEXT)
+    out = <span class="f">answer</span>(question, <span class="f">retrieve</span>(question))   <span class="c"># 先 RAG</span>
+    <span class="k">if</span> out != <span class="s">"INSUFFICIENT"</span>:
+        <span class="k">return</span> out
+    <span class="k">return</span> <span class="f">answer</span>(question, FULL_TEXT) <span class="k">if</span> fits <span class="k">else</span> <span class="s">"手冊中找不到足夠依據。"</span>
+
+LOW_QUERY_VOLUME = <span class="k">False</span>
+<span class="f">print</span>(<span class="f">route</span>(<span class="s">"旋角系統有哪些定期保養項目？"</span>))</code></pre>
+  <div class="prose"><p>全文模式若查詢很頻繁，可把不變的手冊放在提示的前段並啟用提示快取（prompt caching），讓重複的輸入更省；細節請參考官方文件。模型回報「依據不足」的判斷也會出錯，上線前要用評估集檢查路由的誤判率。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>長上下文全文塞入</th><th>基礎 RAG（第 001 堂）</th><th>進階 RAG（第 005～012 堂）</th><th>混合路由</th></tr>
+    <tr><th>做法</th><td>整份資料放進提示</td><td>切塊、嵌入、取回 Top-k</td><td>重排序、查詢改寫、父子文件、壓縮等優化檢索品質</td><td>先 RAG，依模型判斷決定是否改送全文</td></tr>
+    <tr><th>優點</th><td>流程單純；全局問題不漏</td><td>輸入量小；可附出處；資料量不受視窗限制</td><td>檢索更準，雜訊更少</td><td>兼顧成本與完整性</td></tr>
+    <tr><th>缺點</th><td>每次輸入量大；放不進視窗就無解；中段資訊較易被忽略</td><td>全局或分散的問題可能漏檢索</td><td>元件多，要調參數與維護</td><td>多一道判斷，判斷也會錯；系統更複雜</td></tr>
+    <tr><th>成本</th><td>隨資料長度與查詢量增加</td><td>低且穩定</td><td>略高（多一次重排序或改寫）</td><td>介於兩者，視分流比例而定</td></tr>
+    <tr><th>適合用在</th><td>單本手冊、低查詢量、通盤閱讀</td><td>大量資料的單點查找</td><td>檢索品質是瓶頸時</td><td>兩類問題並存的值班問答</td></tr>
+  </table>
+
+  <h2>⚠️ 長上下文 vs RAG 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>只看視窗大小就下結論</b>：「放得進去」不等於「用得好」。要在自己的資料上測，不要只相信視窗規格或別人的基準。</li>
+      <li><b>忽略位置效應</b>：把關鍵段落埋在長輸入中間，表現可能變差（Liu 等人）。若走全文，把最重要的指示與資料放在開頭或結尾，並實測。</li>
+      <li><b>忽略查詢量</b>：一次全文不貴，一天一千次就很可觀。成本要用「每次輸入量 × 查詢量」估，並評估提示快取是否適用。</li>
+      <li><b>RAG 漏檢索卻沒人發現</b>：答案看起來完整，其實少一項。全局型問題要用評估集量召回（第 021 堂），必要時改走全文或第 016 堂的摘要樹。</li>
+      <li><b>全文模式失去出處</b>：整本都在上下文，模型不一定會指出答案來自哪一節。要出處就要求引用章節，並抽樣核對。</li>
+      <li><b>把兩者當成二選一</b>：很多系統用 RAG 處理單點查找，全局問題另開全文路線。路由規則要用資料驗證，別憑感覺。</li>
+      <li><b>安全關鍵內容不能靠任一方式單獨把關</b>：高處作業、上鎖掛牌的步驟必須完整，不能因為漏檢索或被截斷而遺漏，需要專家審查。</li>
+      <li><b>視窗與價格會變</b>：本課的 token 數、視窗與成本比例皆為示意；實際選型請看當下的模型規格與計價。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的 token 數、視窗大小與檢索結果皆為示意，不可作為實際維修或成本決策依據。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Liu 等，〈<a href="https://arxiv.org/abs/2307.03172">Lost in the Middle: How Language Models Use Long Contexts</a>〉（arXiv:2307.03172）；Li 等，〈<a href="https://arxiv.org/abs/2407.16833">Retrieval Augmented Generation or Long-Context LLMs? A Comprehensive Study and Hybrid Approach</a>〉（arXiv:2407.16833，比較兩者並提出 Self-Route）；Hsieh 等，〈<a href="https://arxiv.org/abs/2404.06654">RULER: What's the Real Context Size of Your Long-Context Language Models?</a>〉（arXiv:2404.06654）；Anthropic，〈<a href="https://www.anthropic.com/news/contextual-retrieval">Introducing Contextual Retrieval</a>〉（文中提到知識庫較小時可直接放進提示並搭配提示快取）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="2">
+    <p><b>只有一本約 55K tokens 的手冊，視窗放得下，查詢量很低，使用者常問「旋角系統有哪些保養項目」這類要整節列出的問題。最合理的起點是？</b></p>
+    <button class="opt">A. 切塊建索引，用 Top-3 RAG</button>
+    <button class="opt">B. 一定要用混合路由</button>
+    <button class="opt">C. 先直接長上下文，並用評估集確認答案完整</button>
+    <div class="why">資料小、放得進視窗、查詢量低，且問題偏全局，直接全文最單純，也不會漏檢索。之後若資料變大或查詢量上升，再重新評估。</div>
+  </div>
+  <div class="quiz card" data-answer="1">
+    <p><b>混合路由（先 RAG，不夠再全文）主要想解決什麼？</b></p>
+    <button class="opt">A. 讓所有問題都走全文，確保答案最完整</button>
+    <button class="opt">B. 多數問題用便宜的 RAG 處理，只有 RAG 不夠的問題才付全文的成本</button>
+    <button class="opt">C. 取代評估集，不必再量測</button>
+    <div class="why">混合路由的目的是兼顧成本與完整性；模型判斷「依據不足」也可能出錯，所以仍要用評估集驗證路由。</div>
+  </div>
+
+  <nav class="pager" data-slug="long-context-vs-rag"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'資料太大，放不下', text:'手冊、工單、巡檢報告加起來約 <b>385K tokens</b>（虛構），遠超過視窗。硬塞只能截斷；就算放得下，<b>每次查詢都重送</b>也很貴、很慢。' },
+  { title:'資料夠小：直接全文', text:'只有一本 <b>55K</b> 的手冊，放得進視窗時，<b>整份丟進去</b>最單純：不用切塊、不用建索引，也不會因為檢索漏掉而答不出來。' },
+  { title:'長上下文的代價', text:'每次查詢<b>重送全文</b>，費用與延遲隨長度上升；研究也發現，相關資訊落在<b>中段</b>時模型常比在開頭、結尾時表現差（曲線為示意）。' },
+  { title:'RAG：只送片段', text:'先檢索，只把最相關的 <b>3 個片段</b>（約 1.5K tokens）給模型。<b>輸入量固定、可附出處、更新只動受影響的片段</b>，資料量可以遠超過視窗。' },
+  { title:'RAG 的代價', text:'問「<b>有哪些保養項目</b>」這類答案散在多段的問題，Top-k 可能只撈到 2 項。答案<b>看似完整卻少一項</b>，使用者很難察覺。' },
+  { title:'四個取捨維度', text:'看<b>資料量</b>、<b>問題型態</b>、<b>更新頻率</b>與<b>成本／可追溯性</b>。這四項常指向不同方向，沒有放諸四海皆準的答案，要看自己的資料與查詢量。' },
+  { title:'混合路由', text:'先用 <b>RAG</b> 取片段，讓模型判斷「答得出來嗎」；可以就直接作答，不夠才<b>改送全文</b>。這是 Li 等人 <b>Self-Route</b> 的概念，兼顧成本與完整性。' },
+  { title:'依情境選，不是二選一', text:'<b>小而穩</b>的資料用全文；<b>大而常變</b>、問題偏單點的用 RAG；<b>兩種問題並存</b>就用混合路由。視窗變大只是擴大全文的適用範圍，並未讓 RAG 消失（情境為虛構）。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 全部為虛構；tok 為虛構的 token 數（K）；scope：0 手冊、1 加舊款與通報、2 再加工單與巡檢 */
+  const DOCS = [
+    { id:'pt-overview', scope:0, tok:4, name:'旋角系統總覽', text:'旋角系統（pitch）總覽：三支葉片各有獨立的旋角馬達與備援電源，負責調整葉片角度，緊急時執行順槳。' },
+    { id:'pt203', scope:0, tok:3, name:'OW-8 PT-203', text:'PT-203 旋角馬達過溫 排除步驟：確認環境溫度與負載，檢查旋角馬達冷卻風扇與濾網，量測繞組溫度，降溫後復歸；重複發生時更換馬達。' },
+    { id:'pt205', scope:0, tok:3, name:'OW-8 PT-205', text:'PT-205 旋角馬達煞車異常：檢查煞車線圈電壓與煞車間隙，確認煞車釋放訊號。' },
+    { id:'pt230', scope:0, tok:3, name:'OW-8 PT-230', text:'PT-230 旋角備援電源測試失敗：檢查備援電容電壓與接線，重新執行備援電源測試。' },
+    { id:'maint-a', scope:0, tok:3, name:'保養①潤滑', text:'旋角系統 定期保養 項目：馬達與減速機潤滑，依週期補充指定潤滑脂並檢查有無漏油。' },
+    { id:'maint-b', scope:0, tok:3, name:'保養②備援電源', text:'旋角系統 定期保養 項目：備援電源檢測，量測電容電壓並執行備援電源測試。' },
+    { id:'maint-c', scope:0, tok:3, name:'保養③軸承齒圈', text:'旋角系統 定期保養 項目：旋角軸承與齒圈檢查，目視磨損並抽查螺栓扭力。' },
+    { id:'yaw', scope:0, tok:5, name:'偏航 YW-042', text:'YW-042 偏航誤差過大：檢查風向感測器校正與偏航煞車間隙，必要時重新校正風向計。' },
+    { id:'gearbox', scope:0, tok:6, name:'齒輪箱 GB-117', text:'GB-117 齒輪箱高速軸軸承溫度過高：檢查潤滑油位與油溫，必要時取油樣送檢。' },
+    { id:'generator', scope:0, tok:5, name:'發電機', text:'發電機章節：定子繞組絕緣量測、碳刷與集電環檢查、軸承潤滑。' },
+    { id:'converter', scope:0, tok:5, name:'變流器 CV-310', text:'CV-310 變流器功率模組過溫：檢查水冷迴路流量與散熱風扇，確認冷卻液液位。' },
+    { id:'hydraulic', scope:0, tok:5, name:'液壓與煞車', text:'液壓與煞車章節：液壓油位、蓄壓器預充壓力、煞車摩擦片厚度檢查。' },
+    { id:'tower', scope:0, tok:4, name:'塔架與基礎', text:'塔架與基礎章節：塔架螺栓扭力抽查、塔門與爬梯檢查、基礎沉陷觀測。' },
+    { id:'loto', scope:0, tok:3, name:'上鎖掛牌 LOTO', text:'上鎖掛牌（LOTO）安全規範：任何旋角系統保養前，須先停機、斷電並上鎖掛牌，確認無殘餘能量後方可作業。' },
+    { id:'ow6-pt203', scope:1, tok:6, name:'OW-6 PT-203', text:'OW-6（舊款）PT-203 旋角馬達過溫：檢查舊款旋角馬達冷卻風扇濾網，過溫門檻與 OW-8 不同。' },
+    { id:'ow6-rest', scope:1, tok:49, name:'OW-6 手冊其他章節', text:'OW-6 運維手冊其他章節：偏航、齒輪箱、發電機、變流器、液壓與煞車、塔架與基礎。' },
+    { id:'bulletins', scope:1, tok:35, name:'技術通報彙整', text:'技術通報彙整：TB-2026-07 建議清潔冷卻風扇濾網的週期；TB-2026-11 變流器韌體更新說明。' },
+    { id:'wo-h1', scope:2, tok:70, name:'上半年工單', text:'維修工單 上半年：WTG-12 WO-2026-0412 PT-203 旋角馬達過溫，清潔冷卻風扇濾網後復歸；WTG-05 偏航感測器校正。' },
+    { id:'wo-h2', scope:2, tok:80, name:'下半年工單', text:'維修工單 下半年：WTG-12 WO-2026-0731 PT-230 旋角備援電源測試失敗，更換備援電容；WTG-27 齒輪箱油液取樣。' },
+    { id:'insp', scope:2, tok:90, name:'巡檢報告', text:'巡檢報告：葉片無人機巡檢與塔架目視。WTG-12 葉片前緣輕微侵蝕，列入下次排程追蹤。' }
+  ];
+  const CHUNK = 0.5;
+  const IDX = {};
+  const idxOf = s => IDX[s] || (IDX[s] = rt.buildIndex(DOCS.filter(d => d.scope <= s)));
+
+  const QS = [
+    { q:'PT-203 旋角馬達過溫怎麼排除？', gold:['pt203'] },
+    { q:'旋角系統有哪些定期保養項目？', gold:['maint-a', 'maint-b', 'maint-c', 'loto'] },
+    { q:'OW-6 與 OW-8 的 PT-203 處理有什麼不同？', gold:['pt203', 'ow6-pt203'] },
+    { q:'WTG-12 今年有哪幾張旋角相關工單？', gold:['wo-h1', 'wo-h2'] }
+  ];
+  let qi = 0, scope = 0, win = 128, mode = 'full';
+  const fmt = v => (Math.round(v * 10) / 10) + 'K';
+  const pct = v => Math.round(v * 100) + '%';
+
+  function run(){
+    const k = +$('#kr').value; $('#kv').textContent = k;
+    const Q = QS[qi], docs = DOCS.filter(d => d.scope <= scope);
+    const total = docs.reduce((a, d) => a + d.tok, 0);
+    const goldIn = Q.gold.filter(g => docs.some(d => d.id === g));
+
+    /* 全文：依序放入，放不下的截掉 */
+    let cum = 0; const fullPos = {}; const cut = new Set();
+    let over = false;
+    docs.forEach(d => { if(!over && cum + d.tok <= win){ fullPos[d.id] = cum + d.tok / 2; cum += d.tok; } else { over = true; cut.add(d.id); } });
+    const fullIn = cum;
+    const hits = (mode === 'rag') ? rt.searchBM25(idxOf(scope), Q.q, k) : [];
+    const ragIds = new Set(hits.map(h => h.doc.id));
+    const ragTok = hits.length * CHUNK;
+
+    const stat = id => {
+      if(mode === 'full'){
+        if(cut.has(id)) return { ok:false, msg:'✗ 超出視窗，被截掉' };
+        const p = fullPos[id] / fullIn;
+        const mid = fullIn >= 20 && p > .3 && p < .7;
+        return { ok:true, msg:'✓ 在上下文中（位置約 ' + Math.round(p * 100) + '%）' + (mid ? '，落在中段，較易被忽略' : ''), mid };
+      }
+      return ragIds.has(id) ? { ok:true, msg:'✓ 被檢索取回' } : { ok:false, msg:'✗ 沒被檢索到' };
+    };
+    const st = goldIn.map(id => ({ id, ...stat(id) }));
+    const cov = goldIn.length ? st.filter(s => s.ok).length / goldIn.length : null;
+    const tokens = mode === 'full' ? fullIn : ragTok;
+    const tokFull = Math.min(total, win);
+
+    const bar = (name, val, txt, cls) => `<div class="hit ${cls}"><div class="meta"><span>${name}</span><span>${txt}</span></div><div class="score-bar"><b style="width:${Math.max(2, val * 100)}%"></b></div></div>`;
+    $('#meters').innerHTML =
+      bar('每次查詢輸入量', Math.min(1, tokens / Math.max(total, 1)), fmt(tokens) + ' tokens（全部資料 ' + fmt(total) + '）', tokens / Math.max(total, 1) > .6 ? 'low' : 'top')
+      + (cov === null ? bar('標準依據涵蓋', 0, '此範圍內沒有這份資料', 'low')
+        : bar('標準依據涵蓋', cov, pct(cov) + '（' + st.filter(s => s.ok).length + '／' + goldIn.length + '）', cov >= 1 ? 'top' : cov >= .5 ? '' : 'low'));
+
+    let d;
+    if(cov === null) d = '診斷：這個範圍內根本沒有答案所需的資料，兩種做法都答不出來。正確的行為是回答「查無資料」，並提示擴大資料範圍。';
+    else if(mode === 'full' && total > win) d = '診斷：全部資料 ' + fmt(total) + ' 超過視窗 ' + win + 'K，只放進 ' + fmt(fullIn) + '，其餘被截掉；資料放不進視窗時，全文塞入不是選項，要改用 RAG 或分批。';
+    else if(mode === 'full' && st.some(s => s.mid)) d = '診斷：證據都在上下文中，但有一段落在中段；研究顯示這個位置的資訊較容易被忽略，要實測答案是否完整。';
+    else if(mode === 'full') d = '診斷：證據都在視窗內。代價是每次查詢都送 ' + fmt(fullIn) + ' tokens；查詢量大時要算總成本。';
+    else if(cov < 1) d = '診斷：RAG 沒把證據取齊，答案可能漏項；可加大 k，或這類「全部列出」的問題改走全文／混合路由。';
+    else d = '診斷：RAG 取齊了證據，且輸入量只有 ' + fmt(ragTok) + ' tokens。';
+    $('#diag').innerHTML = d;
+
+    const nameOf = id => (DOCS.find(x => x.id === id) || {}).name;
+    $('#gold').innerHTML = (st.length ? st.map(s => `<div class="hit ${s.ok ? 'top' : 'low'}"><div class="meta"><span>${esc(nameOf(s.id))}</span><span>${esc(s.msg)}</span></div></div>`).join('')
+        : `<div class="hit low"><div class="meta"><span>（此範圍沒有標準依據）</span></div></div>`)
+      + Q.gold.filter(g => !goldIn.includes(g)).map(g => `<div class="hit low"><div class="meta"><span>${esc(nameOf(g))}</span><span>不在目前資料範圍</span></div></div>`).join('')
+      + (mode === 'rag' ? hits.map((h, n) => `<div class="hit"><div class="meta"><span>取回 #${n + 1}．${esc(h.doc.name)}</span><span>分數 ${h.score.toFixed(2)}</span></div><div>${rt.highlight(h.doc.text, Q.q)}</div></div>`).join('') : '');
+
+    const rh = rt.searchBM25(idxOf(scope), Q.q, k), rids = new Set(rh.map(h => h.doc.id));
+    const cf = goldIn.filter(g => !cut.has(g)).length, cr = goldIn.filter(g => rids.has(g)).length;
+    $('#cmp').innerHTML = `<b>對照（目前設定）</b>：全文塞入 ${fmt(fullIn)} tokens，涵蓋 ${cf}／${goldIn.length}；RAG（k=${k}）${fmt(rh.length * CHUNK)} tokens，涵蓋 ${cr}／${goldIn.length}。RAG 輸入量約為全文的 ${fullIn ? Math.max(1, Math.round(rh.length * CHUNK / fullIn * 100)) : 0}%。`;
+  }
+
+  const seg = (id, fn) => { const el = $(id); el.querySelectorAll('button').forEach(b => b.onclick = () => {
+    el.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); fn(b); run(); }); };
+  seg('#scopeSeg', b => scope = +b.dataset.v);
+  seg('#winSeg', b => win = +b.dataset.v);
+  seg('#modeSeg', b => mode = b.dataset.mode);
+  $('#presets').innerHTML = QS.map((x, i) => `<button type="button" data-i="${i}" class="${i === 0 ? 'on' : ''}">${esc(x.q)}</button>`).join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return; qi = +b.dataset.i;
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#kr').oninput = run;
+  run();
+})();
+</script>
+</body>
+</html>

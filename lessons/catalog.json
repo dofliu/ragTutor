@@ -363,6 +363,20 @@
         "評估"
       ],
       "date": "2026-10-13"
+    },
+    {
+      "no": 22,
+      "slug": "long-context-vs-rag",
+      "file": "lessons/022-long-context-vs-rag.html",
+      "title": "長上下文 vs RAG：何時該用哪個",
+      "en": "Long Context vs RAG",
+      "level": 2,
+      "summary": "視窗越來越大，還需要 RAG 嗎？資料量、問題型態、更新頻率與成本會指向不同答案：小而穩的資料可直接全文，大而常變、單點查找適合 RAG，兩類問題並存時可用先 RAG、不足再全文的混合路由。",
+      "tags": [
+        "進階",
+        "取捨"
+      ],
+      "date": "2026-10-14"
     }
   ]
 }
