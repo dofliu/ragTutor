@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>延遲切塊 Late Chunking：先嵌入整份文件，再切塊｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識延遲切塊（Late Chunking）：先讓長上下文嵌入模型讀完整份文件，再依切塊邊界對 token 向量做平均池化，讓每個片段的向量帶有全文脈絡。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 023 堂</span><span class="tag lv3">高階</span><span class="tag">約 20 分鐘</span></p>
+  <h1>延遲切塊 Late Chunking：先嵌入整份文件，再切塊</h1>
+  <p class="lead">手冊裡常寫「<b>該馬達</b>的冷卻風扇要先檢查」，前一句才說這是旋角馬達。傳統做法<b>先切塊、再逐塊嵌入</b>，「該馬達」那一塊單獨看不出指的是誰。<b>延遲切塊（Late Chunking）</b>把順序反過來：先讓<b>長上下文嵌入模型</b>讀完整份文件、為每個 token 產生向量，<b>再依切塊邊界做平均池化</b>，於是每個片段的向量都帶著全文脈絡。</p>
+
+  <h2>🎬 動畫：把「切」放到嵌入之後</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="延遲切塊動畫：先切塊再嵌入會讓代名詞片段失去脈絡；延遲切塊先用長上下文嵌入模型處理整份文件得到 token 向量，再依邊界分段並平均池化，得到帶有全文脈絡的片段向量；需要長上下文嵌入模型且文件長度受限；最後查詢能命中帶脈絡的片段">
+<rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 先切塊再嵌入：每塊各算各的，脈絡斷了</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="1" data-to="1">② 反過來：整份文件一次進嵌入模型</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="2" data-to="2">③ 每個 token 的向量都看過全文</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="3" data-to="3">④ 向量算完，才依切塊邊界分段</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="4" data-to="4">⑤ 每段 token 向量平均池化，得到片段向量</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="5" data-to="5">⑥ 同一句話，先切與後切的向量不同</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="6" data-to="6">⑦ 條件與限制</text>
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 查詢命中帶有脈絡的片段</text>
+<g data-to="0"><rect x="24" y="118" width="264" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="156.0" y="142.0" text-anchor="middle" font-size="11.5">PT-203 旋角馬達過溫的排除步驟</text><path d="M156.0 158 L156.0 184" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="184" width="264" height="34" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="156.0" y="205.0" text-anchor="middle" font-size="11.5" style="fill:var(--llm)">嵌入模型（只看這一塊）</text><path d="M156.0 218 L156.0 244" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="328" y="118" width="264" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="460.0" y="142.0" text-anchor="middle" font-size="11.5">該馬達的冷卻風扇與濾網要先檢查</text><path d="M460.0 158 L460.0 184" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="328" y="184" width="264" height="34" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="460.0" y="205.0" text-anchor="middle" font-size="11.5" style="fill:var(--llm)">嵌入模型（只看這一塊）</text><path d="M460.0 218 L460.0 244" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="632" y="118" width="264" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="764.0" y="142.0" text-anchor="middle" font-size="11.5">降溫後方可復歸，須更換該馬達</text><path d="M764.0 158 L764.0 184" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="632" y="184" width="264" height="34" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="764.0" y="205.0" text-anchor="middle" font-size="11.5" style="fill:var(--llm)">嵌入模型（只看這一塊）</text><path d="M764.0 218 L764.0 244" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="244" width="264" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="156.0" y="265.0" text-anchor="middle" font-size="11.5" style="fill:var(--good)">向量 1：含「旋角馬達」</text><rect x="328" y="244" width="264" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="460.0" y="265.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">向量 2：「該馬達」是誰？</text><rect x="632" y="244" width="264" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="764.0" y="265.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">向量 3：「該馬達」是誰？</text><text x="24" y="316" font-size="12.5" font-weight="700" style="fill:var(--bad)">第 2、3 塊用「該馬達」指代，單獨看不出是旋角馬達還是偏航馬達</text><text x="24" y="342" font-size="12" class="t-muted">問「旋角馬達更換前要做什麼」，第 3 塊的向量缺少「旋角」的訊號，排名可能落後。</text><text x="24" y="366" font-size="12" class="t-muted">這是第 002 堂固定切塊的老問題：切下去的那一刻，前後文就留在別塊裡了。</text></g>
+<g data-from="1" data-to="4"><rect x="18" y="108" width="856" height="46" rx="6" style="fill:none;stroke:var(--doc);stroke-dasharray:5 4"/><rect x="24" y="114" width="64" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="56.0" y="135.0" text-anchor="middle" font-size="11.5">PT-203</text><rect x="92" y="114" width="64" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="124.0" y="135.0" text-anchor="middle" font-size="11.5">旋角</text><rect x="160" y="114" width="64" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="192.0" y="135.0" text-anchor="middle" font-size="11.5">馬達</text><rect x="228" y="114" width="64" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="260.0" y="135.0" text-anchor="middle" font-size="11.5">過溫</text><rect x="312" y="114" width="64" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="344.0" y="135.0" text-anchor="middle" font-size="11.5">該</text><rect x="380" y="114" width="64" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="412.0" y="135.0" text-anchor="middle" font-size="11.5">馬達</text><rect x="448" y="114" width="64" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="480.0" y="135.0" text-anchor="middle" font-size="11.5">冷卻</text><rect x="516" y="114" width="64" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="548.0" y="135.0" text-anchor="middle" font-size="11.5">風扇</text><rect x="600" y="114" width="64" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="632.0" y="135.0" text-anchor="middle" font-size="11.5">降溫</text><rect x="668" y="114" width="64" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="700.0" y="135.0" text-anchor="middle" font-size="11.5">後</text><rect x="736" y="114" width="64" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="768.0" y="135.0" text-anchor="middle" font-size="11.5">復歸</text><rect x="804" y="114" width="64" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="836.0" y="135.0" text-anchor="middle" font-size="11.5">該馬達</text><text x="878" y="136" font-size="11" class="t-muted" data-dummy="1"></text><path d="M446 154 L446 168" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="168" width="844" height="36" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="446.0" y="190.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">長上下文嵌入模型（Transformer：注意力可橫跨整份文件）</text><path d="M446 204 L446 226" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/></g>
+<g data-from="1" data-to="4"><rect x="24" y="228" width="64" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="56.0" y="247.0" text-anchor="middle" font-size="11.5">PT-203</text><rect x="92" y="228" width="64" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="124.0" y="247.0" text-anchor="middle" font-size="11.5">旋角</text><rect x="160" y="228" width="64" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="192.0" y="247.0" text-anchor="middle" font-size="11.5">馬達</text><rect x="228" y="228" width="64" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="260.0" y="247.0" text-anchor="middle" font-size="11.5">過溫</text><rect x="312" y="228" width="64" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="344.0" y="247.0" text-anchor="middle" font-size="11.5">該</text><rect x="380" y="228" width="64" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="412.0" y="247.0" text-anchor="middle" font-size="11.5">馬達</text><rect x="448" y="228" width="64" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="480.0" y="247.0" text-anchor="middle" font-size="11.5">冷卻</text><rect x="516" y="228" width="64" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="548.0" y="247.0" text-anchor="middle" font-size="11.5">風扇</text><rect x="600" y="228" width="64" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="632.0" y="247.0" text-anchor="middle" font-size="11.5">降溫</text><rect x="668" y="228" width="64" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="700.0" y="247.0" text-anchor="middle" font-size="11.5">後</text><rect x="736" y="228" width="64" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="768.0" y="247.0" text-anchor="middle" font-size="11.5">復歸</text><rect x="804" y="228" width="64" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="836.0" y="247.0" text-anchor="middle" font-size="11.5">該馬達</text></g>
+<text x="24" y="284" font-size="12" class="t-muted" data-from="1" data-to="2">每個 token 一個向量（示意）；此時整份文件都還沒被切開</text>
+<g data-from="2" data-to="2"><path d="M344.0 226 Q 234.0 188 124.0 226" class="flow pulse" style="fill:none;stroke-width:1.8;stroke:var(--accent)"/><path d="M344.0 226 Q 268.0 196 192.0 226" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--accent)"/><text x="24" y="316" font-size="12.5" font-weight="700" style="fill:var(--accent-ink)">「該」的向量透過注意力，讀到了前一句的「旋角」「馬達」</text><text x="24" y="342" font-size="12" class="t-muted">所以「該馬達」這些 token 的向量，已經帶著「它指的是旋角馬達」的資訊。</text></g>
+<g data-from="3" data-to="4"><path d="M302 222 L302 300" class="pulse" style="fill:none;stroke:var(--accent);stroke-width:2.2;stroke-dasharray:6 4"/><path d="M590 222 L590 300" class="pulse" style="fill:none;stroke:var(--accent);stroke-width:2.2;stroke-dasharray:6 4"/><path d="M24 270 L292 270" style="fill:none;stroke:var(--accent);stroke-width:2"/><text x="158" y="290" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-ink)">片段 1</text><path d="M312 270 L580 270" style="fill:none;stroke:var(--accent);stroke-width:2"/><text x="446" y="290" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-ink)">片段 2</text><path d="M600 270 L868 270" style="fill:none;stroke:var(--accent);stroke-width:2"/><text x="734" y="290" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-ink)">片段 3</text></g>
+<g data-from="3" data-to="3"><text x="24" y="330" font-size="12.5" font-weight="700" style="fill:var(--accent-ink)">切塊邊界放在「向量算完之後」，所以才叫「延遲」切塊</text><text x="24" y="356" font-size="12" class="t-muted">邊界可以用任何切塊策略決定（固定長度、句子、段落），只是時間點挪到嵌入之後。</text></g>
+<g data-from="4" data-to="4"><path d="M158 296 L158 316" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="316" width="268" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="158.0" y="337.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">片段向量 1＝平均池化</text><path d="M446 296 L446 316" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="312" y="316" width="268" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="446.0" y="337.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">片段向量 2＝平均池化</text><path d="M734 296 L734 316" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="600" y="316" width="268" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="734.0" y="337.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">片段向量 3＝平均池化</text><text x="24" y="378" font-size="12.5" font-weight="700" style="fill:var(--good)">對該片段範圍內的 token 向量取平均（mean pooling）</text><text x="24" y="402" font-size="12" class="t-muted">片段文字沒有改；改變的是向量裡含有多少全文脈絡。不需要額外的 LLM 呼叫。</text></g>
+<g data-from="5" data-to="5"><text x="24" y="126" font-size="12" font-weight="700">問題：旋角馬達更換前要做什麼？　對象：片段 3「降溫後方可復歸，須更換該馬達」</text><text x="24" y="168" font-size="12">先切塊再嵌入</text><rect x="190" y="152" width="120" height="22" style="fill:var(--bad)" opacity=".75"/><text x="320" y="168" font-size="12" class="t-muted">與問題的相似度偏低（示意）</text><text x="24" y="212" font-size="12" font-weight="700" style="fill:var(--good)">延遲切塊</text><rect x="190" y="196" width="300" height="22" style="fill:var(--good)" opacity=".8"/><text x="500" y="212" font-size="12" class="t-muted">相似度較高：向量帶有「旋角馬達」的脈絡（示意）</text><text x="24" y="268" font-size="12.5" font-weight="700" style="fill:var(--accent-ink)">同一段文字、同一個切法，只因為「先切」或「後切」，向量就不同</text><text x="24" y="296" font-size="12" class="t-muted">長條只是示意兩種做法的相對高低，不是實測數字。</text><text x="24" y="320" font-size="12" class="t-muted">互動範例用簡化模型實際算一次，可以自己調整「脈絡強度」。</text></g>
+<g data-from="6" data-to="6"><rect x="24" y="118" width="860" height="68" rx="6" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="40" y="146" font-size="13" font-weight="700" style="fill:var(--warn)">需要長上下文嵌入模型</text><text x="40" y="170" font-size="11.5" class="t-muted">模型要能一次讀入整份文件並輸出 token 向量；文件長度受模型上限限制，細節以所用模型文件為準</text><rect x="24" y="202" width="860" height="68" rx="6" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="40" y="230" font-size="13" font-weight="700" style="fill:var(--warn)">超過上限就要分段</text><text x="40" y="254" font-size="11.5" class="t-muted">整份文件放不進去時，先分成較大的段落，每段內再延遲切塊；跨段的脈絡就看不到</text><rect x="24" y="286" width="860" height="68" rx="6" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="40" y="314" font-size="13" font-weight="700" style="fill:var(--warn)">不是保證</text><text x="40" y="338" font-size="11.5" class="t-muted">脈絡是否有用取決於模型；要在自己的資料上用評估集（第 021 堂）比較，不要只信論文數字</text></g>
+<g data-from="7"><rect x="24" y="120" width="300" height="36" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="174.0" y="142.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">技師問：旋角馬達更換前要做什麼？</text><path d="M324 138 L384 138" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="384" y="120" width="150" height="36" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="459.0" y="142.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">比對片段向量</text><path d="M534 138 L594 138" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="594" y="122" width="298" height="28" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/><text x="604" y="141" font-size="11.5">1. PT-203 旋角馬達過溫的排除步驟</text><rect x="594" y="154" width="298" height="28" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/><text x="604" y="173" font-size="11.5">2. 降溫後方可復歸，須更換該馬達</text><rect x="594" y="186" width="298" height="28" style="fill:var(--panel);stroke:var(--good);stroke-width:1.8"/><text x="604" y="205" font-size="11.5">3. 更換前必須先執行上鎖掛牌</text><text x="24" y="226" font-size="12.5" font-weight="700" style="fill:var(--good)">帶著脈絡的片段排進前段，「上鎖掛牌」這類安全步驟不會被別章的片段擠掉</text><text x="24" y="254" font-size="12" class="t-muted">代價：索引時要用長上下文模型跑整份文件，運算量比逐塊嵌入大；查詢端完全不變。</text><text x="24" y="278" font-size="12" class="t-muted">和第 009 堂「情境化檢索」目標相近，但這裡不需要 LLM 替每塊寫脈絡文字。</text><text x="24" y="320" font-size="12" class="t-muted">片段與排序為虛構示意。</text></g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>問題：切下去就斷了脈絡</b>手冊常用「該馬達」「上述步驟」「同前」指代前文。逐塊嵌入時，模型看不到前一塊，向量裡就缺少「這是旋角馬達」的訊號。</div>
+    <div class="card"><b>做法：先嵌入，後池化</b>長上下文嵌入模型一次讀完整份文件，輸出每個 token 的向量；再依切塊邊界，對各片段範圍內的 token 向量做平均池化（mean pooling），得到片段向量。</div>
+    <div class="card"><b>特色：不改文字、不加 LLM</b>片段文字與原本相同，不需要像情境化檢索（第 009 堂）那樣呼叫 LLM 產生脈絡；原論文指出此法不需額外訓練即可套用在多種長上下文嵌入模型，另提出微調做法。</div>
+    <div class="card"><b>條件：模型要撐得住長文件</b>必須用能輸出 token 向量的長上下文嵌入模型，文件長度受模型上限限制；是否真的變準，要在自己的資料上評估。</div>
+  </div>
+
+  <h2>🧪 互動範例：調整脈絡強度，比較先切塊與延遲切塊</h2>
+  <div class="prose"><p>下面是虛構《OW-8 運維手冊》中三個章節，每章第一句點名子系統，後面的句子用「該馬達」「該系統」「該軸承」指代。每個句子是一個片段。選一個問題，比較<b>先切塊再嵌入</b>（每塊只看自己的字）與<b>延遲切塊</b>的 Top-k。</p>
+  <p><b>這是簡化模擬，不是真的 Transformer：</b>延遲切塊的片段向量＝片段自己的詞向量＋「脈絡強度」×（全文其他位置詞向量，依距離衰減加權）。「脈絡範圍」越大，越遠的句子也算進脈絡。真實模型是用注意力學出脈絡，行為不會這麼單純。試試「旋角馬達更換前要做什麼」：先切塊的 Top-3 會混進別章的片段。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><label for="ar">脈絡強度：<b id="av">1.0</b></label><input type="range" id="ar" min="0" max="2" step="0.1" value="1" style="flex:1;max-width:260px"></div>
+    <div class="row"><label for="lr">脈絡範圍（句子距離衰減）：<b id="lv">30</b></label><input type="range" id="lr" min="5" max="80" step="5" value="30" style="flex:1;max-width:260px"></div>
+    <div class="row"><label for="kr">取回數量 k：<b id="kv">3</b></label><input type="range" id="kr" min="1" max="5" value="3" style="flex:1;max-width:260px"></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono)">先切塊再嵌入（每塊獨立）</div>
+    <div class="hits" id="naive"></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono)">延遲切塊（帶全文脈絡）</div>
+    <div class="hits" id="late"></div>
+    <div class="muted" id="cmp" style="font-size:13px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>用 Hugging Face <code>transformers</code> 做最小的延遲切塊（<code>pip install transformers torch</code>）。重點在三步：整份文件一次過模型、取最後一層的 token 向量、依字元邊界換算成 token 範圍後平均。範例模型名稱請換成你實際使用、支援長輸入的嵌入模型（需允許 <code>trust_remote_code</code> 時請先確認來源）；文件內容為虛構。回答階段用 <code>anthropic</code> SDK。</p></div>
+<pre class="code"><code><span class="k">import</span> numpy <span class="k">as</span> np, torch, anthropic
+<span class="k">from</span> transformers <span class="k">import</span> AutoModel, AutoTokenizer
+
+EMB_MODEL = <span class="s">"你的長上下文嵌入模型"</span>   <span class="c"># 例如 Jina 的長上下文嵌入模型（以官方文件為準）</span>
+tok = AutoTokenizer.<span class="f">from_pretrained</span>(EMB_MODEL)
+model = AutoModel.<span class="f">from_pretrained</span>(EMB_MODEL).<span class="f">eval</span>()
+
+<span class="c"># 虛構的《OW-8 運維手冊》片段；每句一塊，邊界以字元位置記錄</span>
+SENTS = [
+    <span class="s">"PT-203 旋角馬達過溫的排除步驟如下。"</span>,
+    <span class="s">"該馬達的冷卻風扇與濾網要先檢查。"</span>,
+    <span class="s">"降溫後方可復歸，重複發生時須更換該馬達。"</span>,
+    <span class="s">"更換前必須先執行上鎖掛牌。"</span>,
+]
+DOC = <span class="s">""</span>.<span class="f">join</span>(SENTS)
+spans, pos = [], <span class="s">0</span>
+<span class="k">for</span> s <span class="k">in</span> SENTS:
+    spans.<span class="f">append</span>((pos, pos + <span class="f">len</span>(s))); pos += <span class="f">len</span>(s)
+
+<span class="k">def</span> <span class="f">late_chunk_embed</span>(doc, spans):
+    enc = tok(doc, return_tensors=<span class="s">"pt"</span>, return_offsets_mapping=<span class="k">True</span>, truncation=<span class="k">True</span>)
+    offsets = enc.<span class="f">pop</span>(<span class="s">"offset_mapping"</span>)[<span class="s">0</span>].<span class="f">tolist</span>()   <span class="c"># 每個 token 對應的字元範圍</span>
+    <span class="k">with</span> torch.<span class="f">no_grad</span>():
+        token_vecs = model(**enc).last_hidden_state[<span class="s">0</span>]  <span class="c"># 1) 整份文件一次過模型</span>
+    out = []
+    <span class="k">for</span> a, b <span class="k">in</span> spans:                               <span class="c"># 2) 依邊界取該段的 token</span>
+        ids = [i <span class="k">for</span> i, (s, e) <span class="k">in</span> <span class="f">enumerate</span>(offsets) <span class="k">if</span> e &gt; s <span class="k">and</span> s &gt;= a <span class="k">and</span> e &lt;= b]
+        v = token_vecs[ids].<span class="f">mean</span>(dim=<span class="s">0</span>)                 <span class="c"># 3) 平均池化</span>
+        out.<span class="f">append</span>((v / v.<span class="f">norm</span>()).<span class="f">numpy</span>())
+    <span class="k">return</span> np.<span class="f">stack</span>(out)
+
+CHUNK_VECS = <span class="f">late_chunk_embed</span>(DOC, spans)
+
+<span class="k">def</span> <span class="f">embed_query</span>(q):
+    enc = tok(q, return_tensors=<span class="s">"pt"</span>)
+    <span class="k">with</span> torch.<span class="f">no_grad</span>():
+        v = model(**enc).last_hidden_state[<span class="s">0</span>].<span class="f">mean</span>(dim=<span class="s">0</span>)
+    <span class="k">return</span> (v / v.<span class="f">norm</span>()).<span class="f">numpy</span>()
+
+question = <span class="s">"旋角馬達更換前要做什麼？"</span>
+scores = CHUNK_VECS @ <span class="f">embed_query</span>(question)
+top = [SENTS[i] <span class="k">for</span> i <span class="k">in</span> np.<span class="f">argsort</span>(-scores)[:<span class="s">3</span>]]
+
+client = anthropic.<span class="f">Anthropic</span>()
+resp = client.messages.<span class="f">create</span>(
+    model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">400</span>,
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+        <span class="s">"只根據下列手冊片段回答。\n"</span> + <span class="s">"\n"</span>.<span class="f">join</span>(top) + <span class="s">f"\n\n問題：{question}"</span>}])
+<span class="f">print</span>(resp.content[<span class="s">0</span>].text)</code></pre>
+  <div class="prose"><p>注意：上面的 <code>truncation=True</code> 會把超過模型上限的部分截掉，實務上要先確認文件長度，過長就先分成較大的段落再各自處理。片段送給 LLM 的仍是<b>原文</b>，脈絡只存在於向量裡。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>固定切塊（第 002 堂）</th><th>父子文件（第 008 堂）</th><th>情境化檢索（第 009 堂）</th><th>延遲切塊</th></tr>
+    <tr><th>做法</th><td>切好再逐塊嵌入</td><td>小塊檢索，回傳較大的父塊</td><td>用 LLM 替每塊補一段脈絡文字，再嵌入與建索引</td><td>整份文件過嵌入模型，再依邊界池化</td></tr>
+    <tr><th>優點</th><td>簡單、通用</td><td>檢索精準又保有上下文</td><td>脈絡以文字形式存在，關鍵字檢索也受惠</td><td>不呼叫 LLM、不改文字；向量帶有全文脈絡</td></tr>
+    <tr><th>缺點</th><td>代名詞與省略的片段失去脈絡</td><td>父塊較大，輸入量增加</td><td>索引時 LLM 呼叫成本高</td><td>需長上下文嵌入模型；文件長度受限；脈絡只在向量裡，BM25 看不到</td></tr>
+    <tr><th>索引成本</th><td>低</td><td>低</td><td>高（大量 LLM 呼叫）</td><td>中（長輸入的嵌入運算）</td></tr>
+    <tr><th>適合用在</th><td>結構清楚、每塊自成一體</td><td>要把周邊內容一起給模型</td><td>片段缺脈絡且預算足夠</td><td>手冊常以「該」「上述」指代、想省 LLM 成本</td></tr>
+  </table>
+
+  <h2>⚠️ 延遲切塊常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>模型不支援就做不到</b>：必須能輸出 token 層級向量、且接受長輸入。只提供「文字進、向量出」的 API 無法在中間取 token 向量。</li>
+      <li><b>文件超過上限被截斷</b>：截掉的部分根本沒被嵌入。先量長度，過長就先分段；段與段之間的脈絡不會共享。</li>
+      <li><b>每塊本來就自成一體時效益有限</b>：像一條一條獨立的告警代碼表，不太需要前後文，用普通切塊即可。</li>
+      <li><b>只改善向量，不改善文字</b>：BM25 與送給 LLM 的片段仍是原文；要讓關鍵字檢索也看到脈絡，可搭配情境化檢索（第 009 堂）或混合檢索（第 004 堂）。</li>
+      <li><b>沒有評估就上線</b>：原論文報告在多個基準上有小幅提升，但實際幅度依模型與資料而異。用自己的評估集（第 021 堂）比較召回，再決定值不值得改索引流程。</li>
+      <li><b>無關內容的脈絡也會混進來</b>：整份文件塞很多不同主題時，脈絡可能稀釋或誤導。依章節分開處理常比整本一次處理更穩。</li>
+      <li><b>安全步驟不能只靠排名</b>：上鎖掛牌、高處作業等必要步驟應由規則強制附帶，不要期待檢索自己撈到。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例是簡化模擬，分數與排名不代表真實嵌入模型的表現。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Günther 等，〈<a href="https://arxiv.org/abs/2409.04701">Late Chunking: Contextual Chunk Embeddings Using Long-Context Embedding Models</a>〉（arXiv:2409.04701，Jina AI 等）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>延遲切塊裡的「延遲」指的是什麼？</b></p>
+    <button class="opt">A. 查詢時才建立索引</button>
+    <button class="opt">B. 先讓模型處理整份文件，等 token 向量算完之後才依邊界分段池化</button>
+    <button class="opt">C. 先用 LLM 替每塊補脈絡，之後才嵌入</button>
+    <div class="why">延遲的是「切」：邊界套用在 token 向量上，而不是套用在原始文字上。C 是情境化檢索的做法。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>下列哪個情況最不適合直接用延遲切塊？</b></p>
+    <button class="opt">A. 手冊常用「該馬達」指代前一句</button>
+    <button class="opt">B. 想避免為每個片段呼叫 LLM</button>
+    <button class="opt">C. 嵌入服務只提供「文字進、向量出」的介面，無法取得 token 向量</button>
+    <div class="why">延遲切塊需要取得 token 層級向量再自行池化；只回傳整段向量的介面做不到。A、B 正是它擅長的情境。</div>
+  </div>
+
+  <nav class="pager" data-slug="late-chunking"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'先切塊，脈絡就斷了', text:'手冊寫「<b>該馬達</b>的冷卻風扇要先檢查」。傳統做法先切塊再逐塊嵌入，這一塊<b>單獨看不出是旋角馬達</b>，向量缺少關鍵訊號（情境為虛構）。' },
+  { title:'反過來：整份先嵌入', text:'把<b>整份文件</b>一次交給<b>長上下文嵌入模型</b>，先不切。模型輸出的是<b>每個 token 一個向量</b>，而不是每塊一個向量。' },
+  { title:'每個 token 都讀過全文', text:'模型的注意力可以橫跨整份文件，所以「<b>該</b>」的向量已經讀到前一句的「旋角」「馬達」。指代關係被編進向量裡。' },
+  { title:'向量算完，才切', text:'此時才依<b>切塊邊界</b>把 token 向量分成片段。邊界可由任何切塊策略決定，差別只在<b>時間點挪到嵌入之後</b>，所以叫延遲切塊。' },
+  { title:'平均池化得到片段向量', text:'對每個片段範圍內的 token 向量取<b>平均（mean pooling）</b>，就是該片段的向量。<b>文字沒變</b>，也不用再呼叫 LLM。' },
+  { title:'同一句話，向量不同', text:'「降溫後方可復歸，須更換該馬達」這一塊，延遲切塊的向量<b>帶有旋角馬達的脈絡</b>，和問題的相似度通常更高（長條為示意）。' },
+  { title:'條件與限制', text:'需要<b>能輸出 token 向量的長上下文嵌入模型</b>；文件長度受模型上限限制，過長要先分段；效果依模型與資料而異，要用<b>評估集</b>驗證。' },
+  { title:'查詢命中帶脈絡的片段', text:'問「旋角馬達更換前要做什麼」，帶脈絡的片段排進前段，<b>上鎖掛牌</b>等步驟不易被別章片段擠掉。代價是索引時的運算量較大。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 虛構的《OW-8 運維手冊》三個章節，每句一塊 */
+  const SECS = [
+    ['PT-203 旋角馬達過溫', ['PT-203 旋角馬達過溫的排除步驟如下。','該馬達的冷卻風扇與濾網要先檢查。','若繞組溫度仍偏高，請量測並記錄數值。','降溫後方可復歸，重複發生時須更換該馬達。','更換前必須先執行上鎖掛牌。']],
+    ['YW-042 偏航誤差過大', ['YW-042 偏航誤差過大的排除步驟如下。','該系統的風向感測器要先檢查。','若誤差仍偏大，請量測並記錄數值。','校正後方可復歸，重複發生時須更換該感測器。','更換前必須先執行上鎖掛牌。']],
+    ['GB-117 齒輪箱軸承溫度過高', ['GB-117 齒輪箱高速軸軸承溫度過高的排除步驟如下。','該軸承的潤滑油位與油溫要先檢查。','若油溫仍偏高，請量測並記錄數值。','降溫後方可復歸，重複發生時須取油樣送檢。','取樣前必須先執行上鎖掛牌。']]
+  ];
+  const chunks = [], all = [];
+  SECS.forEach((s, si) => s[1].forEach((t, ci) => {
+    const tk = rt.tokenize(t);
+    chunks.push({ si, ci, text:t, tk, start:all.length, end:all.length + tk.length });
+    all.push(...tk);
+  }));
+  const idx = rt.buildIndex(chunks.map(c => ({ text:c.text })));
+  const norm = m => Math.sqrt([...m.values()].reduce((a, b) => a + b * b, 0)) || 1;
+
+  const QS = [
+    { q:'旋角馬達更換前要做什麼', sec:0, gold:4 },
+    { q:'旋角馬達過溫後什麼時候可以復歸', sec:0, gold:3 },
+    { q:'偏航誤差過大更換前要做什麼', sec:1, gold:9 },
+    { q:'旋角馬達冷卻風扇濾網', sec:0, gold:1 }
+  ];
+  let qi = 0;
+
+  function lateVec(i, alpha, lam){
+    const c = chunks[i], own = idx.vecs[i], v = new Map(own), ctx = new Map();
+    all.forEach((t, j) => {
+      if(j >= c.start && j < c.end) return;
+      const d = j < c.start ? c.start - j : j - c.end + 1;
+      ctx.set(t, (ctx.get(t) || 0) + Math.exp(-d / lam) * idx.idf(t));
+    });
+    const k = alpha * norm(own) / norm(ctx);
+    ctx.forEach((w, t) => v.set(t, (v.get(t) || 0) + k * w));
+    return v;
+  }
+
+  function rank(scoreFn){
+    return chunks.map((c, i) => ({ i, c, s:scoreFn(i) })).sort((a, b) => b.s - a.s);
+  }
+  function listHtml(r, k, Q){
+    const max = Math.max(...r.map(x => x.s), 1e-9);
+    return r.slice(0, k).map((x, n) => {
+      const same = x.c.si === Q.sec, gold = x.i === Q.gold;
+      const tag = gold ? '✓ 目標片段' : same ? '同章節' : '✗ 別章';
+      return `<div class="hit ${same ? 'top' : 'low'}"><div class="meta"><span>#${n + 1}　${esc(SECS[x.c.si][0])} · ${esc(tag)}</span><span>${x.s.toFixed(3)}</span></div><div class="score-bar"><b style="width:${Math.max(2, x.s / max * 100)}%"></b></div><div style="font-size:13px;margin-top:4px">${esc(x.c.text)}</div></div>`;
+    }).join('');
+  }
+
+  function run(){
+    const alpha = +$('#ar').value, lam = +$('#lr').value, k = +$('#kr').value;
+    $('#av').textContent = alpha.toFixed(1); $('#lv').textContent = lam; $('#kv').textContent = k;
+    const Q = QS[qi], qv = idx.vec(rt.tokenize(Q.q));
+    const lv = chunks.map((_, i) => lateVec(i, alpha, lam));
+    const rn = rank(i => rt.cosine(qv, idx.vecs[i]));
+    const rl = rank(i => rt.cosine(qv, lv[i]));
+    $('#naive').innerHTML = listHtml(rn, k, Q);
+    $('#late').innerHTML = listHtml(rl, k, Q);
+    const wrong = r => r.slice(0, k).filter(x => x.c.si !== Q.sec).length;
+    const pos = r => r.findIndex(x => x.i === Q.gold) + 1;
+    $('#cmp').textContent = `目標片段排名：先切塊 第 ${pos(rn)} 名 → 延遲切塊 第 ${pos(rl)} 名；Top-${k} 內別章片段：${wrong(rn)} → ${wrong(rl)}。` +
+      (alpha === 0 ? '（脈絡強度為 0 時，兩者相同。）' : alpha >= 1.8 ? '（脈絡過強時，片段自身內容被稀釋，同章節的片段會彼此靠近、不易分辨。）' : '');
+  }
+
+  $('#presets').innerHTML = QS.map((x, i) => `<button type="button" data-i="${i}" class="${i === 0 ? 'on' : ''}">${esc(x.q)}</button>`).join('');
+  $('#presets').onclick = e => {
+    const b = e.target.closest('button'); if(!b) return; qi = +b.dataset.i;
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run();
+  };
+  ['#ar', '#lr', '#kr'].forEach(s => $(s).addEventListener('input', run));
+  run();
+})();
+</script>
+</body>
+</html>

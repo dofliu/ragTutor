@@ -377,6 +377,20 @@
         "取捨"
       ],
       "date": "2026-10-14"
+    },
+    {
+      "no": 23,
+      "slug": "late-chunking",
+      "file": "lessons/023-late-chunking.html",
+      "title": "延遲切塊 Late Chunking：先嵌入整份文件，再切塊",
+      "en": "Late Chunking",
+      "level": 3,
+      "summary": "手冊常用「該馬達」指代前文，先切塊再嵌入會讓片段失去脈絡。延遲切塊先讓長上下文嵌入模型讀完整份文件，再依邊界對 token 向量做平均池化，片段向量就帶有全文脈絡，且不需額外 LLM 呼叫。",
+      "tags": [
+        "高階",
+        "嵌入"
+      ],
+      "date": "2026-10-15"
     }
   ]
 }

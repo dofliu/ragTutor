@@ -33,6 +33,7 @@
 | 🎯 關卡 5 | [測驗關卡 5：圖譜、逐詞比對、代理人與多模態（第 017–020 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-5-graph-agent-multimodal.html) |
 | 021 | [RAG 評估：忠實度、答案相關性、檢索召回](https://dofliu.github.io/ragTutor/lessons/021-rag-evaluation.html) |
 | 022 | [長上下文 vs RAG：何時該用哪個](https://dofliu.github.io/ragTutor/lessons/022-long-context-vs-rag.html) |
+| 023 | [延遲切塊 Late Chunking：先嵌入整份文件，再切塊](https://dofliu.github.io/ragTutor/lessons/023-late-chunking.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 
