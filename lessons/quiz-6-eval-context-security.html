@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>測驗關卡 6：評估、長上下文、延遲切塊與安全｜RAG 動畫教室</title>
+<meta name="description" content="第 021–024 堂複習測驗：RAG 評估、長上下文 vs RAG、延遲切塊、RAG 安全，8 題，答錯會連回該堂複習。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">關卡 6</span><span class="tag">複習第 021–024 堂</span><span class="tag">約 8 分鐘</span></p>
+  <h1>評估、長上下文、延遲切塊與安全</h1>
+  <p class="lead">RAG 評估讓調整有憑據，長上下文 vs RAG 幫你選架構，延遲切塊讓片段向量帶有全文脈絡，RAG 安全提醒你知識庫也是攻擊面。共 8 題，每堂各 2 題。</p>
+  <div class="callout">涵蓋課程：<a href="021-rag-evaluation.html">RAG 評估</a>、<a href="022-long-context-vs-rag.html">長上下文 vs RAG</a>、<a href="023-late-chunking.html">延遲切塊</a>、<a href="024-rag-security.html">RAG 安全</a>。選項順序每次都會重新排列；最佳成績只存在你的瀏覽器裡。</div>
+
+  <h2>🧩 開考前，先快速回顧</h2>
+  <div class="keypoints"><div class="card"><b>RAG 評估</b>先有評估集，檢索與生成分開量：召回與精確看檢索，忠實度與答案相關性看生成；指標是診斷，不是目的。 <a href="021-rag-evaluation.html">回到這一堂 →</a></div><div class="card"><b>長上下文 vs RAG</b>資料量、問題型態、更新頻率與成本會指向不同答案；小而穩的資料可全文，大而常變的單點查找適合 RAG，也可用混合路由。 <a href="022-long-context-vs-rag.html">回到這一堂 →</a></div><div class="card"><b>延遲切塊</b>先讓長上下文嵌入模型讀完整份文件，再依邊界對 token 向量平均池化；不改文字、不加 LLM，但需要能輸出 token 向量的模型。 <a href="023-late-chunking.html">回到這一堂 →</a></div><div class="card"><b>RAG 安全</b>知識庫投毒與間接提示注入；用入庫分級、檢索過濾、輸出檢查多層防禦，沒有單一防線擋得住所有攻擊。 <a href="024-rag-security.html">回到這一堂 →</a></div></div>
+
+  <h2>📝 測驗（8 題）</h2>
+  <div id="quiz"></div>
+
+  <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。</div>
+
+  <nav class="pager" data-slug="quiz-6-eval-context-security"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.quizSet({ el:'#quiz', id:'quiz-6-eval-context-security', pass:6,
+  names:{"021-rag-evaluation": "第 021 堂 RAG 評估", "022-long-context-vs-rag": "第 022 堂 長上下文 vs RAG", "023-late-chunking": "第 023 堂 延遲切塊", "024-rag-security": "第 024 堂 RAG 安全"},
+  questions:[
+ {
+  "from": "021-rag-evaluation",
+  "q": "評估集裡的每一題，至少應該包含哪些東西？",
+  "opts": [
+   "問題、應該被找到的標準依據段落、參考答案要點",
+   "只有問題，答案讓模型自己判斷",
+   "問題與模型實際產生的答案"
+  ],
+  "a": 0,
+  "why": "標準依據讓召回與精確可以不靠 LLM 計算；參考答案要點用來檢查答案相關性。只有問題或只有模型答案，無法固定地比較每次調整。"
+ },
+ {
+  "from": "021-rag-evaluation",
+  "q": "答案忠實引用了一份「已過期的手冊」，忠實度會怎麼樣？",
+  "opts": [
+   "一定偏低，因為內容是錯的",
+   "仍可能是滿分，因為忠實度只看答案有沒有取回段落作依據",
+   "會自動等於答案相關性"
+  ],
+  "a": 1,
+  "why": "忠實不等於正確。資料版本與來源品質要另外把關（例如中繼資料過濾與資料管理）。"
+ },
+ {
+  "from": "022-long-context-vs-rag",
+  "q": "視窗放得下整本手冊，是否代表直接全文就一定用得好？",
+  "opts": [
+   "是，放得下就等於用得好",
+   "否，關鍵資訊的位置等因素可能影響表現，要用自己的資料實測",
+   "是，只要把手冊放在最後面就好"
+  ],
+  "a": 1,
+  "why": "「放得進去」不等於「用得好」；研究指出相關資訊落在長輸入中段時表現常較差。要用評估集實測，而不是只看視窗規格。"
+ },
+ {
+  "from": "022-long-context-vs-rag",
+  "q": "估算全文做法的成本時，最需要乘上哪個數字？",
+  "opts": [
+   "每次輸入的 token 量 × 查詢量",
+   "手冊的頁數 × 技師人數",
+   "切塊的數量 × 重疊比例"
+  ],
+  "a": 0,
+  "why": "一次全文不貴，但每天大量查詢就很可觀；是否適用提示快取也會影響成本。"
+ },
+ {
+  "from": "023-late-chunking",
+  "q": "延遲切塊和情境化檢索（第 009 堂）最大的差別是什麼？",
+  "opts": [
+   "延遲切塊用 LLM 替每塊寫脈絡文字",
+   "延遲切塊不改片段文字、不呼叫 LLM，脈絡只存在向量裡",
+   "兩者做法完全相同"
+  ],
+  "a": 1,
+  "why": "情境化檢索是用 LLM 補一段脈絡文字，關鍵字檢索也受惠；延遲切塊靠長上下文嵌入模型的 token 向量，BM25 看不到脈絡。"
+ },
+ {
+  "from": "023-late-chunking",
+  "q": "文件長度超過嵌入模型的輸入上限時，延遲切塊應該怎麼辦？",
+  "opts": [
+   "直接截斷，沒影響",
+   "先分成較大的段落，每段內再延遲切塊；跨段的脈絡就看不到",
+   "改成每個字元各嵌入一次"
+  ],
+  "a": 1,
+  "why": "截掉的部分根本沒被嵌入。先分較大的段落是常見做法，代價是段與段之間不共享脈絡。"
+ },
+ {
+  "from": "024-rag-security",
+  "q": "為什麼只靠「忽略先前」這類關鍵字黑名單，不足以防住提示注入？",
+  "opts": [
+   "因為關鍵字比對速度太慢",
+   "因為攻擊者可以改寫措辭、換語言或拆字繞過",
+   "因為黑名單會讓檢索變得更準，反而被攻擊"
+  ],
+  "a": 1,
+  "why": "樣式比對只擋得住直白寫法，可當額外訊號，不能當唯一防線；要疊加來源分級、輸出檢查與工具最小權限。"
+ },
+ {
+  "from": "024-rag-security",
+  "q": "代理人（Agent）可以呼叫工具時，被注入的文字為什麼更危險？",
+  "opts": [
+   "因為工具會讓檢索變慢",
+   "被帶偏的模型可能觸發有副作用的動作，後果比答錯一題大",
+   "因為工具一定不會記錄軌跡"
+  ],
+  "a": 1,
+  "why": "工具要最小權限，停機、復歸、下工單等高風險動作要由人確認，並記錄軌跡以便稽核。"
+ }
+]
+});
+</script>
+</body>
+</html>

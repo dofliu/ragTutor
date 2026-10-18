@@ -391,6 +391,34 @@
         "嵌入"
       ],
       "date": "2026-10-15"
+    },
+    {
+      "no": 24,
+      "slug": "rag-security",
+      "file": "lessons/024-rag-security.html",
+      "title": "RAG 安全：知識庫投毒與間接提示注入",
+      "en": "RAG Security",
+      "level": 3,
+      "summary": "RAG 會把檢索到的文字原封不動放進提示，偽造的技術通報可能夾帶惡意指令。本堂看知識庫投毒與間接提示注入怎麼成立，以及入庫分級、檢索過濾、輸出檢查三層防線各擋什麼、擋不住什麼。",
+      "tags": [
+        "高階",
+        "安全"
+      ],
+      "date": "2026-10-18"
+    },
+    {
+      "type": "quiz",
+      "quiz": 6,
+      "slug": "quiz-6-eval-context-security",
+      "file": "lessons/quiz-6-eval-context-security.html",
+      "title": "測驗關卡 6：評估、長上下文、延遲切塊與安全",
+      "en": "Checkpoint 6 · Lessons 021–024",
+      "level": 0,
+      "summary": "第 021–024 堂複習：RAG 評估、長上下文 vs RAG、延遲切塊、RAG 安全。8 題，答完立即看解析，答錯會指向該回頭複習的課程。",
+      "tags": [
+        "測驗關卡"
+      ],
+      "date": "2026-10-18"
     }
   ]
 }

@@ -34,6 +34,8 @@
 | 021 | [RAG 評估：忠實度、答案相關性、檢索召回](https://dofliu.github.io/ragTutor/lessons/021-rag-evaluation.html) |
 | 022 | [長上下文 vs RAG：何時該用哪個](https://dofliu.github.io/ragTutor/lessons/022-long-context-vs-rag.html) |
 | 023 | [延遲切塊 Late Chunking：先嵌入整份文件，再切塊](https://dofliu.github.io/ragTutor/lessons/023-late-chunking.html) |
+| 024 | [RAG 安全：知識庫投毒與間接提示注入](https://dofliu.github.io/ragTutor/lessons/024-rag-security.html) |
+| 🎯 關卡 6 | [測驗關卡 6：評估、長上下文、延遲切塊與安全（第 021–024 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-6-eval-context-security.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 
