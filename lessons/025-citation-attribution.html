@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAG 引用與歸因：讓每一句答案都能回頭查證｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識 RAG 的引用與歸因：檢索片段先編號、模型逐句標註來源，再驗證引用編號是否存在、被引用片段是否真的支持該句，並以引用召回與精確度量化。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 025 堂</span><span class="tag lv2">進階</span><span class="tag">約 20 分鐘</span></p>
+  <h1>RAG 引用與歸因：讓每一句答案都能回頭查證</h1>
+
+  <p class="lead">RAG 的賣點是「答案有依據」，但如果技師看不出<b>哪一句出自手冊的哪一節</b>，這份依據就形同虛設。<b>引用與歸因（Citation / Attribution）</b>要求模型在每一句後面標註來源，再由程式驗證：<b>編號存在嗎？被引用的片段真的支持這句話嗎？</b>本堂看這兩關怎麼做、怎麼用<b>引用召回與精確度</b>量化，以及沒有依據的句子該怎麼處理。</p>
+
+  <h2>🎬 動畫：從黑箱答案到可查證的答案</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="RAG 引用與歸因動畫：無引用的答案無法查證；片段先編號；模型逐句標註來源；先檢查引用編號是否存在；再檢查被引用片段是否支持該句；用引用召回與精確度量化；處理無依據的句子；最後得到每句可回頭查證的答案"><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 沒有引用：答案像一整塊黑箱</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="1" data-to="1">② 檢索片段帶著編號進提示</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="2" data-to="2">③ 模型逐句在句尾標註來源編號</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="3" data-to="3">④ 第一關：引用的編號真的存在嗎？</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="4" data-to="4">⑤ 第二關：被引用的片段真的支持這句話嗎？</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="5" data-to="5">⑥ 用兩個比例量化引用品質</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="6" data-to="6">⑦ 沒有依據的句子要處理，不能放過</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 每一句都能回頭查證</text><g data-to="0"><rect x="24" y="116" width="250" height="40" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="149.0" y="140.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--query)">技師問：PT-203 旋角馬達過溫怎麼處理？</text><path d="M274 136 L324 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="324" y="116" width="120" height="40" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="384.0" y="140.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM</text><path d="M444 136 L484 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="484" y="112" width="408" height="138" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="500" y="138" font-size="11.5">先停機降溫，檢查冷卻風扇與濾網。</text><text x="500" y="166" font-size="11.5">確認溫度正常後才可復歸。</text><text x="500" y="194" font-size="11.5">清潔風扇積塵後即可復歸。</text><text x="500" y="222" font-size="11.5">建議每月以紅外線測溫槍量測外殼。</text><text x="500" y="242" font-size="11" class="t-muted">（哪一句有依據？看不出來）</text><text x="24" y="290" font-size="12.5" font-weight="700" style="fill:var(--bad)">答案是一整段文字，技師無法分辨哪句出自手冊、哪句是模型自己補的</text><text x="24" y="316" font-size="12" class="t-muted">RAG 的賣點是「有依據」，但沒有標出依據，使用者只能整段相信或整段不信。</text><text x="24" y="340" font-size="12" class="t-muted">尤其是會影響作業安全的步驟，值班人員需要能立刻核對原文。</text><text x="24" y="382" font-size="11.5" class="t-muted">範例答案為虛構示意。</text></g><g data-from="1" data-to="1"><rect x="24" y="112" width="560" height="190" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.6"/><text x="40" y="134" font-size="12" font-weight="700" style="fill:var(--llm)">提示（送進模型的整段文字）</text><rect x="40" y="144" width="528" height="30" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="304.0" y="163.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">指令：每一句句尾用 [編號] 標註來源；沒有來源就不要寫</text><rect x="40" y="180" width="528" height="30" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="304.0" y="199.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">[1] 手冊 §4.2　PT-203 旋角馬達過溫：先停機並降溫，檢查冷卻風扇…</text><rect x="40" y="216" width="528" height="30" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="304.0" y="235.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">[2] 手冊 §4.5　更換旋角馬達前必須先執行上鎖掛牌…</text><rect x="40" y="252" width="528" height="30" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="304.0" y="271.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">[3] 工單 WO-2026-0412　清潔冷卻風扇積塵後復歸…</text><path d="M584 206 L640 206" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="640" y="184" width="110" height="44" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="695.0" y="210.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM</text><path d="M750 206 L780 206" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="780" y="176" width="112" height="60" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="836.0" y="210.0" text-anchor="middle" font-size="11" style="fill:var(--ink)"></text><text x="836" y="203" font-size="11.5" font-weight="700" text-anchor="middle" style="fill:var(--accent-ink)">答案句尾</text><text x="836" y="222" font-size="11.5" font-weight="700" text-anchor="middle" style="fill:var(--accent-ink)">帶 [編號]</text><text x="24" y="332" font-size="12.5" font-weight="700" style="fill:var(--doc)">關鍵：片段在進提示前就先編號，模型才有「可以引用的名字」</text><text x="24" y="358" font-size="12" class="t-muted">編號要由系統產生，不要讓模型自己發明；編號與文件、章節、段落的對照表要留存。</text></g><g data-from="2" data-to="2"><rect x="24" y="116" width="250" height="40" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="149.0" y="140.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--query)">技師問：PT-203 旋角馬達過溫怎麼處理？</text><path d="M274 136 L324 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="324" y="116" width="120" height="40" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="384.0" y="140.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM</text><path d="M444 136 L484 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="484" y="112" width="408" height="150" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="500" y="136" font-size="11.5">先停機降溫，檢查冷卻風扇與濾網。</text><text x="876" y="136" font-size="11.5" font-weight="700" text-anchor="end" style="fill:var(--accent-ink)">[1]</text><text x="500" y="162" font-size="11.5">確認溫度正常後才可復歸。</text><text x="876" y="162" font-size="11.5" font-weight="700" text-anchor="end" style="fill:var(--accent-ink)">[1]</text><text x="500" y="188" font-size="11.5">清潔風扇積塵後即可復歸。</text><text x="876" y="188" font-size="11.5" font-weight="700" text-anchor="end" style="fill:var(--accent-ink)">[3]</text><text x="500" y="214" font-size="11.5">建議每月以紅外線測溫槍量測外殼。</text><text x="876" y="214" font-size="11.5" font-weight="700" text-anchor="end" style="fill:var(--accent-ink)">[1]</text><text x="500" y="240" font-size="11.5">更換馬達前須上鎖掛牌。</text><text x="876" y="240" font-size="11.5" font-weight="700" text-anchor="end" style="fill:var(--accent-ink)">[7]</text><text x="24" y="296" font-size="12.5" font-weight="700" style="fill:var(--llm)">每句都有了編號，看起來很有依據，但編號只是模型寫上去的文字</text><text x="24" y="322" font-size="12" class="t-muted">它可能引用了不相干的片段，甚至編出不存在的編號（例如 [7]）。</text><text x="24" y="346" font-size="12" class="t-muted">所以「附上引用」只是第一步，下面要有人（程式）去驗證。</text><text x="24" y="382" font-size="11.5" class="t-muted">句子與編號為虛構示意。</text></g><g data-from="3" data-to="3"><rect x="24" y="116" width="860" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="454.0" y="137.0" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">取回清單（進提示的片段）：[1] 手冊 §4.2　　[2] 手冊 §4.5　　[3] 工單 WO-2026-0412</text><rect x="24" y="170" width="380" height="38" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.6"/><text x="214.0" y="193.0" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">先停機降溫，檢查冷卻風扇與濾網。</text><text x="424" y="194" font-size="12" font-weight="700" style="fill:var(--accent-ink)">引用 [1]</text><path d="M490 189 L560 189" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="560" y="170" width="324" height="38" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="722.0" y="193.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">✓ [1] 在取回清單中</text><rect x="24" y="218" width="380" height="38" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.6"/><text x="214.0" y="241.0" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">清潔風扇積塵後即可復歸。</text><text x="424" y="242" font-size="12" font-weight="700" style="fill:var(--accent-ink)">引用 [3]</text><path d="M490 237 L560 237" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="560" y="218" width="324" height="38" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="722.0" y="241.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">✓ [3] 在取回清單中</text><rect x="24" y="266" width="380" height="38" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.6"/><text x="214.0" y="289.0" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">更換馬達前須上鎖掛牌。</text><text x="424" y="290" font-size="12" font-weight="700" style="fill:var(--accent-ink)">引用 [7]</text><path d="M490 285 L560 285" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="560" y="266" width="324" height="38" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="722.0" y="289.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">✗ [7] 不在取回清單：幻覺引用</text><text x="24" y="334" font-size="12.5" font-weight="700" style="fill:var(--warn)">檢查很便宜：把句尾編號和取回清單做集合比對即可，不需要模型</text><text x="24" y="360" font-size="12" class="t-muted">不存在的編號直接判為無效引用；編號存在也不代表內容支持，所以還有下一關。</text></g><g data-from="4" data-to="4"><text x="24" y="126" font-size="11.5" font-weight="700" style="fill:var(--muted)">答案句子</text><text x="440" y="126" font-size="11.5" font-weight="700" style="fill:var(--muted)">它引用的片段</text><text x="760" y="126" font-size="11.5" font-weight="700" style="fill:var(--muted)">判定</text><rect x="24" y="138" width="360" height="40" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.6"/><text x="204.0" y="162.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">先停機降溫，檢查冷卻風扇與濾網。</text><path d="M384 158 L440 158" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="440" y="138" width="300" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="590.0" y="162.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">[1] §4.2 先停機並降溫，檢查冷卻風扇…</text><path d="M740 158 L760 158" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="760" y="138" width="132" height="40" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="826.0" y="162.0" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">支持</text><rect x="24" y="190" width="360" height="40" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.6"/><text x="204.0" y="214.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">清潔風扇積塵後即可復歸。</text><path d="M384 210 L440 210" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="440" y="190" width="300" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="590.0" y="214.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">[3] 工單：清潔後復歸（僅一筆案例）</text><path d="M740 210 L760 210" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="760" y="190" width="132" height="40" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="826.0" y="214.0" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--warn)">部分支持</text><rect x="24" y="242" width="360" height="40" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.6"/><text x="204.0" y="266.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">建議每月以紅外線測溫槍量測外殼。</text><path d="M384 262 L440 262" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="440" y="242" width="300" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="590.0" y="266.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">[1] §4.2 完全沒有這句的內容</text><path d="M740 262 L760 262" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="760" y="242" width="132" height="40" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="826.0" y="266.0" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--bad)">不支持</text><text x="24" y="310" font-size="12.5" font-weight="700" style="fill:var(--vec)">判定者：自然語言推論（NLI）模型、另一個 LLM 當評審，或簡單的詞彙重疊</text><text x="24" y="336" font-size="12" class="t-muted">ALCE 論文用 NLI 模型檢查「引用的段落是否蘊含該句」；自動判定本身也會出錯。</text><text x="24" y="360" font-size="12" class="t-muted">「部分支持」常見於：只涵蓋句子一半內容，或把個案說成通則。</text></g><g data-from="5" data-to="5"><rect x="24" y="114" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="40" y="138" font-size="13" font-weight="700" style="fill:var(--query)">引用召回（Citation Recall）</text><text x="40" y="162" font-size="11.5">有被引用片段完整支撐的句子數</text><text x="40" y="182" font-size="11.5">÷ 答案的總句子數</text><rect x="472" y="114" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="488" y="138" font-size="13" font-weight="700" style="fill:var(--query)">引用精確度（Citation Precision）</text><text x="488" y="162" font-size="11.5">真正有幫助的引用數</text><text x="488" y="182" font-size="11.5">÷ 答案的總引用數</text><text x="24" y="244" font-size="12" class="t-muted">示意：5 句話、5 個引用；其中 3 句被完整支撐</text><text x="24" y="276" font-size="13" font-weight="700" style="fill:var(--bad)">召回 3 ÷ 5 = 60%</text><rect x="200" y="262" width="300" height="14" rx="3" style="fill:var(--soft)"/><rect x="200" y="262" width="180" height="14" rx="3" style="fill:var(--warn)"/><text x="24" y="306" font-size="13" font-weight="700" style="fill:var(--bad)">精確度 3 ÷ 5 = 60%</text><rect x="200" y="292" width="300" height="14" rx="3" style="fill:var(--soft)"/><rect x="200" y="292" width="180" height="14" rx="3" style="fill:var(--warn)"/><text x="24" y="346" font-size="12.5" font-weight="700" style="fill:var(--query)">兩個數字回答不同問題：召回看「答案有沒有被證據撐住」，精確度看「附的引用有沒有亂掛」</text><text x="24" y="372" font-size="11.5" class="t-muted">指標名稱與思路出自 ALCE；本頁的數字為虛構示意。</text></g><g data-from="6" data-to="6"><rect x="24" y="118" width="250" height="64" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="149.0" y="154.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">不支持的句子：每月紅外線測溫</text><path d="M274 150 L350 142" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="350" y="112" width="542" height="60" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="366" y="138" font-size="13" font-weight="700" style="fill:var(--good)">移除</text><text x="366" y="159" font-size="11.5">把不支持的句子刪掉，只留有依據的</text><path d="M274 150 L350 216" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="350" y="186" width="542" height="60" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="366" y="212" font-size="13" font-weight="700" style="fill:var(--warn)">改寫</text><text x="366" y="233" font-size="11.5">改成「手冊未載明，請洽原廠或工程師」</text><path d="M274 150 L350 290" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="350" y="260" width="542" height="60" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="366" y="286" font-size="13" font-weight="700" style="fill:var(--accent-ink)">轉人工</text><text x="366" y="307" font-size="11.5">安全相關論述缺依據時，交給人確認</text><text x="24" y="340" font-size="12.5" font-weight="700" style="fill:var(--accent-ink)">模型常常「知道」某件事是真的，但它不在取回的資料裡；歸因檢查問的是「有沒有證據」，不是「是不是真的」</text><text x="24" y="366" font-size="12" class="t-muted">所以備援電容會在失電時讓葉片順槳，即使是事實，只要手冊片段沒寫，仍應標為「無依據」。</text></g><g data-from="7"><rect x="24" y="112" width="868" height="150" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="40" y="138" font-size="11.5">先停機降溫，檢查冷卻風扇與濾網。</text><text x="876" y="138" font-size="11.5" font-weight="700" text-anchor="end" style="fill:var(--accent-ink)">[1] 手冊 §4.2</text><text x="40" y="166" font-size="11.5">確認溫度正常後才可復歸。</text><text x="876" y="166" font-size="11.5" font-weight="700" text-anchor="end" style="fill:var(--accent-ink)">[1] 手冊 §4.2</text><text x="40" y="194" font-size="11.5">清潔風扇積塵後即可復歸（僅有單筆工單可參考）。</text><text x="876" y="194" font-size="11.5" font-weight="700" text-anchor="end" style="fill:var(--accent-ink)">[3] 工單 WO-2026-0412</text><text x="40" y="222" font-size="11.5">更換馬達前須上鎖掛牌。</text><text x="876" y="222" font-size="11.5" font-weight="700" text-anchor="end" style="fill:var(--accent-ink)">[2] 手冊 §4.5（已更正引用）</text><text x="40" y="248" font-size="11" class="t-muted">已移除 1 句無依據的論述（每月紅外線測溫）</text><text x="24" y="300" font-size="12.5" font-weight="700" style="fill:var(--good)">使用者看到的是「可以點回原文的答案」，而不是「看起來有道理的答案」</text><text x="24" y="326" font-size="12" class="t-muted">代價是多一次驗證（成本與延遲）；而且引用只證明「有出處」，出處本身仍可能過時或有誤（第 014、024 堂）。</text><text x="24" y="382" font-size="11.5" class="t-muted">答案與來源為虛構示意。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>引用 = 讓答案可以被查證</b>RAG 的價值是「有依據」。把依據標在每一句後面，技師就能回頭核對手冊原文，而不是整段相信或整段不信。</div>
+    <div class="card"><b>先編號，再標註</b>檢索片段進提示前由系統編號（附文件、章節對照表），要求模型在句尾用 [編號] 標註；編號不要讓模型自己發明。</div>
+    <div class="card"><b>兩關驗證</b>第一關：句尾編號是否在取回清單內（集合比對，很便宜）。第二關：被引用的片段是否真的支持該句（NLI、LLM 評審或詞彙重疊）。只過第一關仍可能是「張冠李戴」。</div>
+    <div class="card"><b>量化與處置</b>ALCE 論文提出以引用召回與引用精確度衡量引用品質。無依據的句子可移除、改成「手冊未載明」或轉人工；事實為真但檢索內容沒寫，也算無依據。</div>
+  </div>
+
+  <h2>🧪 互動範例：驗證引用，看哪些句子站得住腳</h2>
+  <div class="prose"><p>下面是模型對三個問題的答案（<b>虛構</b>，每句都附了 [編號]，其中混入了無依據的句子、錯誤的編號與不存在的編號）。切到「驗證」模式，程式會逐句檢查：編號是否存在、被引用片段與該句的<b>字詞覆蓋率</b>是否達門檻，並算出引用召回與精確度。</p>
+  <p><b>這是簡化模擬：</b>覆蓋率＝句子的詞元（中文二元組）有多少比例出現在被引用的片段；真實系統會用 NLI 或 LLM 評審判斷語意是否蘊含。調高門檻會更嚴格，但同義改寫的句子也更容易被誤判為不支持。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><b style="font-size:13px">模式：</b>
+      <div class="seg" id="mode"><button type="button" data-m="0">不驗證（只看模型附的標記）</button><button type="button" data-m="1" class="on">驗證引用</button></div></div>
+    <div class="row"><label for="th">支持門檻（覆蓋率）：<b id="tv">0.60</b></label><input type="range" id="th" min="0.3" max="0.9" step="0.05" value="0.6" style="flex:1;max-width:260px">
+      <label><input type="checkbox" id="rm"> 移除不支持的句子</label></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono)">答案（逐句）</div>
+    <div class="hits" id="hits"></div>
+    <div class="muted" id="cmp" style="font-size:13px"></div>
+    <details><summary class="muted" style="font-size:12.5px;cursor:pointer">檢索片段清單（虛構《OW-8 運維手冊》）</summary><div class="hits" id="src" style="margin-top:8px"></div></details>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>最小的「編號 → 標註 → 兩關驗證」。為了不用額外套件就能跑驗證，支持度用字元二元組覆蓋率代替 NLI；實際系統可換成 NLI 模型或 LLM 評審。文件為虛構，回答用 <code>anthropic</code> SDK（需設定 <code>ANTHROPIC_API_KEY</code>）。</p></div>
+<pre class="code"><code><span class="k">import</span> re, anthropic
+
+<span class="c"># 檢索到的片段：編號由系統產生，並保留與文件、章節的對照</span>
+CHUNKS = {
+    <span class="s">1</span>: (<span class="s">"手冊 §4.2"</span>, <span class="s">"PT-203 旋角馬達過溫：先停機並降溫，檢查冷卻風扇與濾網，確認繞組溫度後才可復歸。"</span>),
+    <span class="s">2</span>: (<span class="s">"手冊 §4.5"</span>, <span class="s">"更換旋角馬達前必須先執行上鎖掛牌，並確認葉片已順槳鎖定。"</span>),
+    <span class="s">3</span>: (<span class="s">"工單 WO-2026-0412"</span>, <span class="s">"旋角馬達故障，現場檢查冷卻風扇積塵，清潔後復歸，已確認上鎖掛牌紀錄。"</span>),
+}
+
+SYSTEM = (<span class="s">"你是風場運維助理。只能根據 &lt;片段&gt; 回答；每一句句尾用 [編號] 標註來源，"</span>
+          <span class="s">"一句可標多個編號。片段沒寫的內容不要回答，請說「手冊未載明」。"</span>)
+
+<span class="k">def</span> <span class="f">ask</span>(question):
+    ctx = <span class="s">"\n"</span>.<span class="f">join</span>(<span class="s">f'&lt;片段 編號="{i}"&gt;{t}&lt;/片段&gt;'</span> <span class="k">for</span> i, (_, t) <span class="k">in</span> CHUNKS.<span class="f">items</span>())
+    resp = anthropic.<span class="f">Anthropic</span>().messages.<span class="f">create</span>(
+        model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">500</span>, system=SYSTEM,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: ctx + <span class="s">f"\n\n問題：{question}"</span>}])
+    <span class="k">return</span> resp.content[<span class="s">0</span>].text
+
+<span class="k">def</span> <span class="f">bigrams</span>(s): <span class="k">return</span> {s[i:i+<span class="s">2</span>] <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(s) - <span class="s">1</span>)}
+
+<span class="k">def</span> <span class="f">support</span>(sentence, ids):   <span class="c"># 第二關：被引用片段覆蓋了句子多少內容（簡化版）</span>
+    s = bigrams(re.<span class="f">sub</span>(<span class="s">r"\[\d+\]|[，。、：；\s]"</span>, <span class="s">""</span>, sentence))
+    cited = <span class="f">set</span>().<span class="f">union</span>(*(bigrams(CHUNKS[i][<span class="s">1</span>]) <span class="k">for</span> i <span class="k">in</span> ids <span class="k">if</span> i <span class="k">in</span> CHUNKS))
+    <span class="k">return</span> <span class="f">len</span>(s &amp; cited) / <span class="f">max</span>(<span class="f">len</span>(s), <span class="s">1</span>)
+
+<span class="k">def</span> <span class="f">verify</span>(answer, thr=<span class="s">0.6</span>):
+    report, ok_cites, all_cites = [], <span class="s">0</span>, <span class="s">0</span>
+    <span class="k">for</span> sent <span class="k">in</span> re.<span class="f">split</span>(<span class="s">r"(?&lt;=\])|(?&lt;=。)"</span>, answer):
+        ids = [<span class="f">int</span>(x) <span class="k">for</span> x <span class="k">in</span> re.<span class="f">findall</span>(<span class="s">r"\[(\d+)\]"</span>, sent)]
+        <span class="k">if not</span> sent.<span class="f">strip</span>(): <span class="k">continue</span>
+        bad = [i <span class="k">for</span> i <span class="k">in</span> ids <span class="k">if</span> i <span class="k">not in</span> CHUNKS]           <span class="c"># 第一關：編號存在嗎</span>
+        score = <span class="f">support</span>(sent, ids)
+        verdict = <span class="s">"無效引用"</span> <span class="k">if</span> bad <span class="k">or not</span> ids <span class="k">else</span> <span class="s">"支持"</span> <span class="k">if</span> score &gt;= thr <span class="k">else</span> <span class="s">"不支持"</span>
+        all_cites += <span class="f">len</span>(ids); ok_cites += <span class="f">len</span>(ids) <span class="k">if</span> verdict == <span class="s">"支持"</span> <span class="k">else</span> <span class="s">0</span>
+        report.<span class="f">append</span>((verdict, <span class="f">round</span>(score, <span class="s">2</span>), sent.<span class="f">strip</span>()))
+    recall = <span class="f">sum</span>(r[<span class="s">0</span>] == <span class="s">"支持"</span> <span class="k">for</span> r <span class="k">in</span> report) / <span class="f">max</span>(<span class="f">len</span>(report), <span class="s">1</span>)
+    precision = ok_cites / <span class="f">max</span>(all_cites, <span class="s">1</span>)
+    <span class="k">return</span> report, recall, precision
+
+answer = <span class="f">ask</span>(<span class="s">"PT-203 旋角馬達過溫怎麼處理？"</span>)
+report, recall, precision = <span class="f">verify</span>(answer)
+<span class="k">for</span> row <span class="k">in</span> report: <span class="f">print</span>(row)
+<span class="f">print</span>(<span class="s">f"引用召回 {recall:.0%}，引用精確度 {precision:.0%}"</span>)</code></pre>
+  <div class="prose"><p>注意：這裡的 <code>support</code> 只是教學用的近似，會誤判同義改寫；正式使用請換成 NLI 模型或 LLM 評審，並抽樣人工檢查判定結果。部分 API（例如 Anthropic 的 Citations 功能）可以直接回傳引用位置，省去自己解析句尾編號，但「引用是否真的支持該句」仍建議自行抽查。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>基礎 RAG（第 001 堂）</th><th>上下文壓縮（第 012 堂）</th><th>Self-RAG（第 013 堂）</th><th>RAG 評估（第 021 堂）</th><th>引用與歸因</th></tr>
+    <tr><th>想解決的問題</th><td>讓答案有資料可依</td><td>提示太長、雜訊多</td><td>該不該檢索、是否可信</td><td>不知道系統好不好</td><td>使用者無法核對答案出處</td></tr>
+    <tr><th>作用位置</th><td>檢索＋生成</td><td>檢索後、生成前</td><td>生成中（反思標記）</td><td>離線量測</td><td>生成後（逐句驗證）</td></tr>
+    <tr><th>優點</th><td>簡單</td><td>省 token</td><td>可自我修正</td><td>能量出瓶頸</td><td>可查證、可稽核，能抓出無依據的句子</td></tr>
+    <tr><th>缺點</th><td>答案無從核對</td><td>可能刪掉關鍵句</td><td>需要特殊訓練模型</td><td>不直接改善答案</td><td>驗證有成本；判定器也會錯；出處本身可能有誤</td></tr>
+    <tr><th>成本</th><td>低</td><td>中</td><td>高</td><td>中</td><td>低到中（集合比對很便宜；NLI／LLM 評審較貴）</td></tr>
+    <tr><th>適合用在</th><td>原型</td><td>長片段</td><td>需要自我檢查的場景</td><td>調整前後比較</td><td>答案影響作業安全、需要事後稽核的場景</td></tr>
+  </table>
+
+  <h2>⚠️ 引用與歸因常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>把「有附引用」當成「有依據」</b>：模型可能引用不相干的片段，甚至編出不存在的編號。至少要做編號存在檢查，最好再檢查內容支持。</li>
+      <li><b>編號由模型自己決定</b>：編號與片段的對應必須由系統產生並保存，不要事後靠模型回憶「剛剛第幾段」。</li>
+      <li><b>引用粒度太粗</b>：整份手冊當一個出處，技師還是要自己翻幾十頁。引用到章節、段落甚至句子，才真的能核對。</li>
+      <li><b>判定器也會錯</b>：詞彙重疊會誤判同義改寫，NLI 模型對長片段、數字與否定句也可能出錯（ALCE 論文也指出其 NLI 判定與人工評估有落差）。要抽樣人工檢查。</li>
+      <li><b>「真的」不等於「有依據」</b>：模型說的可能是事實，但取回的資料沒寫。歸因檢查問的是證據，不是真偽；要補知識就回頭改善檢索（第 014 堂）或補資料。</li>
+      <li><b>出處本身可能是錯的</b>：引用只能證明答案來自某份文件；文件是過時版本、被污染（第 024 堂）或機型不符時，答案仍然是錯的。</li>
+      <li><b>不是所有場景都需要</b>：閒聊式、創意型問答，或答案本身一眼可驗證的場景，逐句驗證的成本不一定划算；但會影響作業安全的答案（上鎖掛牌、復歸條件）就該有。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的答案與檢索片段為教學用虛構示意，覆蓋率驗證是簡化模擬，不代表真實模型的引用行為。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Gao 等，〈<a href="https://arxiv.org/abs/2305.14627">Enabling Large Language Models to Generate Text with Citations</a>〉（ALCE，arXiv:2305.14627，EMNLP 2023）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>答案句尾的引用編號 [7] 不在本次取回的片段清單中。這代表什麼？</b></p>
+    <button class="opt">A. 模型引用了知識庫裡更舊的資料，可以放心</button>
+    <button class="opt">B. 這是無效（幻覺）引用，用集合比對就能抓出，該句應視為無依據</button>
+    <button class="opt">C. 只要句子內容看起來合理，編號錯了也無妨</button>
+    <div class="why">編號必須對應到系統這次放進提示的片段；不在清單內就是無效引用。這一關只需要集合比對，不需要模型。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>一句話引用的編號存在，但被引用的片段完全沒提到這件事，該怎麼判定？</b></p>
+    <button class="opt">A. 通過，因為編號存在</button>
+    <button class="opt">B. 通過，因為句子內容在現實中是對的</button>
+    <button class="opt">C. 不支持：歸因檢查看的是被引用的片段有沒有證據，而不是句子是否為真</button>
+    <div class="why">這就是第二關「支持度檢查」要抓的情況。事實為真但取回資料沒寫，仍是無依據；處理方式是移除、改成「手冊未載明」或補資料。</div>
+  </div>
+
+  <nav class="pager" data-slug="citation-attribution"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'沒有引用：答案像一整塊黑箱', text:'技師問 PT-203 過溫怎麼處理，模型給了一段流暢的答案，但<b>看不出哪句出自手冊</b>、哪句是模型自己補的。其中一句其實沒有依據（情境為虛構）。' },
+  { title:'檢索片段帶著編號進提示', text:'片段進提示前先由<b>系統編號</b>（[1] 手冊 §4.2、[2]…），並要求模型<b>每句句尾標註來源編號</b>。編號與文件、章節的對照表要保存下來。' },
+  { title:'模型逐句標註來源', text:'答案每句都帶了 [編號]，<b>看起來很有依據</b>。但標記只是模型寫出來的文字，可能<b>引用錯片段</b>，甚至編出不存在的編號。' },
+  { title:'第一關：編號存在嗎？', text:'把句尾編號和<b>取回清單</b>做集合比對。[7] 不在清單內，就是<b>幻覺引用</b>。這關不需要模型，成本最低，所有系統都該做。' },
+  { title:'第二關：片段真的支持嗎？', text:'逐句比對<b>被引用的片段</b>，判定支持、部分支持或不支持。可用 NLI 模型、LLM 評審或詞彙重疊；判定器本身也會出錯，要抽樣檢查。' },
+  { title:'用兩個比例量化', text:'<b>引用召回</b>看答案有多少句被完整支撐，<b>引用精確度</b>看附的引用有多少真的有幫助（ALCE 論文提出）。兩者都低，代表答案不能直接信。' },
+  { title:'無依據的句子要處理', text:'可以<b>移除</b>、改成「<b>手冊未載明</b>」或<b>轉人工確認</b>。事實為真但取回資料沒寫的句子也算無依據，應回頭補檢索或補資料。' },
+  { title:'每一句都能回頭查證', text:'最終答案每句都附<b>可點回原文的出處</b>，錯引的編號被更正，無依據的句子被移除。代價是多一次驗證，且<b>出處本身仍須可信</b>。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 虛構的《OW-8 運維手冊》片段 */
+  const CH = {
+    1:{ id:'手冊 §4.2', text:'PT-203 旋角馬達過溫的故障處理：先停機並降溫，檢查冷卻風扇與濾網，確認繞組溫度後才可復歸。' },
+    2:{ id:'手冊 §4.5', text:'更換旋角馬達前必須先執行上鎖掛牌，並確認葉片已順槳鎖定。' },
+    3:{ id:'工單 WO-2026-0412', text:'旋角馬達故障，現場檢查冷卻風扇積塵，清潔後復歸，已確認上鎖掛牌紀錄。' },
+    4:{ id:'手冊 §9.1', text:'高處作業須使用雙掛點安全帶，登塔前確認天候與風速。' },
+    5:{ id:'手冊 §4.1', text:'旋角系統由旋角馬達、減速機、備援電容與煞車組成，每支葉片各有一組。' }
+  };
+  /* 模型的答案：每句帶它自己標的編號（含錯引、幻覺引用與沒有依據的句子） */
+  const QS = [
+    { q:'PT-203 旋角馬達過溫怎麼處理', ans:[
+      { s:'先停機並降溫，再檢查冷卻風扇與濾網。', c:[1] },
+      { s:'確認繞組溫度正常後才可復歸。', c:[1] },
+      { s:'若冷卻風扇積塵，清潔後即可復歸。', c:[3] },
+      { s:'建議每月以紅外線測溫槍量測馬達外殼。', c:[1] },
+      { s:'更換馬達前須先執行上鎖掛牌。', c:[7] } ] },
+    { q:'更換旋角馬達要注意什麼', ans:[
+      { s:'更換前必須先執行上鎖掛牌。', c:[2] },
+      { s:'並確認葉片已順槳鎖定。', c:[2] },
+      { s:'登塔前確認天候與風速，使用雙掛點安全帶。', c:[2] },
+      { s:'更換後需重新校正旋角角度，誤差須小於 0.5 度。', c:[2] } ] },
+    { q:'旋角系統由哪些部分組成', ans:[
+      { s:'由旋角馬達、減速機、備援電容與煞車組成。', c:[5] },
+      { s:'每支葉片各有一組。', c:[5] },
+      { s:'備援電容用於電網失電時讓葉片順槳。', c:[5] } ] }
+  ];
+  const idx = rt.buildIndex(Object.keys(CH).map(k => ({ text: CH[k].text })));
+  const keys = Object.keys(CH);
+  let qi = 0, mode = 1;
+
+  const gramSet = t => new Set(rt.tokenize(t).filter(x => x.length >= 2));
+  function cover(sent, ids){
+    const s = gramSet(sent); if(!s.size) return 0;
+    const c = new Set(); ids.forEach(i => { if(CH[i]) gramSet(CH[i].text).forEach(g => c.add(g)); });
+    let n = 0; s.forEach(g => { if(c.has(g)) n++; });
+    return n / s.size;
+  }
+  /* 判定：無效引用 / 支持 / 部分 / 不支持 */
+  function judge(a, thr){
+    if(a.c.some(i => !CH[i])) return { v:'invalid', score:0 };
+    const sc = cover(a.s, a.c);
+    return { v: sc >= thr ? 'ok' : sc >= thr * 0.6 ? 'part' : 'no', score:sc };
+  }
+  const LABEL = { ok:['✓ 支持','var(--good)'], part:['△ 部分支持','var(--warn)'], no:['✗ 不支持','var(--bad)'], invalid:['✗ 無效引用（編號不存在）','var(--bad)'] };
+
+  function run(){
+    const thr = +$('#th').value; $('#tv').textContent = thr.toFixed(2);
+    const Q = QS[qi], rm = $('#rm').checked;
+    const res = Q.ans.map(a => ({ a, j: judge(a, thr) }));
+    let html = '';
+    res.forEach((r, n) => {
+      const cite = r.a.c.map(i => `[${i}]`).join('');
+      if(mode === 0){
+        html += `<div class="hit top"><div style="font-size:13px">${esc(r.a.s)} <b style="color:var(--accent-ink)">${cite}</b></div></div>`;
+        return;
+      }
+      if(rm && (r.j.v === 'no' || r.j.v === 'invalid')) return;
+      const [lab, col] = LABEL[r.j.v];
+      /* 若引用不理想，找出覆蓋率最高的片段當作建議 */
+      let hint = '';
+      if(r.j.v === 'no' || r.j.v === 'invalid' || r.j.v === 'part'){
+        let best = null, bs = 0;
+        keys.forEach(k => { const sc = cover(r.a.s, [+k]); if(sc > bs){ bs = sc; best = k; } });
+        if(best && bs >= thr && !r.a.c.includes(+best)) hint = `　建議改引：[${best}] ${esc(CH[best].id)}（覆蓋率 ${bs.toFixed(2)}）`;
+      }
+      html += `<div class="hit" style="border-left:3px solid ${col}"><div class="meta"><span style="color:${col};font-weight:700">${lab}</span><span>覆蓋率 ${r.j.v === 'invalid' ? '—' : r.j.score.toFixed(2)}</span></div>` +
+        `<div style="font-size:13px;margin-top:4px">${esc(r.a.s)} <b style="color:var(--accent-ink)">${cite}</b></div>` +
+        `<div class="muted" style="font-size:12px;margin-top:2px">${r.a.c.map(i => CH[i] ? `[${i}] ${esc(CH[i].id)}` : `[${i}] 不在取回清單`).join('、')}${hint}</div></div>`;
+    });
+    $('#hits').innerHTML = html || '<div class="muted">所有句子都被移除了：沒有任何依據可以回答，應轉人工。</div>';
+
+    const total = res.length, okN = res.filter(r => r.j.v === 'ok').length;
+    const cites = res.reduce((n, r) => n + r.a.c.length, 0);
+    const okC = res.filter(r => r.j.v === 'ok').reduce((n, r) => n + r.a.c.length, 0);
+    const bad = res.filter(r => r.j.v === 'no' || r.j.v === 'invalid').length;
+    $('#cmp').textContent = mode === 0
+      ? `不驗證：${total} 句都帶著 [編號]，看起來每句都有依據，但其中有多少句真的站得住腳，完全看不出來。`
+      : `引用召回 ${okN} / ${total} = ${Math.round(okN / total * 100)}%；引用精確度 ${okC} / ${cites} = ${Math.round(okC / cites * 100)}%；${bad} 句無依據或無效引用${rm ? '（已從答案中移除）' : ''}。`;
+  }
+
+  $('#src').innerHTML = keys.map(k => `<div class="hit"><div class="meta"><span>[${k}] ${esc(CH[k].id)}</span></div><div style="font-size:13px;margin-top:4px">${esc(CH[k].text)}</div></div>`).join('');
+  $('#presets').innerHTML = QS.map((x, i) => `<button type="button" data-i="${i}" class="${i === 0 ? 'on' : ''}">${esc(x.q)}</button>`).join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return; qi = +b.dataset.i;
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#mode').onclick = e => { const b = e.target.closest('button'); if(!b) return; mode = +b.dataset.m;
+    $('#mode').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#th').addEventListener('input', run); $('#rm').addEventListener('change', run);
+  run();
+})();
+</script>
+</body>
+</html>
