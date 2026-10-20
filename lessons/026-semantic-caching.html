@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>語意快取：相似的問題，直接重用上次的答案｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識 RAG 的語意快取：把問題嵌入後與過往問題比相似度，達門檻就直接回傳舊答案；並看門檻取捨、誤命中的風險，以及精確欄位守門、TTL 與版本失效。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 026 堂</span><span class="tag lv2">進階</span><span class="tag">約 20 分鐘</span></p>
+  <h1>語意快取：相似的問題，直接重用上次的答案</h1>
+
+  <p class="lead">值班室裡，同一個告警常被不同的人用不同的說法問上好幾次，每次都完整跑一遍「檢索＋生成」既慢又貴。<b>語意快取（Semantic Caching）</b>把問題嵌入成向量，和過往問題比相似度，<b>達到門檻就直接回傳上次的答案</b>。省下的是延遲與費用，代價是可能<b>誤命中</b>：措辭很像、答案卻不同。本堂看門檻怎麼取捨，以及怎麼用守門與失效機制降低風險。</p>
+
+  <h2>🎬 動畫：從每次重算到相似就重用</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="語意快取動畫：相同問題重複執行完整 RAG；問題嵌入後比對過往問題；達門檻直接回傳；未達門檻走完整流程並寫入；措辭相近但答案不同會誤命中；門檻取捨；以精確欄位守門、分區、TTL 與版本失效；最後重複問題變快"><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 沒有快取：同樣的問題每次都從頭跑一遍</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="1" data-to="1">② 把問題嵌入，和過往問題比相似度</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="2" data-to="2">③ 相似度達門檻：直接回傳上次的答案</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="3" data-to="3">④ 相似度不足：走完整 RAG，再寫入快取</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="4" data-to="4">⑤ 風險：措辭像，但答案不一樣</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="5" data-to="5">⑥ 門檻是取捨：太高漏接，太低誤命中</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="6" data-to="6">⑦ 加守門：精確欄位、分區、過期與失效</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 重複的問題變快，不同的問題照常完整回答</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-to="0"><rect x="24" y="112" width="330" height="38" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="189.0" y="135.0" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">值班 A：PT-203 旋角馬達過溫怎麼處理？</text><path d="M354 131 L420 131" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="420" y="112" width="300" height="38" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="570.0" y="135.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">嵌入 → 檢索 → LLM 生成</text><path d="M720 131 L760 131" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="760" y="112" width="132" height="38" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="826.0" y="135.0" text-anchor="middle" font-size="11.5" style="fill:var(--bad)">答案（都一樣）</text><rect x="24" y="160" width="330" height="38" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="189.0" y="183.0" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">值班 B：旋角馬達 PT-203 過溫要怎麼排除？</text><path d="M354 179 L420 179" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="420" y="160" width="300" height="38" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="570.0" y="183.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">嵌入 → 檢索 → LLM 生成</text><path d="M720 179 L760 179" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="760" y="160" width="132" height="38" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="826.0" y="183.0" text-anchor="middle" font-size="11.5" style="fill:var(--bad)">答案（都一樣）</text><rect x="24" y="208" width="330" height="38" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="189.0" y="231.0" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">技師 C：PT-203 旋角馬達溫度過高怎麼辦？</text><path d="M354 227 L420 227" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="420" y="208" width="300" height="38" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="570.0" y="231.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">嵌入 → 檢索 → LLM 生成</text><path d="M720 227 L760 227" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="760" y="208" width="132" height="38" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="826.0" y="231.0" text-anchor="middle" font-size="11.5" style="fill:var(--bad)">答案（都一樣）</text><text x="24" y="282" font-size="12.5" font-weight="700" style="fill:var(--bad)">三個人措辭不同、問的是同一件事，系統卻付了三次檢索與生成的費用與等待時間</text><text x="24" y="308" font-size="12" class="t-muted">值班室交班時，大家常在同一時段查同一個告警代碼；重複問題越多，浪費越明顯。</text><text x="24" y="382" font-size="11.5" class="t-muted">問題與答案為虛構示意。</text></g><g data-from="1" data-to="1"><rect x="24" y="116" width="250" height="40" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="149.0" y="140.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--query)">新問題：PT-203 過溫要怎麼排除？</text><path d="M274 136 L330 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="330" y="116" width="130" height="40" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="395.0" y="140.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">嵌入模型</text><path d="M460 136 L516 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="516" y="112" width="376" height="172" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="704.0" y="202.0" text-anchor="middle" font-size="11" style="fill:var(--ink)"></text><text x="532" y="134" font-size="11.5" font-weight="700" style="fill:var(--vec)">語意快取（過往問題的向量 + 當時的答案）</text><rect x="532" y="146" width="344" height="26" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="542" y="163" font-size="11">PT-203 旋角馬達過溫怎麼處理</text><text x="866" y="163" font-size="11.5" font-weight="700" text-anchor="end" style="fill:var(--good)">0.86</text><rect x="532" y="178" width="344" height="26" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="542" y="195" font-size="11">PT-205 旋角馬達煞車異常怎麼處理</text><text x="866" y="195" font-size="11.5" font-weight="700" text-anchor="end" style="fill:var(--muted)">0.41</text><rect x="532" y="210" width="344" height="26" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="542" y="227" font-size="11">OW-8 更換旋角馬達前的安全步驟</text><text x="866" y="227" font-size="11.5" font-weight="700" text-anchor="end" style="fill:var(--muted)">0.18</text><rect x="532" y="242" width="344" height="26" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.2"/><text x="542" y="259" font-size="11">YW-042 偏航誤差過大怎麼排除</text><text x="866" y="259" font-size="11.5" font-weight="700" text-anchor="end" style="fill:var(--muted)">0.12</text><text x="24" y="320" font-size="12.5" font-weight="700" style="fill:var(--vec)">做法：新問題轉成向量，和快取裡每個過往問題的向量算餘弦相似度，取最高分</text><text x="24" y="346" font-size="12" class="t-muted">比的是「問題」與「問題」，不是問題與文件；這和第 003 堂的向量檢索用同一種運算。</text><text x="24" y="382" font-size="11.5" class="t-muted">相似度數字為虛構示意。</text></g><g data-from="2" data-to="2"><rect x="24" y="116" width="220" height="40" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="134.0" y="140.0" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">最高相似度 0.86</text><path d="M244 136 L300 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="300" y="116" width="200" height="40" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="400.0" y="140.0" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">≥ 門檻 0.80？ 是</text><path d="M500 136 L556 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="556" y="116" width="336" height="40" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="724.0" y="140.0" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">直接回傳快取答案</text><rect x="24" y="190" width="220" height="44" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.6"/><text x="134.0" y="216.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">嵌入模型（一次，很便宜）</text><rect x="300" y="190" width="200" height="44" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.6"/><text x="400.0" y="216.0" text-anchor="middle" font-size="11" style="fill:var(--muted)">檢索 ✕　重排序 ✕</text><rect x="556" y="190" width="336" height="44" rx="4" style="fill:var(--panel);stroke:var(--line);stroke-width:1.6"/><text x="724.0" y="216.0" text-anchor="middle" font-size="11" style="fill:var(--muted)">LLM 生成 ✕（省下最貴、最慢的一步）</text><text x="24" y="278" font-size="12.5" font-weight="700" style="fill:var(--good)">命中時，延遲與費用只剩一次嵌入加一次相似度查詢</text><text x="24" y="304" font-size="12" class="t-muted">答案是上一次生成的，所以必須確認當時用的手冊版本、機型與現在一致。</text><text x="24" y="330" font-size="12" class="t-muted">提醒：這和 Anthropic 的提示快取（prompt caching）不同——那是重用相同提示前綴的運算，每次仍會生成新答案。</text></g><g data-from="3" data-to="3"><rect x="24" y="116" width="220" height="40" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="134.0" y="140.0" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--vec)">最高相似度 0.41</text><path d="M244 136 L300 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="300" y="116" width="200" height="40" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="400.0" y="140.0" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--warn)">≥ 門檻 0.80？ 否</text><path d="M500 136 L556 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="556" y="116" width="336" height="40" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="724.0" y="140.0" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--llm)">走完整 RAG 流程</text><rect x="556" y="190" width="336" height="40" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="724.0" y="214.0" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--good)">新答案</text><path d="M724 156 L724 190" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="300" y="260" width="200" height="40" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="400.0" y="284.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--vec)">寫入快取：問題向量＋答案</text><path d="M556 210 L500 270" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="336" font-size="12.5" font-weight="700" style="fill:var(--llm)">快取是越用越有效：每個未命中的問題，都會成為下一次的命中機會</text><text x="24" y="362" font-size="12" class="t-muted">同時記錄寫入時間、手冊版本與機型，後面失效時要用。</text></g><g data-from="4" data-to="4"><rect x="24" y="120" width="260" height="44" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="154.0" y="146.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">快取：PT-203 旋角馬達過溫怎麼處理</text><rect x="24" y="176" width="260" height="44" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="154.0" y="194.5" text-anchor="middle" font-size="11" style="fill:var(--ink)">新問題：PT-230 旋角馬達備援電源</text><text x="154.0" y="209.5" text-anchor="middle" font-size="11" style="fill:var(--ink)">測試失敗怎麼處理</text><path d="M284 142 L360 142" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M284 198 L360 160" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="360" y="128" width="170" height="44" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="445.0" y="146.25" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">相似度 0.80</text><text x="445.0" y="161.75" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">（字面幾乎一樣）</text><path d="M530 150 L590 150" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="590" y="124" width="302" height="52" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="741.0" y="154.0" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--bad)">誤命中：回傳 PT-203 的過溫答案</text><rect x="24" y="252" width="260" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="154.0" y="276.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">OW-8 更換馬達前的安全步驟</text><rect x="24" y="304" width="260" height="40" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="154.0" y="328.0" text-anchor="middle" font-size="11" style="fill:var(--ink)">新問題：OW-6 更換馬達前的安全步驟</text><rect x="360" y="264" width="170" height="66" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="445.0" y="293.25" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">只差一個機型編號</text><text x="445.0" y="308.75" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">相似度仍很高</text><path d="M284 272 L360 290" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M284 324 L360 306" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="590" y="264" width="302" height="66" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="741.0" y="293.0" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--bad)">用 OW-8 的步驟指導 OW-6 的作業</text><text x="741.0" y="309.0" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--bad)">（安全相關，後果嚴重）</text><path d="M530 297 L590 297" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="380" font-size="12" class="t-muted">嵌入模型擅長「大意相近」，不擅長分辨代碼、型號、數字這類關鍵差異（範例為虛構）。</text></g><g data-from="5" data-to="5"><text x="24" y="126" font-size="12" font-weight="700" style="fill:var(--muted)">門檻</text><rect x="80" y="116" width="812" height="14" rx="3" style="fill:var(--soft)"/><rect x="80" y="116" width="270" height="14" rx="3" style="fill:var(--bad);opacity:.55"/><rect x="350" y="116" width="270" height="14" rx="3" style="fill:var(--good);opacity:.55"/><rect x="620" y="116" width="272" height="14" rx="3" style="fill:var(--warn);opacity:.7"/><text x="215" y="152" font-size="11.5" font-weight="700" text-anchor="middle" style="fill:var(--bad)">偏低</text><text x="485" y="152" font-size="11.5" font-weight="700" text-anchor="middle" style="fill:var(--good)">折衷（要靠資料校準）</text><text x="756" y="152" font-size="11.5" font-weight="700" text-anchor="middle" style="fill:var(--warn)">偏高</text><rect x="24" y="176" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="234.0" y="226.0" text-anchor="middle" font-size="11" style="fill:var(--ink)"></text><text x="40" y="200" font-size="13" font-weight="700" style="fill:var(--bad)">門檻太低：誤命中增加</text><text x="40" y="224" font-size="11.5">不同問題被當成同一題，</text><text x="40" y="244" font-size="11.5">技師拿到錯的答案，而且看起來很自信。</text><rect x="472" y="176" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="682.0" y="226.0" text-anchor="middle" font-size="11" style="fill:var(--ink)"></text><text x="488" y="200" font-size="13" font-weight="700" style="fill:var(--warn)">門檻太高：漏接增加</text><text x="488" y="224" font-size="11.5">換句話說就不命中，</text><text x="488" y="244" font-size="11.5">快取形同虛設，省不到錢。</text><text x="24" y="306" font-size="12.5" font-weight="700" style="fill:var(--accent-ink)">怎麼定：收集一批「同一題／不同題」的問題配對，掃過各種門檻，</text><text x="24" y="330" font-size="12.5" font-weight="700" style="fill:var(--accent-ink)">看誤命中與漏接各是多少；安全相關的領域寧可保守（門檻高、守門嚴）。</text><text x="24" y="368" font-size="12" class="t-muted">沒有放諸四海皆準的門檻，它取決於嵌入模型與領域；請用自己的資料量。</text></g><g data-from="6" data-to="6"><rect x="24" y="116" width="428" height="84" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="238.0" y="162.0" text-anchor="middle" font-size="11" style="fill:var(--ink)"></text><text x="40" y="146" font-size="13.5" font-weight="700" style="fill:var(--accent-ink)">精確欄位守門</text><text x="40" y="174" font-size="11.5">告警代碼、機型、料號必須完全一致才算命中</text><rect x="464" y="116" width="428" height="84" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="678.0" y="162.0" text-anchor="middle" font-size="11" style="fill:var(--ink)"></text><text x="480" y="146" font-size="13.5" font-weight="700" style="fill:var(--vec)">分區快取</text><text x="480" y="174" font-size="11.5">依機型、風場、使用者權限分開存，避免跨區回答</text><rect x="24" y="212" width="428" height="84" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="238.0" y="258.0" text-anchor="middle" font-size="11" style="fill:var(--ink)"></text><text x="40" y="242" font-size="13.5" font-weight="700" style="fill:var(--warn)">過期 TTL</text><text x="40" y="270" font-size="11.5">快取答案有壽命，到期自動作廢</text><rect x="464" y="212" width="428" height="84" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="678.0" y="258.0" text-anchor="middle" font-size="11" style="fill:var(--ink)"></text><text x="480" y="242" font-size="13.5" font-weight="700" style="fill:var(--bad)">版本失效</text><text x="480" y="270" font-size="11.5">手冊更新或技術通報發布，相關快取立即清除</text><text x="24" y="330" font-size="12.5" font-weight="700" style="fill:var(--accent-ink)">守門的原則：能用精確比對解決的差異，不要交給相似度去猜</text><text x="24" y="356" font-size="12" class="t-muted">答案若涉及人員權限或個資，快取必須按權限分區，否則會把 A 的答案送給 B。</text></g><g data-from="7"><rect x="24" y="116" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="234.0" y="166.0" text-anchor="middle" font-size="11" style="fill:var(--ink)"></text><text x="40" y="142" font-size="13" font-weight="700" style="fill:var(--good)">重複的問題</text><text x="40" y="166" font-size="11.5">嵌入＋比對後直接回覆，免檢索、免生成</text><text x="40" y="188" font-size="11.5">延遲與費用大幅下降（幅度依流量而定）</text><rect x="472" y="116" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="682.0" y="166.0" text-anchor="middle" font-size="11" style="fill:var(--ink)"></text><text x="488" y="142" font-size="13" font-weight="700" style="fill:var(--llm)">新的問題或被守門擋下的問題</text><text x="488" y="166" font-size="11.5">照常走完整 RAG，答案新鮮、有引用</text><text x="488" y="188" font-size="11.5">並寫入快取供下次使用</text><text x="24" y="252" font-size="12.5" font-weight="700" style="fill:var(--good)">要追蹤的指標：命中率、誤命中率（抽樣人工檢查）、省下的費用與延遲</text><text x="24" y="278" font-size="12" class="t-muted">代價：多一套快取要維運、可能回傳過期或錯誤的答案；「快」不能以犧牲安全為代價。</text><text x="24" y="382" font-size="11.5" class="t-muted">本頁數字與範例皆為虛構示意。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>比的是「問題」與「問題」</b>快取鍵是過往問題的嵌入向量。新問題算出最高相似度，達門檻就回傳當時存下的答案，跳過檢索與生成；沒達就走完整 RAG 並寫入快取。</div>
+    <div class="card"><b>門檻是取捨</b>太低會誤命中（不同問題拿到同一個答案），太高會漏接（改寫一下就不命中）。門檻取決於嵌入模型與領域，要用自己標註的「同題／不同題」配對校準。</div>
+    <div class="card"><b>嵌入分不清關鍵差異</b>PT-203 與 PT-230、OW-8 與 OW-6 字面極像，相似度卻很高。告警代碼、機型、料號這類欄位應先精確比對，再交給相似度。</div>
+    <div class="card"><b>快取會過期</b>手冊更新、技術通報發布，舊答案就可能是錯的。要設 TTL、記錄寫入時的手冊版本，並依機型與權限分區快取。</div>
+  </div>
+
+  <h2>🧪 互動範例：調門檻，看命中、誤命中與漏接</h2>
+  <div class="prose"><p>下面有 4 筆已快取的問題（<b>虛構</b>）。選一個新問題或自己輸入，程式用 TF-IDF 餘弦相似度（第 003 堂的簡化向量）比對快取。切換「不用快取／語意快取／加守門」，並拖動門檻觀察結果；最下方的表會用 6 個預設問題統計目前設定的表現。</p>
+  <p><b>這是簡化模擬：</b>真實系統用嵌入模型，相似度的分布不同於這裡的詞元比對；門檻數值不能直接搬用。守門規則：問題與快取問題中的告警代碼、機型必須完全一致。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><input type="text" id="q" style="flex:1;min-width:220px" aria-label="輸入問題" placeholder="輸入問題，例如：PT-203 旋角馬達過溫怎麼處理"></div>
+    <div class="row"><b style="font-size:13px">模式：</b>
+      <div class="seg" id="mode"><button type="button" data-m="0">不用快取</button><button type="button" data-m="1">語意快取</button><button type="button" data-m="2" class="on">語意快取＋守門</button></div></div>
+    <div class="row"><label for="th">相似度門檻：<b id="tv">0.60</b></label><input type="range" id="th" min="0.3" max="0.95" step="0.05" value="0.6" style="flex:1;max-width:260px"></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono)">與快取問題的相似度</div>
+    <div class="hits" id="hits"></div>
+    <div id="verdict" style="font-size:13.5px;font-weight:700"></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono);margin-top:6px">6 個預設問題的總表現（依目前模式與門檻）</div>
+    <div class="muted" id="tally" style="font-size:13px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>最小的語意快取：嵌入問題、找最相似的過往問題、達門檻且守門通過才重用。為了不用額外套件就能執行，嵌入以字元二元組向量代替；實際請換成嵌入模型。快取未命中時用 <code>anthropic</code> SDK 生成（需設定 <code>ANTHROPIC_API_KEY</code>）；文件與查詢皆為虛構。</p></div>
+<pre class="code"><code><span class="k">import</span> re, time, math, anthropic
+<span class="k">from</span> collections <span class="k">import</span> Counter
+
+THRESHOLD = <span class="s">0.8</span>        <span class="c"># 要用自己標註的同題／不同題配對校準</span>
+TTL = <span class="s">24</span> * <span class="s">3600</span>        <span class="c"># 快取壽命（秒）</span>
+MANUAL_VERSION = <span class="s">"OW-8-rev3"</span>   <span class="c"># 手冊更新時改這個，舊快取自動失效</span>
+cache = []   <span class="c"># 每筆：{"q", "vec", "codes", "answer", "ts", "ver"}</span>
+
+<span class="k">def</span> <span class="f">embed</span>(text):   <span class="c"># 教學用替身：字元二元組向量；實務請用嵌入模型</span>
+    t = re.<span class="f">sub</span>(<span class="s">r"\s+"</span>, <span class="s">""</span>, text.<span class="f">lower</span>())
+    <span class="k">return</span> <span class="f">Counter</span>(t[i:i+<span class="s">2</span>] <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(t) - <span class="s">1</span>))
+
+<span class="k">def</span> <span class="f">cosine</span>(a, b):
+    dot = <span class="f">sum</span>(v * b[k] <span class="k">for</span> k, v <span class="k">in</span> a.<span class="f">items</span>())
+    na, nb = math.<span class="f">sqrt</span>(<span class="f">sum</span>(v * v <span class="k">for</span> v <span class="k">in</span> a.<span class="f">values</span>())), math.<span class="f">sqrt</span>(<span class="f">sum</span>(v * v <span class="k">for</span> v <span class="k">in</span> b.<span class="f">values</span>()))
+    <span class="k">return</span> dot / (na * nb) <span class="k">if</span> na <span class="k">and</span> nb <span class="k">else</span> <span class="s">0.0</span>
+
+<span class="k">def</span> <span class="f">codes</span>(q):       <span class="c"># 守門：告警代碼與機型必須完全一致</span>
+    <span class="k">return</span> <span class="f">frozenset</span>(re.<span class="f">findall</span>(<span class="s">r"[A-Z]{2}-\d{3}|OW-\d"</span>, q.<span class="f">upper</span>()))
+
+<span class="k">def</span> <span class="f">rag_answer</span>(question):   <span class="c"># 完整 RAG（此處省略檢索，示意用）</span>
+    resp = anthropic.<span class="f">Anthropic</span>().messages.<span class="f">create</span>(
+        model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">400</span>,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">f"依《OW-8 運維手冊》回答：{question}"</span>}])
+    <span class="k">return</span> resp.content[<span class="s">0</span>].text
+
+<span class="k">def</span> <span class="f">ask</span>(question):
+    v, c, now = <span class="f">embed</span>(question), <span class="f">codes</span>(question), time.<span class="f">time</span>()
+    best, best_s = <span class="k">None</span>, <span class="s">0.0</span>
+    <span class="k">for</span> e <span class="k">in</span> cache:
+        <span class="k">if</span> e[<span class="s">"codes"</span>] != c <span class="k">or</span> e[<span class="s">"ver"</span>] != MANUAL_VERSION <span class="k">or</span> now - e[<span class="s">"ts"</span>] &gt; TTL:
+            <span class="k">continue</span>               <span class="c"># 守門、版本、過期：任一不符就不能重用</span>
+        s = <span class="f">cosine</span>(v, e[<span class="s">"vec"</span>])
+        <span class="k">if</span> s &gt; best_s: best, best_s = e, s
+    <span class="k">if</span> best <span class="k">and</span> best_s &gt;= THRESHOLD:
+        <span class="k">return</span> best[<span class="s">"answer"</span>], <span class="s">f"命中快取（{best_s:.2f}）"</span>
+    ans = <span class="f">rag_answer</span>(question)
+    cache.<span class="f">append</span>({<span class="s">"q"</span>: question, <span class="s">"vec"</span>: v, <span class="s">"codes"</span>: c, <span class="s">"answer"</span>: ans, <span class="s">"ts"</span>: now, <span class="s">"ver"</span>: MANUAL_VERSION})
+    <span class="k">return</span> ans, <span class="s">"未命中，已完整生成並寫入快取"</span>
+
+<span class="k">for</span> q <span class="k">in</span> [<span class="s">"PT-203 旋角馬達過溫怎麼處理？"</span>, <span class="s">"旋角馬達 PT-203 過溫要怎麼排除？"</span>, <span class="s">"PT-230 旋角馬達備援電源測試失敗怎麼處理？"</span>]:
+    ans, how = <span class="f">ask</span>(q)
+    <span class="f">print</span>(q, <span class="s">"→"</span>, how)</code></pre>
+  <div class="prose"><p>注意：正式系統通常把快取放在向量資料庫或 Redis 這類儲存層，並為「機型、使用者權限」另設分區鍵。開源專案如 GPTCache 就是以這種思路實作 LLM 回應的語意快取。上面的 <code>embed</code> 只是教學用替身，門檻 0.8 也只是占位數值。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>基礎 RAG（第 001 堂）</th><th>嵌入與向量檢索（第 003 堂）</th><th>上下文壓縮（第 012 堂）</th><th>引用與歸因（第 025 堂）</th><th>語意快取</th></tr>
+    <tr><th>想解決的問題</th><td>讓答案有資料可依</td><td>找出語意相近的文件</td><td>提示太長、雜訊多</td><td>答案無法核對出處</td><td>重複的問題反覆付費、等待</td></tr>
+    <tr><th>作用位置</th><td>檢索＋生成</td><td>檢索</td><td>檢索後、生成前</td><td>生成後驗證</td><td>整條流程之前（命中即跳過）</td></tr>
+    <tr><th>優點</th><td>簡單</td><td>能處理改寫、同義</td><td>省 token</td><td>可查證、可稽核</td><td>降低延遲與費用，減輕後端負載</td></tr>
+    <tr><th>缺點</th><td>每次都完整執行</td><td>分不清代碼、數字</td><td>可能刪掉關鍵句</td><td>多一道驗證</td><td>可能誤命中、答案會過期；多一套快取要維運</td></tr>
+    <tr><th>成本</th><td>低</td><td>低到中</td><td>中</td><td>低到中</td><td>低（嵌入＋查詢），效益取決於問題重複程度</td></tr>
+    <tr><th>適合用在</th><td>原型</td><td>語意檢索</td><td>長片段</td><td>安全相關答案</td><td>高流量、問題高度重複、答案變動慢的場景</td></tr>
+  </table>
+
+  <h2>⚠️ 語意快取常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>誤命中最危險</b>：答案「看起來很合理」，卻是另一個告警或另一種機型的處理方式。涉及作業安全的問題，門檻要保守，必要時乾脆不快取。</li>
+      <li><b>只靠相似度</b>：代碼、型號、數字、否定詞（「可以」與「不可以」）是嵌入的弱項。用規則先精確比對，或改用重排序／LLM 再確認一次。</li>
+      <li><b>忘了失效</b>：手冊改版、技術通報、備品料號變更後，舊答案要立刻清除。快取裡至少存寫入時間與手冊版本。</li>
+      <li><b>跨權限共用</b>：不同角色（技師、備品管理）可看的文件不同，快取必須依權限分區，否則會洩漏本來看不到的內容。</li>
+      <li><b>門檻照抄別人的</b>：0.8、0.9 這類數字只對特定嵌入模型有意義。換模型就要重新校準。</li>
+      <li><b>快取被污染</b>：若某次生成的答案是錯的（或被知識庫投毒影響，第 024 堂），之後所有相似問題都會拿到錯答案。要能依回饋刪除單筆快取。</li>
+      <li><b>不適合的場景</b>：問題很少重複、答案要看即時資料（當下風速、即時告警狀態），或每次都需要新鮮引用的場景，快取的收益很低、風險相對高。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的快取問題、相似度與門檻為教學用簡化模擬，不代表真實嵌入模型的行為。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：<a href="https://github.com/zilliztech/GPTCache">GPTCache</a>（開源的 LLM 語意快取專案）；與之不同的「提示快取」請見 <a href="https://docs.claude.com/en/docs/build-with-claude/prompt-caching">Anthropic 官方文件：Prompt caching</a>。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>快取中有「PT-203 旋角馬達過溫怎麼處理」，新問題是「PT-230 旋角馬達備援電源測試失敗怎麼處理」，相似度超過門檻。最合理的作法是？</b></p>
+    <button class="opt">A. 直接回傳 PT-203 的答案，因為相似度夠高</button>
+    <button class="opt">B. 加上精確欄位守門：告警代碼不同就視為未命中，走完整 RAG</button>
+    <button class="opt">C. 把門檻調到 0 讓所有問題都命中</button>
+    <div class="why">嵌入對代碼、型號這類關鍵差異不敏感，相似度高不代表同一題。先以精確比對守門，不一致就走完整流程。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>語意快取的門檻調得很高，最可能出現什麼情況？</b></p>
+    <button class="opt">A. 誤命中大增，常拿到別題的答案</button>
+    <button class="opt">B. 快取答案會自動更新</button>
+    <button class="opt">C. 漏接增加：換個說法就不命中，快取省不到多少</button>
+    <div class="why">門檻高＝很嚴格，只有幾乎一樣的問題才命中，誤命中減少但漏接增加。要在兩者之間用標註資料取捨。</div>
+  </div>
+
+  <nav class="pager" data-slug="semantic-caching"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'沒有快取：每次都從頭跑', text:'三位值班人員用不同說法問<b>同一個</b> PT-203 過溫問題，系統每次都跑完<b>嵌入、檢索、生成</b>，付三次費用、等三次（情境為虛構）。' },
+  { title:'嵌入問題，比對過往問題', text:'把新問題轉成向量，和快取裡<b>過往問題的向量</b>算餘弦相似度，取最高分。比的是問題對問題，不是問題對文件。' },
+  { title:'達門檻：直接回傳舊答案', text:'最高分<b>達到門檻</b>就直接回傳當時存下的答案，<b>跳過檢索與生成</b>。省下最慢最貴的一步，但答案必須仍然有效。' },
+  { title:'未達門檻：完整流程並寫入', text:'分數不夠就走<b>完整 RAG</b>，產生新答案後，把「問題向量＋答案」<b>寫入快取</b>，並記下時間與手冊版本，成為下次的命中機會。' },
+  { title:'風險：措辭像但答案不同', text:'PT-203 與 PT-230、OW-8 與 OW-6 字面極像，相似度很高卻是<b>不同的問題</b>。誤命中會讓技師拿到別題的答案，安全相關時後果嚴重。' },
+  { title:'門檻是取捨', text:'門檻<b>太低</b>誤命中多，<b>太高</b>漏接多。要用標註的同題／不同題配對掃描門檻來校準；沒有通用數值，換嵌入模型就要重做。' },
+  { title:'守門與失效', text:'代碼、機型等欄位<b>先精確比對</b>；依機型與權限<b>分區</b>；設 <b>TTL</b>；手冊或技術通報更新時讓相關快取<b>立即失效</b>。' },
+  { title:'重複的變快，不同的照常答', text:'重複的問題由快取秒回，新問題與被守門擋下的問題走完整 RAG。要追蹤<b>命中率與誤命中率</b>，快不能以犧牲安全為代價。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+
+  /* 已快取的問題與答案（虛構） */
+  const CACHE = [
+    { q:'PT-203 旋角馬達過溫怎麼處理', a:'先停機並降溫，檢查冷卻風扇與濾網，確認繞組溫度後才可復歸（手冊 §4.2）。' },
+    { q:'PT-205 旋角馬達煞車異常怎麼處理', a:'先確認煞車線圈供電與間隙，必要時更換煞車組（手冊 §4.3）。' },
+    { q:'OW-8 更換旋角馬達前要做哪些安全步驟', a:'先執行上鎖掛牌，並確認葉片已順槳鎖定（手冊 §4.5）。' },
+    { q:'YW-042 偏航誤差過大怎麼排除', a:'檢查風向計校正與偏航驅動器狀態（手冊 §5.2）。' }
+  ];
+  /* 預設問題；truth = 正確該命中的快取索引，-1 表示快取裡沒有對應答案 */
+  const PRE = [
+    { q:'旋角馬達 PT-203 過溫怎麼處理', truth:0 },
+    { q:'PT-203 旋角馬達溫度過高怎麼處理', truth:0 },
+    { q:'PT-230 旋角馬達過溫怎麼處理', truth:-1 },
+    { q:'OW-6 更換旋角馬達前要做哪些安全步驟', truth:-1 },
+    { q:'OW-8 更換旋角馬達前要先做什麼安全步驟', truth:2 },
+    { q:'今天現場天氣如何', truth:-1 }
+  ];
+  const idx = rt.buildIndex(CACHE.map(c => ({ text:c.q })));
+  const codes = t => (t.toUpperCase().match(/[A-Z]{2}-\d{3}|OW-\d/g) || []).sort().join(',');
+  let mode = 2;
+
+  function lookup(q, thr, m){
+    const qv = idx.vec(rt.tokenize(q));
+    const rows = CACHE.map((c, i) => ({ i, s: rt.cosine(qv, idx.vecs[i]), guard: codes(q) === codes(c.q) }));
+    const top = rows.slice().sort((a, b) => b.s - a.s)[0];
+    let hit = -1;
+    if(m >= 1 && top.s >= thr && (m === 1 || top.guard)) hit = top.i;
+    return { rows, top, hit };
+  }
+  function classify(hit, truth){
+    if(hit >= 0) return hit === truth ? ['ok','✓ 正確命中'] : ['bad','✗ 誤命中（拿到別題的答案）'];
+    return truth >= 0 ? ['part','△ 漏接（快取有答案卻沒命中）'] : ['ok','✓ 正確未命中（走完整 RAG）'];
+  }
+  const COL = { ok:'var(--good)', bad:'var(--bad)', part:'var(--warn)' };
+
+  function run(){
+    const thr = +$('#th').value; $('#tv').textContent = thr.toFixed(2);
+    const q = $('#q').value.trim();
+    const r = lookup(q, thr, mode);
+    const pre = PRE.find(p => p.q === q);
+    $('#hits').innerHTML = q ? r.rows.map(x => {
+      const on = x.i === r.hit;
+      return `<div class="hit${on ? ' top' : ''}"><div class="meta"><span>快取 ${x.i + 1}${on ? '　← 命中' : ''}</span><span>相似度 ${x.s.toFixed(2)}${mode === 2 && !x.guard ? '　守門：代碼／機型不同' : ''}</span></div>` +
+        `<div style="font-size:13px;margin-top:4px">${esc(CACHE[x.i].q)}</div><div class="score-bar"><b style="width:${Math.round(x.s * 100)}%"></b></div></div>`;
+    }).join('') : '<div class="muted">請輸入問題或點選預設問題。</div>';
+    let msg;
+    if(!q) msg = '';
+    else if(mode === 0) msg = '不用快取：每次都完整執行嵌入、檢索與生成。';
+    else if(r.hit >= 0){
+      msg = `命中快取 ${r.hit + 1}：直接回傳「${esc(CACHE[r.hit].a)}」`;
+      if(pre){ const [k, l] = classify(r.hit, pre.truth); msg += `　<span style="color:${COL[k]}">${l}</span>`; }
+    } else {
+      msg = `未命中（最高相似度 ${r.top.s.toFixed(2)}${mode === 2 && r.top.s >= thr && !r.top.guard ? '，被守門擋下' : ''}）：走完整 RAG，並把新答案寫入快取。`;
+      if(pre){ const [k, l] = classify(-1, pre.truth); msg += `　<span style="color:${COL[k]}">${l}</span>`; }
+    }
+    $('#verdict').innerHTML = msg;
+
+    let hits = 0, ok = 0, bad = 0, miss = 0;
+    PRE.forEach(p => { const h = lookup(p.q, thr, mode).hit; const k = classify(h, p.truth)[0];
+      if(h >= 0) hits++; if(k === 'ok' && h >= 0) ok++; if(k === 'bad') bad++; if(k === 'part') miss++; });
+    $('#tally').innerHTML = mode === 0
+      ? '不用快取：6 個問題全部完整執行，沒有命中，也沒有誤命中。'
+      : `命中 ${hits} 個，其中正確 ${ok} 個、<b style="color:var(--bad)">誤命中 ${bad} 個</b>；<b style="color:var(--warn)">漏接 ${miss} 個</b>（快取有答案卻沒命中）。正確命中越多、誤命中越少越好。`;
+  }
+
+  $('#presets').innerHTML = PRE.map((x, i) => `<button type="button" data-i="${i}" class="${i === 0 ? 'on' : ''}">${esc(x.q)}</button>`).join('');
+  $('#q').value = PRE[0].q;
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    $('#q').value = PRE[+b.dataset.i].q;
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#q').addEventListener('input', () => { $('#presets').querySelectorAll('button').forEach(x => x.classList.remove('on')); run(); });
+  $('#mode').onclick = e => { const b = e.target.closest('button'); if(!b) return; mode = +b.dataset.m;
+    $('#mode').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#th').addEventListener('input', run);
+  run();
+})();
+</script>
+</body>
+</html>
