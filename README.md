@@ -38,6 +38,7 @@
 | 🎯 關卡 6 | [測驗關卡 6：評估、長上下文、延遲切塊與安全（第 021–024 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-6-eval-context-security.html) |
 | 025 | [RAG 引用與歸因：讓每一句答案都能回頭查證](https://dofliu.github.io/ragTutor/lessons/025-citation-attribution.html) |
 | 026 | [語意快取：相似的問題，直接重用上次的答案](https://dofliu.github.io/ragTutor/lessons/026-semantic-caching.html) |
+| 027 | [向量壓縮：Matryoshka 截斷與量化，讓索引小一個數量級](https://dofliu.github.io/ragTutor/lessons/027-vector-compression.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 

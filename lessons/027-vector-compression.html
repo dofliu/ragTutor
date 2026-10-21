@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>向量壓縮：Matryoshka 截斷與量化｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識 RAG 的向量壓縮：Matryoshka 維度截斷、int8 與二元量化、先粗篩再重新評分，並看體積縮小與檢索品質之間的取捨。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 027 堂</span><span class="tag lv2">進階</span><span class="tag">約 20 分鐘</span></p>
+  <h1>向量壓縮：Matryoshka 截斷與量化，讓索引小一個數量級</h1>
+
+  <p class="lead">運維手冊、工單與巡檢報告切成百萬個片段後，每個片段的嵌入向量都要放進記憶體，<b>索引的體積與成本</b>很快成為瓶頸。<b>向量壓縮（Embedding Compression）</b>用三種手法縮小它：<b>Matryoshka 截斷</b>（只留前面的維度）、<b>量化</b>（把 float32 改成 int8 或 1 位元），以及<b>兩階段檢索</b>（壓縮向量粗篩、高精度向量重算）。省下的是記憶體與搜尋時間，代價是細微差異可能分不出來。</p>
+
+  <h2>🎬 動畫：從 20 GB 到 160 MB</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="向量壓縮動畫：向量庫體積過大；體積由片段數、維度與精度決定；Matryoshka 截斷；維度與品質取捨；int8 純量量化；二元量化與漢明距離；二元粗篩加高精度重算；組合後體積大幅下降"><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 沒有壓縮：向量庫越大，記憶體與成本越高</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="1" data-to="1">② 體積 = 片段數 × 維度 × 每維位元組</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="2" data-to="2">③ 第一招：Matryoshka 截斷，只留前面的維度</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="3" data-to="3">④ 維度越少越省，但檢索品質會下降</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="4" data-to="4">⑤ 第二招：純量量化，float32 → int8</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="5" data-to="5">⑥ 二元量化：每維只留 1 個位元</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="6" data-to="6">⑦ 兩階段：低精度粗篩，高精度重算</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 組合起來：體積大降，品質用資料驗證</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-to="0"><rect x="24" y="120" width="170" height="60" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="109" y="145.5" text-anchor="middle" font-size="11.5">5,000,000 個片段</text><text x="109" y="162.5" text-anchor="middle" font-size="11.5">（虛構的假設規模）</text><path d="M194 150 L224 150" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="224" y="120" width="170" height="60" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="309" y="145.5" text-anchor="middle" font-size="11.5">× 1,024 維</text><text x="309" y="162.5" text-anchor="middle" font-size="11.5">嵌入向量</text><path d="M394 150 L424 150" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="424" y="120" width="170" height="60" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="509" y="145.5" text-anchor="middle" font-size="11.5">× 4 位元組</text><text x="509" y="162.5" text-anchor="middle" font-size="11.5">（float32）</text><path d="M594 150 L624 150" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="624" y="120" width="268" height="60" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="758" y="145.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">≈ 20.5 GB</text><text x="758" y="162.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">都要放進記憶體</text><text x="24" y="232" font-size="12.5" font-weight="700" style="fill:var(--bad)">為了讓檢索夠快，索引通常要常駐記憶體，向量一多，機器與費用就跟著暴增</text><text x="24" y="260" font-size="12" class="t-muted">運維場景：40 台風機多年的手冊、工單、巡檢報告切塊後，片段數很容易破百萬。</text><text x="24" y="286" font-size="12" class="t-muted">維度越高、精度越高，單一向量越大；但不是每個應用都需要這麼細的向量。</text><text x="24" y="382" font-size="11.5" class="t-muted">規模與數字為虛構的假設，只用來說明體積怎麼算。</text></g><g data-from="1" data-to="1"><rect x="24" y="118" width="60" height="38" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="54" y="141" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">0.12</text><rect x="90" y="118" width="60" height="38" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="120" y="141" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">-0.53</text><rect x="156" y="118" width="60" height="38" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="186" y="141" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">0.08</text><rect x="222" y="118" width="60" height="38" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="252" y="141" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">0.91</text><rect x="288" y="118" width="60" height="38" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="318" y="141" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">-0.27</text><rect x="354" y="118" width="60" height="38" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="384" y="141" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">0.44</text><rect x="420" y="118" width="60" height="38" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="450" y="141" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">-0.05</text><rect x="486" y="118" width="60" height="38" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="516" y="141" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">0.67</text><text x="560" y="142" font-size="14" style="fill:var(--muted)">⋯</text><text x="24" y="182" font-size="12" class="t-muted">一個向量就是一串數字；每個維度存成 float32 = 4 位元組</text><rect x="24" y="208" width="868" height="50" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="458" y="237" text-anchor="middle" font-size="12.5" font-weight="700" style="fill:var(--accent)">體積 ＝ 片段數 × 維度數 × 每維位元組（float32 為 4、int8 為 1、二元為 1/8）</text><rect x="24" y="284" width="276" height="70" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="162" y="314.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">降低維度</text><text x="162" y="331.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">Matryoshka 截斷</text><rect x="322" y="284" width="276" height="70" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="460" y="314.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">降低精度</text><text x="460" y="331.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">int8、二元量化</text><rect x="620" y="284" width="272" height="70" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="756" y="314.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">兩階段檢索</text><text x="756" y="331.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">粗篩後再重算</text><text x="24" y="382" font-size="11.5" class="t-muted">這三招可以單獨用，也可以疊加。</text></g><g data-from="2" data-to="2"><rect x="24" y="112" width="430" height="24" rx="3" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="466" y="129" font-size="11.5">1,024 維（完整）</text><rect x="24" y="146" width="215" height="24" rx="3" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="251" y="163" font-size="11.5">前 512 維</text><rect x="24" y="180" width="107.5" height="24" rx="3" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="143.5" y="197" font-size="11.5">前 256 維</text><rect x="24" y="214" width="53.75" height="24" rx="3" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="89.75" y="231" font-size="11.5">前 128 維</text><rect x="24" y="248" width="30" height="24" rx="3" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="66" y="265" font-size="11.5">前 64 維</text><rect x="640" y="112" width="252" height="92" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="766" y="153.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">訓練時就要求：</text><text x="766" y="170.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">前 n 維自己也能代表語意</text><text x="24" y="310" font-size="12.5" font-weight="700" style="fill:var(--query)">截斷後要重新 L2 正規化，再照常算餘弦相似度</text><text x="24" y="336" font-size="12" class="t-muted">只有用 Matryoshka 表示法學習（Kusupati 等人，2022）訓練的模型，截斷才安全。</text><text x="24" y="362" font-size="12" class="t-muted">一般模型直接砍後半段，品質可能掉得很多。</text></g><g data-from="3" data-to="3"><path d="M70 330 L70 120 M70 330 L560 330" style="fill:none;stroke:var(--line);stroke-width:1.5"/><path d="M70 320 C140 190 220 150 560 135" style="fill:none;stroke:var(--vec);stroke-width:2.2"/><circle cx="210" cy="175" r="6" style="fill:var(--accent)"/><text x="222" y="168" font-size="11.5" font-weight="700" style="fill:var(--accent)">拐點：再多維度，效益遞減</text><text x="70" y="352" font-size="11.5" class="t-muted">維度（少 → 多）</text><text x="76" y="112" font-size="11.5" class="t-muted">檢索品質</text><rect x="620" y="128" width="272" height="88" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="756" y="167.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">維度少的好處</text><text x="756" y="184.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">體積小、搜尋快</text><rect x="620" y="236" width="272" height="88" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="756" y="275.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">維度少的代價</text><text x="756" y="292.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">細微差異分不出來</text><text x="24" y="386" font-size="11.5" class="t-muted">曲線為示意，不是實測。拐點在哪裡，要用自己的資料與評估集量。</text></g><g data-from="4" data-to="4"><text x="24" y="126" font-size="12" font-weight="700" style="fill:var(--muted)">float32</text><rect x="120" y="108" width="110" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="175" y="129" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">0.12</text><path d="M175 142 L175 176" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="120" y="176" width="110" height="34" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="175" y="197" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">17</text><rect x="250" y="108" width="110" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="305" y="129" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">-0.53</text><path d="M305 142 L305 176" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="250" y="176" width="110" height="34" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="305" y="197" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">-74</text><rect x="380" y="108" width="110" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="435" y="129" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">0.08</text><path d="M435 142 L435 176" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="380" y="176" width="110" height="34" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="435" y="197" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">11</text><rect x="510" y="108" width="110" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="565" y="129" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">0.91</text><path d="M565 142 L565 176" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="510" y="176" width="110" height="34" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="565" y="197" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">127</text><text x="24" y="198" font-size="12" font-weight="700" style="fill:var(--llm)">int8</text><text x="24" y="250" font-size="12.5" font-weight="700" style="fill:var(--llm)">做法：用資料中的最大絕對值（或 min / max）算出縮放比例，把 float32 對應到 −127～127 的整數</text><text x="24" y="276" font-size="12" class="t-muted">範例：縮放比例 ≈ 127 ÷ 0.91，所以 0.91 → 127、−0.53 → −74。</text><rect x="24" y="300" width="420" height="56" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="234" y="323.5" text-anchor="middle" font-size="11.5">每維 4 位元組 → 1 位元組</text><text x="234" y="340.5" text-anchor="middle" font-size="11.5">體積約為 1/4，品質通常掉得很少</text><rect x="472" y="300" width="420" height="56" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="682" y="323.5" text-anchor="middle" font-size="11.5">校準範圍要有代表性</text><text x="682" y="340.5" text-anchor="middle" font-size="11.5">極端值太多會讓精度浪費掉</text></g><g data-from="5" data-to="5"><text x="24" y="126" font-size="12" font-weight="700" style="fill:var(--muted)">float32</text><rect x="120" y="108" width="84" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="162" y="129" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">0.12</text><path d="M162 142 L162 172" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="120" y="172" width="84" height="34" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="162" y="193" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">1</text><rect x="220" y="108" width="84" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="262" y="129" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">-0.53</text><path d="M262 142 L262 172" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="220" y="172" width="84" height="34" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="262" y="193" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">0</text><rect x="320" y="108" width="84" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="362" y="129" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">0.08</text><path d="M362 142 L362 172" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="320" y="172" width="84" height="34" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="362" y="193" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">1</text><rect x="420" y="108" width="84" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="462" y="129" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">0.91</text><path d="M462 142 L462 172" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="420" y="172" width="84" height="34" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="462" y="193" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">1</text><rect x="520" y="108" width="84" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="562" y="129" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">-0.27</text><path d="M562 142 L562 172" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="520" y="172" width="84" height="34" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="562" y="193" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">0</text><rect x="620" y="108" width="84" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="662" y="129" text-anchor="middle" font-size="11.5" style="fill:var(--ink)">0.44</text><path d="M662 142 L662 172" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="620" y="172" width="84" height="34" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="662" y="193" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">1</text><text x="24" y="194" font-size="12" font-weight="700" style="fill:var(--accent)">二元</text><text x="24" y="246" font-size="12.5" font-weight="700" style="fill:var(--accent)">規則：大於 0 記 1，否則記 0。每維只佔 1 個位元，體積約為 float32 的 1/32</text><rect x="24" y="266" width="430" height="86" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="239" y="296" text-anchor="middle" font-size="11.5">比相似度：漢明距離（Hamming）</text><text x="239" y="313" text-anchor="middle" font-size="11.5">A = 10110010</text><text x="239" y="330" text-anchor="middle" font-size="11.5">B = 10011010　→ 不同位元 2 個</text><rect x="482" y="266" width="410" height="86" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="687" y="296" text-anchor="middle" font-size="11.5">XOR 加 popcount，運算極快</text><text x="687" y="313" text-anchor="middle" font-size="11.5">但資訊損失大，單獨使用常掉品質</text><text x="687" y="330" text-anchor="middle" font-size="11.5">所以常搭配下一步的重算</text></g><g data-from="6" data-to="6"><rect x="24" y="116" width="150" height="52" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="99" y="146" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">查詢向量</text><path d="M174 142 L204 142" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="204" y="116" width="230" height="52" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="319" y="137.5" text-anchor="middle" font-size="11.5">二元索引（常駐記憶體）</text><text x="319" y="154.5" text-anchor="middle" font-size="11.5">粗篩：取前 50 名</text><path d="M434 142 L464 142" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="464" y="116" width="250" height="52" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="589" y="137.5" text-anchor="middle" font-size="11.5">高精度向量（可放磁碟）</text><text x="589" y="154.5" text-anchor="middle" font-size="11.5">只讀這 50 筆重算分數</text><path d="M714 142 L744 142" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="744" y="116" width="148" height="52" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="818" y="146" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">最終前 10 名</text><text x="24" y="222" font-size="12.5" font-weight="700" style="fill:var(--vec)">重新評分（rescoring）：候選數 = 要的數量 × 倍數（例如 10 × 5），倍數越大越準也越慢</text><text x="24" y="250" font-size="12" class="t-muted">便宜的壓縮向量負責「大範圍快速篩選」，貴的高精度向量只負責「少數候選的最後比較」。</text><rect x="24" y="282" width="420" height="60" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="234" y="307.5" text-anchor="middle" font-size="11.5">記憶體只放壓縮索引</text><text x="234" y="324.5" text-anchor="middle" font-size="11.5">高精度向量放磁碟，只讀候選</text><rect x="472" y="282" width="420" height="60" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="682" y="307.5" text-anchor="middle" font-size="11.5">仍要保存高精度向量</text><text x="682" y="324.5" text-anchor="middle" font-size="11.5">磁碟與讀取延遲成為新成本</text><text x="24" y="384" font-size="11.5" class="t-muted">做法參考 Hugging Face「Embedding Quantization」。</text></g><g data-from="7"><rect x="24" y="116" width="300" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="174" y="146.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">5,000,000 × 1,024 維 × float32</text><text x="174" y="163.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">≈ 20.5 GB</text><path d="M324 151 L424 151" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="424" y="116" width="468" height="70" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="658" y="146.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">先截斷到 256 維（4 倍），再二元量化（32 倍）</text><text x="658" y="163.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">5,000,000 × 256 位元 ≈ 160 MB（128 倍）</text><text x="24" y="226" font-size="12.5" font-weight="700" style="fill:var(--good)">體積約縮小 128 倍（只算記憶體中的索引，不含磁碟上的高精度向量）</text><text x="24" y="254" font-size="12" class="t-muted">要追蹤的指標：相對完整向量的召回率（前 k 名重疊多少）、延遲、記憶體用量。</text><text x="24" y="280" font-size="12" class="t-muted">壓縮的目標是「省下的成本」與「掉的品質」之間划算；划不划算要在自己的資料上量。</text><rect x="24" y="306" width="868" height="48" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="458" y="334" text-anchor="middle" font-size="11.5">代價：多一道量化與重算流程；Matryoshka 需要模型支援；告警代碼這類精細差異最容易在壓縮後被混淆</text><text x="24" y="382" font-size="11.5" class="t-muted">本頁規模與數字為虛構的假設。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>體積＝片段數×維度×每維位元組</b>float32 每維 4 位元組、int8 為 1、二元為 1/8。降低維度與降低精度可以相乘，所以壓縮效果很可觀。</div>
+    <div class="card"><b>Matryoshka：前 n 維自己也能用</b>用 Matryoshka 表示法訓練的模型，把向量截到前 n 維、重新正規化後仍可檢索；一般模型不能這樣砍。</div>
+    <div class="card"><b>量化：精度換空間</b>int8 約省 4 倍，通常品質損失小；二元量化約省 32 倍，用漢明距離比對、速度很快，但單獨使用品質掉得較多。</div>
+    <div class="card"><b>粗篩加重算</b>用二元向量多取一些候選（前 k × 倍數），再以高精度向量重新評分取前 k。多數品質能救回來，代價是還要保存高精度向量。</div>
+  </div>
+
+  <h2>🧪 互動範例：調維度與精度，看體積與結果</h2>
+  <div class="prose"><p>下面有 14 段《OW-8 運維手冊》片段（<b>虛構</b>）。程式把每段文字用雜湊投影成 256 維向量當「完整向量」，再依你的設定<b>真的</b>截斷、量化並檢索，和完整向量（256 維 float32）的結果比較。體積以「100 萬個片段」估算。</p>
+  <p><b>這是簡化模擬：</b>真實系統用嵌入模型；這裡的雜湊投影刻意讓前面的維度承載較多資訊，以模擬 Matryoshka 的排序。實際品質與召回請用自己的模型與資料量測。「重新評分」使用完整 256 維 float32 向量。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><input type="text" id="q" style="flex:1;min-width:220px" aria-label="輸入問題" placeholder="輸入問題，例如：旋角馬達過溫怎麼處理"></div>
+    <div class="row"><b style="font-size:13px">維度：</b>
+      <div class="seg" id="dims"><button type="button" data-v="256" class="on">256</button><button type="button" data-v="128">128</button><button type="button" data-v="64">64</button><button type="button" data-v="32">32</button><button type="button" data-v="16">16</button></div></div>
+    <div class="row"><b style="font-size:13px">精度：</b>
+      <div class="seg" id="prec"><button type="button" data-v="f32" class="on">float32</button><button type="button" data-v="i8">int8</button><button type="button" data-v="bin">二元（1 位元）</button></div>
+      <label style="font-size:13px"><input type="checkbox" id="resc"> 二元粗篩後重新評分（候選 ×4）</label></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono)">100 萬個片段的索引體積</div>
+    <div id="size" style="font-size:14px;font-weight:700"></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono);margin-top:6px">前 3 名（左：目前設定；右：完整 256 維 float32）</div>
+    <div class="hits" id="hits"></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono);margin-top:6px">6 個預設問題的總表現（相對完整向量）</div>
+    <div class="muted" id="tally" style="font-size:13px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>最小的向量壓縮實作：截斷、int8 量化、二元量化，以及「二元粗篩＋高精度重算」。只需要 <code>numpy</code>；為了能直接執行，<code>embed</code> 以雜湊投影代替嵌入模型（<b>不具 Matryoshka 性質</b>，實務請換成支援 Matryoshka 的嵌入模型）。文件與查詢皆為虛構。</p></div>
+<pre class="code"><code><span class="k">import</span> re, zlib
+<span class="k">import</span> numpy <span class="k">as</span> np
+
+DOCS = [
+    <span class="s">"PT-203 旋角馬達過溫：先停機降溫，檢查冷卻風扇與濾網。"</span>,
+    <span class="s">"PT-205 旋角馬達煞車異常：檢查煞車線圈供電與間隙。"</span>,
+    <span class="s">"PT-230 旋角備援電源測試失敗：檢查備援電池電壓與充電迴路。"</span>,
+    <span class="s">"GB-117 齒輪箱高速軸軸承溫度過高：檢查潤滑油位與油溫。"</span>,
+    <span class="s">"CV-310 變流器功率模組過溫：檢查水冷迴路流量與散熱器積塵。"</span>,
+]
+D = <span class="s">256</span>
+
+<span class="k">def</span> <span class="f">embed</span>(text):   <span class="c"># 教學用替身；實務請用嵌入模型（最好支援 Matryoshka）</span>
+    v = np.<span class="f">zeros</span>(D, dtype=np.float32)
+    toks = re.<span class="f">findall</span>(<span class="s">r"[a-z0-9\-]+|[\u4e00-\u9fff]{2}"</span>, text.<span class="f">lower</span>())
+    <span class="k">for</span> t <span class="k">in</span> toks:
+        <span class="k">for</span> r <span class="k">in</span> <span class="f">range</span>(<span class="s">6</span>):
+            h = zlib.<span class="f">crc32</span>(<span class="s">f"{r}:{t}"</span>.<span class="f">encode</span>())
+            v[h % D] += <span class="s">1</span> <span class="k">if</span> (h &gt;&gt; <span class="s">8</span>) &amp; <span class="s">1</span> <span class="k">else</span> -<span class="s">1</span>
+    <span class="k">return</span> v
+
+<span class="k">def</span> <span class="f">normalize</span>(x):
+    <span class="k">return</span> x / (np.linalg.<span class="f">norm</span>(x, axis=-<span class="s">1</span>, keepdims=<span class="k">True</span>) + <span class="s">1e-9</span>)
+
+<span class="k">def</span> <span class="f">truncate</span>(x, dims):          <span class="c"># Matryoshka：取前 dims 維並重新正規化</span>
+    <span class="k">return</span> <span class="f">normalize</span>(x[..., :dims])
+
+<span class="k">def</span> <span class="f">to_int8</span>(x, scale):          <span class="c"># 純量量化：scale 用資料的最大絕對值校準</span>
+    <span class="k">return</span> np.<span class="f">clip</span>(np.<span class="f">round</span>(x * scale), -<span class="s">127</span>, <span class="s">127</span>).<span class="f">astype</span>(np.int8)
+
+<span class="k">def</span> <span class="f">to_bits</span>(x):                 <span class="c"># 二元量化：大於 0 記 1，並打包成位元組</span>
+    <span class="k">return</span> np.<span class="f">packbits</span>(x &gt; <span class="s">0</span>, axis=-<span class="s">1</span>)
+
+POPCOUNT = np.<span class="f">array</span>([<span class="f">bin</span>(i).<span class="f">count</span>(<span class="s">"1"</span>) <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="s">256</span>)], dtype=np.int32)
+<span class="k">def</span> <span class="f">hamming</span>(qb, db):            <span class="c"># XOR 後數 1 的個數；越小越像</span>
+    <span class="k">return</span> POPCOUNT[np.<span class="f">bitwise_xor</span>(db, qb)].<span class="f">sum</span>(axis=-<span class="s">1</span>)
+
+full = <span class="f">normalize</span>(np.<span class="f">stack</span>([<span class="f">embed</span>(d) <span class="k">for</span> d <span class="k">in</span> DOCS]))       <span class="c"># 高精度向量（可放磁碟）</span>
+dims = <span class="s">128</span>
+small = <span class="f">truncate</span>(full, dims)
+bits = <span class="f">to_bits</span>(small)                                        <span class="c"># 常駐記憶體的壓縮索引</span>
+scale = <span class="s">127</span> / np.<span class="f">abs</span>(small).<span class="f">max</span>()
+int8 = <span class="f">to_int8</span>(small, scale)
+<span class="f">print</span>(<span class="s">"float32 全維度:"</span>, full.nbytes, <span class="s">"B ｜ int8:"</span>, int8.nbytes, <span class="s">"B ｜ 二元:"</span>, bits.nbytes, <span class="s">"B"</span>)
+
+<span class="k">def</span> <span class="f">search</span>(query, k=<span class="s">2</span>, multiplier=<span class="s">5</span>):
+    q = <span class="f">normalize</span>(<span class="f">embed</span>(query))
+    qb = <span class="f">to_bits</span>(<span class="f">truncate</span>(q, dims))
+    cand = np.<span class="f">argsort</span>(<span class="f">hamming</span>(qb, bits))[: k * multiplier]       <span class="c"># 第一階段：二元粗篩</span>
+    scores = full[cand] @ q                                    <span class="c"># 第二階段：高精度重新評分</span>
+    <span class="k">return</span> [(<span class="f">int</span>(cand[i]), <span class="f">float</span>(scores[i])) <span class="k">for</span> i <span class="k">in</span> np.<span class="f">argsort</span>(-scores)[:k]]
+
+<span class="k">for</span> i, s <span class="k">in</span> <span class="f">search</span>(<span class="s">"旋角馬達過溫怎麼處理"</span>):
+    <span class="f">print</span>(<span class="s">f"{s:.3f}"</span>, DOCS[i])</code></pre>
+  <div class="prose"><p>注意：實務上可用 <code>sentence-transformers</code> 的 <code>truncate_dim</code> 參數與 <code>quantize_embeddings</code> 函式處理截斷與量化，向量資料庫（如 Qdrant、Weaviate、Milvus 等）也多內建純量或二元量化選項，細節請查各產品文件。上面的 <code>embed</code> 只是教學替身，維度與倍數也是占位數值。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>嵌入與向量檢索（第 003 堂）</th><th>重排序（第 005 堂）</th><th>ColBERT（第 018 堂）</th><th>語意快取（第 026 堂）</th><th>向量壓縮</th></tr>
+    <tr><th>想解決的問題</th><td>找出語意相近的文件</td><td>前幾名排得不夠準</td><td>代碼、專有名詞比對不精</td><td>重複的問題反覆付費</td><td>索引太大、太貴、搜尋太慢</td></tr>
+    <tr><th>作用位置</th><td>建索引與檢索</td><td>檢索之後</td><td>檢索（逐詞向量）</td><td>整條流程之前</td><td>建索引時壓縮、檢索時兩階段</td></tr>
+    <tr><th>優點</th><td>能處理改寫、同義</td><td>精度高</td><td>精確度高</td><td>省延遲與費用</td><td>記憶體與搜尋時間大降</td></tr>
+    <tr><th>缺點</th><td>向量體積大</td><td>額外算力</td><td>儲存的向量更多</td><td>可能誤命中</td><td>細微差異變模糊；要自行驗證召回</td></tr>
+    <tr><th>成本</th><td>低到中</td><td>中</td><td>高（儲存）</td><td>低</td><td>低（一次性量化）到中（兩階段）</td></tr>
+    <tr><th>適合用在</th><td>語意檢索</td><td>要最準的前幾名</td><td>精確詞比對</td><td>高重複問題</td><td>片段數很大、記憶體吃緊的知識庫</td></tr>
+  </table>
+
+  <h2>⚠️ 向量壓縮常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>用沒訓練過的模型硬截斷</b>：只有以 Matryoshka 方式訓練的模型，前 n 維才保有語意；一般模型砍掉後半段，品質可能掉很多。先看模型的說明文件。</li>
+      <li><b>只看體積不量品質</b>：壓縮倍率再漂亮，召回掉了就沒意義。要用自己的查詢與標註結果量「召回率」與「前幾名是否正確」。</li>
+      <li><b>代碼與型號最先被混淆</b>：PT-203 與 PT-230 這類只差幾個字元的內容，在低維度、1 位元時最容易分不出來。這類查詢可搭配第 004 堂的關鍵字檢索，或第 005 堂的重排序。</li>
+      <li><b>忘了留高精度向量</b>：想做重新評分，就必須另外保存高精度向量（磁碟或物件儲存）；否則二元索引的誤差無法補救。</li>
+      <li><b>量化範圍沒校準</b>：int8 的縮放比例若被少數極端值拉大，大多數維度會只用到很小的整數範圍，白白浪費精度。</li>
+      <li><b>換模型沒重做</b>：維度、量化範圍與倍數都與嵌入模型綁定，換模型就要重新壓縮並重新驗證。</li>
+      <li><b>不適合的場景</b>：知識庫只有幾萬個片段時，記憶體本來就不是問題，壓縮的收益有限，卻多了複雜度與品質風險。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的向量為雜湊投影的教學用簡化模擬，不代表真實嵌入模型的行為。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：<a href="https://huggingface.co/blog/embedding-quantization">Hugging Face：Binary and Scalar Embedding Quantization</a>；Matryoshka 表示法原始論文：Kusupati 等人，<i>Matryoshka Representation Learning</i>（NeurIPS 2022）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="0">
+    <p><b>想把一般（未用 Matryoshka 訓練）的嵌入模型輸出直接截成前 128 維來省空間，最大的風險是什麼？</b></p>
+    <button class="opt">A. 前 128 維不保證能獨立代表語意，檢索品質可能大幅下降</button>
+    <button class="opt">B. 向量會變成 int8，失去精度</button>
+    <button class="opt">C. 漢明距離無法計算</button>
+    <div class="why">Matryoshka 表示法在訓練時就要求前 n 維自成一個可用的向量；沒有這樣訓練的模型，資訊分散在各維度，直接截斷可能損失很多。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>二元量化的向量搭配「重新評分」的作法，是怎麼運作的？</b></p>
+    <button class="opt">A. 只用二元向量完成全部排序，不需要其他資料</button>
+    <button class="opt">B. 把二元向量還原成 float32 後直接丟棄原始向量</button>
+    <button class="opt">C. 先用二元向量粗篩出較多候選，再用高精度向量對候選重新計分取前幾名</button>
+    <div class="why">二元向量又小又快，適合大範圍粗篩；高精度向量只讀少數候選，補回粗篩損失的品質，但需要另外保存高精度向量。</div>
+  </div>
+
+  <nav class="pager" data-slug="vector-compression"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'沒有壓縮：索引越來越大', text:'假設有 500 萬個片段、每個 1,024 維 float32，向量就要約 <b>20.5 GB</b> 常駐記憶體。片段越多、維度越高，機器與費用越吃緊（規模為虛構）。' },
+  { title:'體積怎麼算', text:'體積＝<b>片段數 × 維度 × 每維位元組</b>。要縮小，可以<b>減少維度</b>、<b>降低精度</b>，或改用<b>兩階段檢索</b>；三招可以疊加。' },
+  { title:'Matryoshka 截斷', text:'用 <b>Matryoshka 表示法</b>訓練的模型，前 n 維自己就能代表語意。取前 256 維、<b>重新正規化</b>後照常檢索，體積直接降為 1/4。' },
+  { title:'維度與品質的取捨', text:'維度越少越省、搜尋越快，但<b>細微差異</b>（例如只差一個代碼）會分不出來。品質曲線有拐點，位置要用<b>自己的資料</b>量。' },
+  { title:'純量量化：float32 → int8', text:'用資料的最大絕對值算縮放比例，把每個數字對應到 <b>−127～127</b> 的整數。每維從 4 位元組變 1 位元組，體積約 <b>1/4</b>，品質通常掉得不多。' },
+  { title:'二元量化：每維 1 位元', text:'大於 0 記 1，否則記 0，體積約 <b>1/32</b>。比相似度改用<b>漢明距離</b>（XOR 後數 1 的個數），運算很快，但資訊損失也最大。' },
+  { title:'兩階段：粗篩再重算', text:'用二元索引取前「k × 倍數」個候選，再從磁碟讀這些候選的<b>高精度向量重新評分</b>。便宜的負責篩，貴的只算少數，品質大多能救回。' },
+  { title:'組合起來，用資料驗證', text:'先截斷到 256 維再二元量化，索引由約 20.5 GB 降到約 <b>160 MB</b>（約 128 倍，不含磁碟上的高精度向量）。務必量<b>召回率與延遲</b>再上線。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  const D = 256;
+  function h32(s, seed){ let h = 2166136261 ^ seed; for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return h >>> 0; }
+  function embed(text, rt){
+    const v = new Float64Array(D);
+    rt.tokenize(text).forEach(t => {
+      for(let r = 0; r < 6; r++){   /* 每個詞元散到 6 個維度，向量較稠密 */
+        const u = h32(t, 10 + r) / 4294967296;
+        const j = Math.min(D - 1, Math.floor(D * u * u));
+        v[j] += (h32(t, 50 + r) & 1) ? 1 : -1;
+      }
+    });
+    return v;
+  }
+  const norm = v => { let n = 0; v.forEach(x => n += x*x); n = Math.sqrt(n) || 1; return v.map(x => x / n); };
+  function prep(raw, dims){ return norm(raw.slice(0, dims)); }
+  function topk(scores, k){ return scores.map((s,i)=>({i,s})).sort((a,b)=>b.s-a.s||a.i-b.i).slice(0,k); }
+  function search(docsRaw, qRaw, o){ /* o: dims, prec 'f32'|'i8'|'bin', rescore, mult, k */
+    const q = prep(qRaw, o.dims), ds = docsRaw.map(d => prep(d, o.dims));
+    const full = prep(qRaw, D), fulls = docsRaw.map(d => prep(d, D));
+    const dot = (a,b) => { let s=0; for(let i=0;i<a.length;i++) s+=a[i]*b[i]; return s; };
+    let sc;
+    if(o.prec === 'f32') sc = ds.map(d => dot(q,d));
+    else if(o.prec === 'i8'){
+      let mx = 0; ds.forEach(d => d.forEach(x => mx = Math.max(mx, Math.abs(x)))); const sc8 = 127 / (mx || 1);
+      const qi = q.map(x => Math.round(x*sc8)); sc = ds.map(d => dot(qi, d.map(x => Math.round(x*sc8))));
+    } else {
+      const qb = q.map(x => x > 0 ? 1 : 0);
+      sc = ds.map(d => { let same = 0; for(let i=0;i<d.length;i++) if((d[i] > 0 ? 1 : 0) === qb[i]) same++; return same / d.length; });
+      if(o.rescore){
+        const cand = topk(sc, o.k * o.mult).map(x => x.i);
+        sc = sc.map(() => -1e9); cand.forEach(i => sc[i] = dot(full, fulls[i]));
+      }
+    }
+    return topk(sc, o.k);
+  }
+  
+  /* 14 段虛構的《OW-8 運維手冊》片段 */
+  const DOCS = [
+    "旋角系統 PT-203 旋角馬達過溫：先停機降溫，檢查馬達冷卻風扇與濾網，確認繞組溫度恢復後才可復歸。",
+    "旋角系統 PT-205 旋角馬達煞車異常：檢查煞車線圈供電與間隙，間隙超出範圍時更換煞車組。",
+    "旋角系統 PT-230 旋角備援電源測試失敗：檢查備援電池電壓與充電迴路，必要時更換電池模組。",
+    "旋角系統 PT-211 三支葉片角度偏差過大：比對各葉片角度編碼器讀值，校正或更換偏差最大的編碼器。",
+    "偏航系統 YW-042 偏航誤差過大：檢查風向計校正與偏航驅動器狀態，確認偏航煞車釋放正常。",
+    "齒輪箱 GB-117 高速軸軸承溫度過高：檢查潤滑油位與油溫，比對 CMS 振動趨勢，必要時降載運轉並排定檢修。",
+    "變流器 CV-310 功率模組過溫：檢查水冷迴路流量與散熱器積塵，確認環境溫度後再復歸。",
+    "液壓與煞車：機械煞車片磨耗超過限值時需更換，更換前必須執行上鎖掛牌並確認轉子已鎖定。",
+    "高處作業規範：進入輪轂或機艙前，確認天候與海象窗口，並檢查安全帶、救援裝備與雙人作業。",
+    "上鎖掛牌 LOTO：作業前切斷並上鎖所有能量來源，掛上個人鎖與標籤，驗證零能量後才可開始。",
+    "更換旋角馬達程序：先上鎖掛牌，將葉片順槳鎖定，拆下馬達電纜與固定螺栓，以吊具移出並安裝新馬達。",
+    "發電機繞組絕緣量測：停機後以絕緣電阻計量測，對照歷次紀錄判斷劣化趨勢。",
+    "塔架螺栓巡檢：依扭力表抽檢法蘭螺栓，發現鬆動時全圈重新鎖固並登錄工單。",
+    "旋角馬達冷卻風扇更換：備品料號 PT-MTR-02 的風扇組，更換後需空轉測試並確認旋角馬達溫升正常。"
+  ];
+  const PRE = ['旋角馬達過溫怎麼處理','PT-230 備援電源測試失敗','更換旋角馬達前的安全步驟','變流器過溫要檢查什麼','齒輪箱軸承溫度過高','高處作業要注意什麼'];
+  const RAW = DOCS.map(t => embed(t, rt));
+  const st = { dims:256, prec:'f32' };
+  const bytes = { f32:4, i8:1, bin:1/8 };
+  const fmt = mb => mb >= 1024 ? (mb/1024).toFixed(2) + ' GB' : mb.toFixed(mb < 10 ? 1 : 0) + ' MB';
+  const cfg = () => ({ dims:st.dims, prec:st.prec, rescore: st.prec === 'bin' && $('#resc').checked, mult:4, k:3 });
+  const base = qr => search(RAW, qr, { dims:D, prec:'f32', k:3 });
+
+  function run(){
+    const q = $('#q').value.trim();
+    $('#resc').disabled = st.prec !== 'bin';
+    const mb = st.dims * bytes[st.prec];   /* 100 萬片段：維度×每維位元組 位元組 → 即 MB 數 */
+    const full = D * 4;
+    $('#size').innerHTML = fmt(mb) + '　<span class="muted" style="font-weight:400">（完整 256 維 float32 為 ' + fmt(full) + '，約縮小 ' + (full/mb).toFixed(full/mb >= 10 ? 0 : 1) + ' 倍' + (cfg().rescore ? '；另需保存高精度向量供重算' : '') + '）</span>';
+    if(!q){ $('#hits').innerHTML = '<div class="muted">請輸入問題或點選預設問題。</div>'; }
+    else {
+      const qr = embed(q, rt), a = search(RAW, qr, cfg()), b = base(qr);
+      const row = (r, ref) => r.map((x, n) => '<div style="font-size:12.5px;margin-top:4px;' + (ref && ref.some(y => y.i === x.i) ? '' : 'color:var(--bad)') + '">' + (n+1) + '. ' + esc(DOCS[x.i].slice(0, 34)) + '…</div>').join('');
+      $('#hits').innerHTML = '<div class="hit top"><div class="meta"><span>目前設定</span><span>紅字＝不在完整向量的前 3 名</span></div>' + row(a, b) + '</div>' +
+        '<div class="hit"><div class="meta"><span>完整 256 維 float32</span></div>' + row(b, null) + '</div>';
+    }
+    let ov = 0, t1 = 0;
+    PRE.forEach(p => { const qr = embed(p, rt), b = base(qr).map(x => x.i), r = search(RAW, qr, cfg()).map(x => x.i);
+      ov += r.filter(i => b.includes(i)).length / 3; if(r[0] === b[0]) t1++; });
+    $('#tally').innerHTML = '前 3 名與完整向量平均重疊 <b>' + Math.round(ov / PRE.length * 100) + '%</b>；第 1 名相同的有 <b>' + t1 + ' / ' + PRE.length + '</b>。重疊越高、體積越小越好。';
+  }
+
+  $('#presets').innerHTML = PRE.map((x, i) => '<button type="button" data-i="' + i + '" class="' + (i === 0 ? 'on' : '') + '">' + esc(x) + '</button>').join('');
+  $('#q').value = PRE[0];
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    $('#q').value = PRE[+b.dataset.i];
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#q').addEventListener('input', () => { $('#presets').querySelectorAll('button').forEach(x => x.classList.remove('on')); run(); });
+  [['#dims','dims',Number],['#prec','prec',String]].forEach(([sel, key, cast]) => {
+    $(sel).onclick = e => { const b = e.target.closest('button'); if(!b) return; st[key] = cast(b.dataset.v);
+      $(sel).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  });
+  $('#resc').addEventListener('change', run);
+  run();
+})();
+</script>
+</body>
+</html>

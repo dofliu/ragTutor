@@ -447,6 +447,20 @@
         "成本與延遲"
       ],
       "date": "2026-10-20"
+    },
+    {
+      "no": 27,
+      "slug": "vector-compression",
+      "file": "lessons/027-vector-compression.html",
+      "title": "向量壓縮：Matryoshka 截斷與量化，讓索引小一個數量級",
+      "en": "Embedding Compression: Matryoshka & Quantization",
+      "level": 2,
+      "summary": "向量庫變大後記憶體與成本成為瓶頸。本堂看 Matryoshka 維度截斷、int8 與二元量化，以及用二元向量粗篩、高精度向量重新評分，並用互動範例比較體積與檢索品質的取捨。",
+      "tags": [
+        "進階",
+        "成本與延遲"
+      ],
+      "date": "2026-10-21"
     }
   ]
 }
