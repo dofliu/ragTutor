@@ -461,6 +461,34 @@
         "成本與延遲"
       ],
       "date": "2026-10-21"
+    },
+    {
+      "no": 28,
+      "slug": "sufficient-context",
+      "file": "lessons/028-sufficient-context.html",
+      "title": "充分上下文與拒答：檢索到的內容，夠回答嗎？",
+      "en": "Sufficient Context & Abstention",
+      "level": 2,
+      "summary": "檢索到的片段看起來相關，卻可能不夠回答。本堂區分相關與充分，逐項檢查回答所需的資訊，不夠就補救或拒答並說明缺什麼，並用互動範例比較「一律回答」與「充分性檢查」的差異。",
+      "tags": [
+        "進階",
+        "可靠性"
+      ],
+      "date": "2026-10-22"
+    },
+    {
+      "type": "quiz",
+      "quiz": 7,
+      "slug": "quiz-7-cite-cache-compress-sufficient",
+      "file": "lessons/quiz-7-cite-cache-compress-sufficient.html",
+      "title": "測驗關卡 7：引用、快取、向量壓縮與充分上下文",
+      "en": "Checkpoint 7 · Lessons 025–028",
+      "level": 0,
+      "summary": "第 025–028 堂複習：引用與歸因、語意快取、向量壓縮、充分上下文與拒答。8 題，答完立即看解析，答錯會指向該回頭複習的課程。",
+      "tags": [
+        "測驗關卡"
+      ],
+      "date": "2026-10-22"
     }
   ]
 }

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>測驗關卡 7：引用、快取、向量壓縮與充分上下文｜RAG 動畫教室</title>
+<meta name="description" content="第 021–024 堂複習測驗：RAG 評估、長上下文 vs RAG、延遲切塊、RAG 安全，8 題，答錯會連回該堂複習。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">關卡 7</span><span class="tag">複習第 025–028 堂</span><span class="tag">約 8 分鐘</span></p>
+  <h1>引用、快取、向量壓縮與充分上下文</h1>
+  <p class="lead">引用讓答案可以回頭查證，語意快取省下重複的成本，向量壓縮讓索引小一個數量級，充分上下文則在片段不夠時選擇補救或拒答。共 8 題，每堂各 2 題。</p>
+  <div class="callout">涵蓋課程：<a href="025-citation-attribution.html">引用與歸因</a>、<a href="026-semantic-caching.html">語意快取</a>、<a href="027-vector-compression.html">向量壓縮</a>、<a href="028-sufficient-context.html">充分上下文與拒答</a>。選項順序每次都會重新排列；最佳成績只存在你的瀏覽器裡。</div>
+
+  <h2>🧩 開考前，先快速回顧</h2>
+  <div class="keypoints"><div class="card"><b>引用與歸因</b>先編號再標註，兩關驗證（編號存在、內容支持）；有引用不等於有依據。 <a href="025-citation-attribution.html">回到這一堂 →</a></div><div class="card"><b>語意快取</b>比問題與問題的相似度，門檻是取捨；代碼機型要精確守門，並設 TTL 與版本失效。 <a href="026-semantic-caching.html">回到這一堂 →</a></div><div class="card"><b>向量壓縮</b>體積＝片段數×維度×每維位元組；Matryoshka 截斷、int8／二元量化，再用高精度向量重算。 <a href="027-vector-compression.html">回到這一堂 →</a></div><div class="card"><b>充分上下文與拒答</b>相關不等於充分；逐項檢查所需資訊，不夠就補救或拒答並說明缺什麼。 <a href="028-sufficient-context.html">回到這一堂 →</a></div></div>
+  <h2>📝 測驗（8 題）</h2>
+  <div id="quiz"></div>
+
+  <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。</div>
+
+  <nav class="pager" data-slug="quiz-7-cite-cache-compress-sufficient"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.quizSet({ el:'#quiz', id:'quiz-7-cite-cache-compress-sufficient', pass:6,
+  names:{"025-citation-attribution": "第 025 堂 引用與歸因", "026-semantic-caching": "第 026 堂 語意快取", "027-vector-compression": "第 027 堂 向量壓縮", "028-sufficient-context": "第 028 堂 充分上下文與拒答"},
+  questions:[
+ {
+  "from": "025-citation-attribution",
+  "q": "ALCE 論文提出用哪兩個面向衡量引用品質？",
+  "opts": [
+   "引用召回與引用精確度",
+   "檢索速度與記憶體用量",
+   "答案長度與語氣"
+  ],
+  "a": 0,
+  "why": "引用召回看答案的陳述有沒有被引用支持，引用精確度看引用的片段是否真的支持該句；兩者都要看，才不會只靠「有附引用」自我感覺良好。"
+ },
+ {
+  "from": "025-citation-attribution",
+  "q": "引用編號與片段的對應，應該由誰產生？",
+  "opts": [
+   "由模型在回答時自行決定",
+   "由系統在片段進提示前編號並保存對照表",
+   "事後請模型回憶剛剛是第幾段"
+  ],
+  "a": 1,
+  "why": "編號必須是系統這次放進提示的片段編號，並保存對照；讓模型自己發明或回憶，就無法可靠地做存在檢查。"
+ },
+ {
+  "from": "026-semantic-caching",
+  "q": "語意快取的快取鍵，比對的是什麼？",
+  "opts": [
+   "新問題與過往問題的嵌入向量相似度",
+   "新問題與手冊片段的相似度",
+   "新答案與舊答案的字面重疊"
+  ],
+  "a": 0,
+  "why": "快取比的是「問題與問題」；達門檻就回傳當時存下的答案，跳過檢索與生成，沒達就走完整 RAG 並寫入快取。"
+ },
+ {
+  "from": "026-semantic-caching",
+  "q": "手冊改版、發布技術通報之後，快取裡的舊答案該怎麼處理？",
+  "opts": [
+   "繼續使用，因為相似度仍然很高",
+   "只要把門檻調高就不會有問題",
+   "依寫入時記錄的手冊版本或 TTL 讓它失效並清除"
+  ],
+  "a": 2,
+  "why": "舊答案可能已經是錯的。快取要記錄寫入時間與手冊版本，改版後立刻清除相關項目。"
+ },
+ {
+  "from": "027-vector-compression",
+  "q": "在其他條件相同時，向量索引的體積主要取決於哪些因素的乘積？",
+  "opts": [
+   "片段數 × 維度數 × 每維位元組數",
+   "只看維度數",
+   "只看嵌入模型的參數量"
+  ],
+  "a": 0,
+  "why": "體積＝片段數×維度×每維位元組。降低維度（Matryoshka 截斷）與降低精度（int8、二元量化）可以相乘，所以壓縮效果可觀。"
+ },
+ {
+  "from": "027-vector-compression",
+  "q": "int8 量化的縮放比例被少數極端值拉得很大，會發生什麼事？",
+  "opts": [
+   "向量會自動變成二元向量",
+   "漢明距離變得無法計算",
+   "大多數維度只用到很小範圍的整數，精度被浪費"
+  ],
+  "a": 2,
+  "why": "縮放比例要用有代表性的範圍校準；極端值太多，一般維度就被壓縮到少數幾個整數，量化後的區辨力下降。"
+ },
+ {
+  "from": "028-sufficient-context",
+  "q": "問題問的是 OW-6 偏航誤差，取回的是 OW-8 的 YW-042 偏航誤差章節。這組片段屬於哪一類？",
+  "opts": [
+   "相關但不充分：主題相同，卻沒有 OW-6 的資料",
+   "充分：只要同一個告警代碼就夠",
+   "不相關：代碼不同就算不相關"
+  ],
+  "a": 0,
+  "why": "相關是談同一件事，充分是光靠片段就能明確回答。機型不符、缺少所需資料，就是相關但不充分，應補檢索或拒答。"
+ },
+ {
+  "from": "028-sufficient-context",
+  "q": "Joren 等人（ICLR 2025）對「脈絡不充分時」的觀察，最接近下列哪一項？",
+  "opts": [
+   "模型一定會主動拒答",
+   "強模型常常仍給出答案，而不是拒答",
+   "不充分時模型必然答錯"
+  ],
+  "a": 1,
+  "why": "他們發現強模型在脈絡不充分時常照樣作答；不充分時偶爾也能答對（靠模型本身記憶），所以才需要把充分性當成獨立訊號，與信心一起決定答或不答。"
+ }
+]
+});
+</script>
+</body>
+</html>

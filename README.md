@@ -39,6 +39,8 @@
 | 025 | [RAG 引用與歸因：讓每一句答案都能回頭查證](https://dofliu.github.io/ragTutor/lessons/025-citation-attribution.html) |
 | 026 | [語意快取：相似的問題，直接重用上次的答案](https://dofliu.github.io/ragTutor/lessons/026-semantic-caching.html) |
 | 027 | [向量壓縮：Matryoshka 截斷與量化，讓索引小一個數量級](https://dofliu.github.io/ragTutor/lessons/027-vector-compression.html) |
+| 028 | [充分上下文與拒答：檢索到的內容，夠回答嗎？](https://dofliu.github.io/ragTutor/lessons/028-sufficient-context.html) |
+| 🎯 關卡 7 | [測驗關卡 7：引用、快取、向量壓縮與充分上下文（第 025–028 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-7-cite-cache-compress-sufficient.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 

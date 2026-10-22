@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>充分上下文與拒答：檢索到的內容，夠回答嗎？｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識 RAG 的充分上下文（Sufficient Context）：區分相關與充分、逐項檢查所需資訊、不夠就補救或拒答，以及選擇性生成的取捨。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 028 堂</span><span class="tag lv2">進階</span><span class="tag">約 20 分鐘</span></p>
+  <h1>充分上下文與拒答：檢索到的內容，夠回答嗎？</h1>
+
+  <p class="lead">RAG 出錯，不一定是模型亂講，常常是<b>檢索到的片段根本不夠回答</b>，模型卻照樣給了答案。<b>充分上下文（Sufficient Context）</b>把「相關」和「充分」分開：先判斷這些片段<b>光靠自己能不能明確回答問題</b>，不夠就補檢索，補不到就<b>拒答（abstain）</b>並說明缺什麼，而不是硬湊一個像樣的答案。</p>
+
+  <h2>🎬 動畫：相關，不代表夠用</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="充分上下文動畫：相關的片段不一定足夠回答；把問題拆成所需資訊逐項檢查；判斷器決定回答、補救或拒答；研究發現模型在不充分時常照答；選擇性生成結合信心與充分性；結果是少答幾題但更可信"><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 沒有充分性檢查：看起來相關，模型就照答</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="1" data-to="1">② 相關 ≠ 充分</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="2" data-to="2">③ 把問題拆成「需要的資訊」，逐項找證據</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="3" data-to="3">④ 判斷器：這些片段夠回答嗎？</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="4" data-to="4">⑤ 不充分時有三條出路</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="5" data-to="5">⑥ 研究發現：不充分時模型常照樣作答</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="6" data-to="6">⑦ 選擇性生成：充分性加信心，決定答或不答</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 結果：少答幾題，答出來的更可信</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-to="0"><rect x="24" y="112" width="230" height="56" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="139" y="135.5" text-anchor="middle" font-size="11.5">OW-6 偏航誤差過大</text><text x="139" y="152.5" text-anchor="middle" font-size="11.5">怎麼處理？</text><path d="M254 140 L284 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="284" y="112" width="120" height="56" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="344" y="144" text-anchor="middle" font-size="11.5">檢索</text><path d="M404 140 L434 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="434" y="112" width="458" height="56" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="663" y="135.5" text-anchor="middle" font-size="11.5">取回：OW-8 的 YW-042 偏航誤差過大章節</text><text x="663" y="152.5" text-anchor="middle" font-size="11.5">（手冊裡沒有 OW-6 的資料）</text><path d="M663 168 L663 198" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="434" y="198" width="458" height="56" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="663" y="230" text-anchor="middle" font-size="11.5">LLM：依取回的片段組出答案</text><path d="M434 226 L404 226" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="198" width="380" height="56" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="214" y="221.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">「請檢查風向計校正與偏航驅動器…」</text><text x="214" y="238.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">語氣篤定，但是別款機型的做法</text><text x="24" y="296" font-size="12.5" font-weight="700" style="fill:var(--bad)">片段「看起來很相關」（同告警、同系統），卻沒有回答這題所需的資料</text><text x="24" y="322" font-size="12" class="t-muted">沒有「資料不夠」這個出口時，模型常會用手上的片段硬湊出一個答案。</text><text x="24" y="382" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="1" data-to="1"><text x="24" y="124" font-size="12" font-weight="700" style="fill:var(--vec)">問題</text><text x="334" y="124" font-size="12" font-weight="700" style="fill:var(--vec)">取回的片段</text><text x="644" y="124" font-size="12" font-weight="700" style="fill:var(--vec)">相關？</text><text x="754" y="124" font-size="12" font-weight="700" style="fill:var(--vec)">充分？</text><rect x="24" y="136" width="290" height="46" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="169" y="154.5" text-anchor="middle" font-size="11.5">OW-6 偏航誤差過大</text><text x="169" y="171.5" text-anchor="middle" font-size="11.5">怎麼處理？</text><rect x="334" y="136" width="290" height="46" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="479" y="154.5" text-anchor="middle" font-size="11.5">OW-8 YW-042 偏航誤差</text><text x="479" y="171.5" text-anchor="middle" font-size="11.5">過大（只有 OW-8）</text><rect x="644" y="136" width="90" height="46" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="689" y="163" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">✓ 相關</text><rect x="754" y="136" width="138" height="46" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="823" y="163" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">✗ 不充分</text><rect x="24" y="192" width="290" height="46" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="169" y="210.5" text-anchor="middle" font-size="11.5">PT-230 備援電池</text><text x="169" y="227.5" text-anchor="middle" font-size="11.5">電壓低於多少要更換？</text><rect x="334" y="192" width="290" height="46" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="479" y="210.5" text-anchor="middle" font-size="11.5">PT-230：檢查電壓與充電</text><text x="479" y="227.5" text-anchor="middle" font-size="11.5">迴路，必要時更換（無數值）</text><rect x="644" y="192" width="90" height="46" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="689" y="219" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">✓ 相關</text><rect x="754" y="192" width="138" height="46" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="823" y="219" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">✗ 不充分</text><rect x="24" y="248" width="290" height="46" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="169" y="266.5" text-anchor="middle" font-size="11.5">PT-203 旋角馬達</text><text x="169" y="283.5" text-anchor="middle" font-size="11.5">過溫怎麼處理？</text><rect x="334" y="248" width="290" height="46" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="479" y="266.5" text-anchor="middle" font-size="11.5">PT-203：停機降溫、檢查</text><text x="479" y="283.5" text-anchor="middle" font-size="11.5">風扇濾網、確認溫度再復歸</text><rect x="644" y="248" width="90" height="46" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="689" y="275" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">✓ 相關</text><rect x="754" y="248" width="138" height="46" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="823" y="275" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">✓ 充分</text><text x="24" y="326" font-size="12.5" font-weight="700" style="fill:var(--accent)">充分＝光靠這些片段，就能對問題給出明確答案；相關只是「談同一件事」</text><text x="24" y="352" font-size="12" class="t-muted">定義參考 Joren 等人（ICLR 2025）：脈絡含有足夠資訊，足以明確回答問題。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="2" data-to="2"><rect x="24" y="112" width="430" height="44" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="239" y="138" text-anchor="middle" font-size="11.5">問題：PT-230 備援電池電壓低於多少要更換？</text><rect x="24" y="176" width="230" height="38" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="139" y="199" text-anchor="middle" font-size="11.5">① 告警代碼 PT-230</text><path d="M254 195 L274 195" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="274" y="176" width="618" height="38" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="583" y="199" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">✓ 片段有「PT-230 旋角備援電源測試失敗」</text><rect x="24" y="224" width="230" height="38" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="139" y="247" text-anchor="middle" font-size="11.5">② 要檢查的項目</text><path d="M254 243 L274 243" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="274" y="224" width="618" height="38" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="583" y="247" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">✓ 片段有「檢查備援電池電壓與充電迴路」</text><rect x="24" y="272" width="230" height="38" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="139" y="295" text-anchor="middle" font-size="11.5">③ 更換的電壓門檻（數值）</text><path d="M254 291 L274 291" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="274" y="272" width="618" height="38" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="583" y="295" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">✗ 片段裡沒有任何數值，缺這一項</text><text x="24" y="342" font-size="12.5" font-weight="700" style="fill:var(--bad)">有一項缺口 → 判定「不充分」，並記下缺的是「更換門檻數值」</text><text x="24" y="368" font-size="12" class="t-muted">把問題拆成「需要哪些資訊」，逐項找證據；缺一項就要說出缺什麼。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="3" data-to="3"><rect x="24" y="118" width="170" height="44" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="109" y="144" text-anchor="middle" font-size="11.5">問題</text><rect x="24" y="190" width="170" height="44" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="109" y="216" text-anchor="middle" font-size="11.5">檢索片段</text><path d="M194 140 L274 164" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M194 212 L274 188" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="274" y="128" width="230" height="80" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="389" y="163.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">判斷器（LLM 或小模型）</text><text x="389" y="180.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">「只憑片段，夠回答嗎？」</text><path d="M504 160 L564 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M504 176 L564 214" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="564" y="118" width="328" height="44" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="728" y="144" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">充分 → 可以回答</text><rect x="564" y="190" width="328" height="56" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="728" y="222" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">不充分 → 列出缺少的資訊</text><text x="24" y="296" font-size="12.5" font-weight="700" style="fill:var(--llm)">判斷器只看「問題＋片段」，判斷時不需要標準答案，所以上線後每次查詢都能跑</text><text x="24" y="324" font-size="12" class="t-muted">代價：多一次模型呼叫與延遲；判斷器自己也會錯，要抽樣人工複核。</text><text x="24" y="350" font-size="12" class="t-muted">與第 014 堂 CRAG 的檢索評估相似，但這裡問的是「夠不夠回答」。</text></g><g data-from="4" data-to="4"><rect x="300" y="112" width="320" height="44" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="460" y="138" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">充分性判斷</text><path d="M380 156 L164 198" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M460 156 L460 198" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M540 156 L756 198" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="198" width="280" height="72" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="164" y="229.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">充分</text><text x="164" y="246.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">→ 回答並附引用（第 025 堂）</text><rect x="320" y="198" width="280" height="72" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="460" y="229.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">不充分，但可補救</text><text x="460" y="246.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">→ 改寫查詢再檢索、換資料源</text><rect x="616" y="198" width="276" height="72" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="754" y="229.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">不充分，補不到</text><text x="754" y="246.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">→ 拒答、說明缺什麼、轉人工</text><text x="24" y="316" font-size="12.5" font-weight="700" style="fill:var(--warn)">補救可用第 006 堂查詢改寫、第 014 堂 CRAG 或第 019 堂代理人式檢索</text><text x="24" y="342" font-size="12" class="t-muted">拒答不是終點：要說出缺什麼，並給技師下一步（查原廠文件、聯絡工程師）。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="5" data-to="5"><rect x="24" y="116" width="868" height="60" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="458" y="150" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">脈絡充分時：強模型多半能答對</text><rect x="24" y="192" width="868" height="60" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="458" y="226" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">脈絡不充分時：強模型常常照樣給答案，而不是拒答</text><rect x="24" y="268" width="868" height="60" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="458" y="302" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">不充分也可能答對（靠模型本身記憶），所以不能一律拒答</text><text x="24" y="362" font-size="12" font-weight="700" style="fill:var(--accent)">出處：Joren 等人，〈Sufficient Context: A New Lens on RAG Systems〉（ICLR 2025）。</text><text x="24" y="388" font-size="12" class="t-muted">結論：要把「脈絡夠不夠」當成獨立的訊號來看，而不是只看檢索分數。</text></g><g data-from="6" data-to="6"><path d="M70 340 L70 118 M70 340 L540 340" style="fill:none;stroke:var(--line);stroke-width:1.5"/><path d="M70 150 C230 156 360 200 530 310" style="fill:none;stroke:var(--muted);stroke-width:2.2"/><path d="M70 130 C230 136 380 160 530 252" style="fill:none;stroke:var(--good);stroke-width:2.2"/><text x="76" y="112" font-size="11.5" class="t-muted">答出來的題目中，正確的比例</text><text x="300" y="364" font-size="11.5" text-anchor="middle" class="t-muted">覆蓋率：回答的題目比例（少 → 多）</text><text x="380" y="232" font-size="11.5" font-weight="700" style="fill:var(--muted)">只看模型信心</text><text x="330" y="146" font-size="11.5" font-weight="700" style="fill:var(--good)">信心＋充分性</text><rect x="590" y="118" width="302" height="92" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="741" y="151" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">訊號 1：模型自評的信心</text><text x="741" y="168" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">訊號 2：脈絡是否充分</text><text x="741" y="185" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">合起來決定「答」或「不答」</text><rect x="590" y="226" width="302" height="84" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="741" y="263.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">門檻往嚴格調：更準，但答的更少</text><text x="741" y="280.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">要用自己的評估集找平衡點</text><text x="590" y="340" font-size="11.5" class="t-muted">曲線為示意，不是實測。</text></g><g data-from="7"><rect x="24" y="116" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="234" y="149" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">沒有充分性檢查</text><text x="234" y="166" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">每題都答；缺資料的題目</text><text x="234" y="183" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">也照樣給出像樣的答案</text><rect x="472" y="116" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="682" y="149" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">有充分性檢查</text><text x="682" y="166" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">少答幾題，答出來的有依據</text><text x="682" y="183" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">缺資料時明確說出缺什麼</text><rect x="24" y="228" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="234" y="258.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">代價：覆蓋率下降、多一次判斷成本</text><text x="234" y="275.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">判斷器會錯，門檻要持續校準</text><rect x="472" y="228" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="682" y="258.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">拒答要附下一步</text><text x="682" y="275.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">補檢索、追問條件、轉人工</text><text x="24" y="336" font-size="12.5" font-weight="700" style="fill:var(--good)">技師看到的是：「手冊未載明 OW-6 的處理方式，請查原廠文件或聯絡工程師」</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>相關 ≠ 充分</b>片段和問題談同一件事叫相關；光靠片段就能明確回答才叫充分。同告警、不同機型、缺數值的片段，都是相關但不充分。</div>
+    <div class="card"><b>拆成「需要的資訊」逐項查</b>問題需要告警代碼、機型、步驟、門檻值等；逐項在片段裡找證據，缺哪一項就說缺哪一項，比籠統的「不確定」更有用。</div>
+    <div class="card"><b>三條出路</b>充分就回答並附引用；不充分但可補救，就改寫查詢、換資料源再檢索；補不到就拒答，說明缺什麼，並指引下一步。</div>
+    <div class="card"><b>答或不答是取捨</b>拒答越多、答出來的越準，但覆蓋率越低。研究也發現不充分時模型偶爾仍答得對，所以門檻要用自己的評估集調，不是一刀切。</div>
+  </div>
+
+  <h2>🧪 互動範例：有沒有充分性檢查，差在哪？</h2>
+  <div class="prose"><p>下面有 12 段《OW-8 運維手冊》片段（<b>虛構</b>）。選一個問題，系統用 BM25 取回前 k 段，再檢查「回答這題需要的資訊」是否都出現在片段裡（代碼、機型、步驟、數值等）。你可以切換成「一律回答」，看看沒有把關時會發生什麼；把 k 調小（3 以下）則會看到「更換旋角馬達前的安全步驟」因<b>取回不全</b>被誤拒，k＝5 才答得出來。</p>
+  <p><b>這是簡化模擬：</b>真實系統用 LLM 判斷器，這裡改用每題預設的「必要資訊」清單比對文字；自行輸入的問題只檢查其中的代碼與機型（例如 OW-6、WTG-17）是否出現在片段裡。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><input type="text" id="q" style="flex:1;min-width:220px" aria-label="輸入問題" placeholder="輸入問題，例如：OW-6 偏航誤差過大怎麼處理"></div>
+    <div class="row"><b style="font-size:13px">取回片段數 k：</b>
+      <div class="seg" id="kk"><button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3" class="on">3</button><button type="button" data-v="5">5</button></div></div>
+    <div class="row"><b style="font-size:13px">作法：</b>
+      <div class="seg" id="mode"><button type="button" data-v="always">一律回答</button><button type="button" data-v="check" class="on">充分性檢查後才回答</button></div></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono)">取回的片段（標記＝與問題重疊的字）</div>
+    <div class="hits" id="hits"></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono);margin-top:6px">回答這題需要的資訊</div>
+    <div id="facets" style="font-size:13.5px"></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono);margin-top:6px">系統的回應</div>
+    <div class="hits" id="resp"></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono);margin-top:6px">7 個預設問題的總表現（目前的 k）</div>
+    <div class="muted" id="tally" style="font-size:13px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>最小的「充分性檢查＋拒答」實作：取回片段後先請模型判斷「夠不夠回答」，不夠就回報缺少的資訊，夠才進入生成。需要 <code>anthropic</code> 套件與 API 金鑰；<code>retrieve</code> 為教學用替身，文件與問題皆為虛構。</p></div>
+<pre class="code"><code><span class="k">import</span> json
+<span class="k">from</span> anthropic <span class="k">import</span> Anthropic
+
+client = <span class="f">Anthropic</span>()            <span class="c"># 需要環境變數 ANTHROPIC_API_KEY</span>
+MODEL = <span class="s">"claude-sonnet-5"</span>
+
+DOCS = [
+    <span class="s">"PT-230 旋角備援電源測試失敗：檢查備援電池電壓與充電迴路，必要時更換電池模組。"</span>,
+    <span class="s">"PT-203 旋角馬達過溫：先停機降溫，檢查冷卻風扇與濾網，復歸前確認繞組溫度。"</span>,
+    <span class="s">"OW-8 YW-042 偏航誤差過大：檢查風向計校正與偏航驅動器狀態。"</span>,
+    <span class="s">"上鎖掛牌 LOTO：作業前切斷並上鎖所有能量來源，驗證零能量後才可開始。"</span>,
+]
+
+<span class="k">def</span> <span class="f">retrieve</span>(query, k=3):       <span class="c"># 教學用替身：依共同字元數排序；實務請換成前面課程的檢索</span>
+    <span class="k">return</span> <span class="f">sorted</span>(DOCS, key=<span class="k">lambda</span> t: <span class="f">len</span>(<span class="f">set</span>(query) &amp; <span class="f">set</span>(t)), reverse=<span class="k">True</span>)[:k]
+
+<span class="k">def</span> <span class="f">ask</span>(system, user):
+    msg = client.messages.<span class="f">create</span>(model=MODEL, max_tokens=600, system=system,
+                                 messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: user}])
+    <span class="k">return</span> msg.content[0].text
+
+JUDGE = <span class="s">"""你是檢索品質把關員。只依「片段」判斷，不可用自己的知識補充。
+先想：這個問題需要哪些資訊才能明確回答？片段是否都有？
+只輸出 JSON：{"sufficient": true 或 false, "missing": ["缺少的資訊"]}"""</span>
+
+<span class="k">def</span> <span class="f">check_sufficiency</span>(question, passages):
+    raw = <span class="f">ask</span>(JUDGE, <span class="s">f"問題：{question}\n片段：\n"</span> + <span class="s">"\n"</span>.<span class="f">join</span>(passages))
+    <span class="k">try</span>:
+        <span class="k">return</span> json.<span class="f">loads</span>(raw)
+    <span class="k">except</span> json.JSONDecodeError:    <span class="c"># 判斷器沒照格式輸出：保守處理，視為不充分</span>
+        <span class="k">return</span> {<span class="s">"sufficient"</span>: <span class="k">False</span>, <span class="s">"missing"</span>: [<span class="s">"（判斷器輸出無法解析）"</span>]}
+
+<span class="k">def</span> <span class="f">answer</span>(question):
+    passages = <span class="f">retrieve</span>(question)
+    verdict = <span class="f">check_sufficiency</span>(question, passages)
+    <span class="k">if</span> <span class="k">not</span> verdict[<span class="s">"sufficient"</span>]:
+        missing = <span class="s">"、"</span>.<span class="f">join</span>(verdict[<span class="s">"missing"</span>])
+        <span class="k">return</span> <span class="s">f"手冊未載明，無法回答。缺少：{missing}。請查原廠文件或聯絡工程師。"</span>
+    <span class="k">return</span> <span class="f">ask</span>(<span class="s">"只根據片段回答，並指出依據哪一則片段。"</span>,
+               <span class="s">f"問題：{question}\n片段：\n"</span> + <span class="s">"\n"</span>.<span class="f">join</span>(passages))
+
+<span class="f">print</span>(<span class="f">answer</span>(<span class="s">"PT-230 備援電池電壓低於多少要更換？"</span>))   <span class="c"># 片段沒有數值 → 預期拒答</span>
+<span class="f">print</span>(<span class="f">answer</span>(<span class="s">"PT-203 旋角馬達過溫怎麼處理？"</span>))           <span class="c"># 片段足夠 → 預期回答</span></code></pre>
+  <div class="prose"><p>注意：判斷器的提示要明確要求「只依片段判斷」，否則模型會用自己的知識補上缺的部分，等於把問題藏起來。實務上可把判斷結果與缺少的資訊記入日誌，方便找出手冊該補哪些內容；也可以只對高風險問題（作業安全、復歸條件）啟用，以控制成本與延遲。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>Self-RAG（第 013 堂）</th><th>CRAG（第 014 堂）</th><th>RAG 評估（第 021 堂）</th><th>引用與歸因（第 025 堂）</th><th>充分上下文</th></tr>
+    <tr><th>想解決的問題</th><td>模型該不該檢索、取回的有沒有用</td><td>取回的內容品質不佳時如何補救</td><td>離線量測整體表現</td><td>答案能否回頭查證</td><td>片段不夠回答時，模型仍照答</td></tr>
+    <tr><th>作用位置</th><td>生成過程中（反思標記）</td><td>檢索之後、生成之前</td><td>上線前後的離線評測</td><td>生成之後</td><td>生成之前，決定答或不答</td></tr>
+    <tr><th>檢查的是</th><td>相關性、支持度、有用性</td><td>檢索內容的相關程度</td><td>召回、忠實度、答案相關性</td><td>句子有沒有證據支持</td><td>片段是否足以明確回答</td></tr>
+    <tr><th>缺點</th><td>需要專門訓練的模型</td><td>多一次評估與補救流程</td><td>不會即時攔住單次錯誤</td><td>事後才發現沒依據</td><td>判斷器會錯；拒答降低覆蓋率</td></tr>
+    <tr><th>成本</th><td>高（訓練）</td><td>中</td><td>中（建立評估集）</td><td>中</td><td>低到中（多一次判斷呼叫）</td></tr>
+    <tr><th>適合用在</th><td>自訂模型的研究型系統</td><td>檢索品質不穩的知識庫</td><td>持續調整與回歸測試</td><td>要可稽核的答案</td><td>答錯代價高、資料常有缺口的問答</td></tr>
+  </table>
+
+  <h2>⚠️ 充分上下文常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>把相關分數當充分</b>：檢索分數高只代表像，不代表夠用。同告警不同機型、缺關鍵數值的片段，分數都可能很高。</li>
+      <li><b>判斷器偷用自己的知識</b>：若提示沒要求「只依片段」，判斷器會憑常識認定「夠了」，把缺口蓋掉。提示要明確，並用抽樣檢查。</li>
+      <li><b>一律拒答的過度保守</b>：不充分時模型有時仍答得對，門檻太嚴會讓技師常得到「無法回答」。要看覆蓋率，不只看正確率。</li>
+      <li><b>拒答沒有下一步</b>：只說「無法回答」會讓人卡住。要列出缺什麼、建議查哪份文件或聯絡誰。</li>
+      <li><b>k 太小造成誤拒</b>：答案分散在多份文件（例如步驟在一處、安全注意事項在另一處）時，取回太少會被判不充分；先確認檢索夠完整，再調門檻。</li>
+      <li><b>判斷結果沒被利用</b>：把「缺少的資訊」記下來，就知道手冊或知識庫該補什麼。只拿來攔截而不回饋，等於浪費訊號。</li>
+      <li><b>不適合的場景</b>：閒聊或創意型問答、答案本身一眼可驗證，或延遲極敏感的場景，多一次判斷的成本不一定划算；但涉及作業安全的問題值得開啟。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的「必要資訊」比對是簡化模擬，不代表真實判斷器的行為。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Joren 等人，<a href="https://arxiv.org/abs/2411.06037">Sufficient Context: A New Lens on Retrieval Augmented Generation Systems</a>（ICLR 2025）；<a href="https://research.google/blog/deeper-insights-into-retrieval-augmented-generation-the-role-of-sufficient-context/">Google Research 部落格摘要</a>。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>取回的片段與問題「談同一個告警」，為什麼仍可能不充分？</b></p>
+    <button class="opt">A. 因為相關的片段一定比較短</button>
+    <button class="opt">B. 因為相關只代表主題相同，片段可能缺少回答所需的關鍵資訊（如機型或數值）</button>
+    <button class="opt">C. 因為充分性只由嵌入向量的相似度決定</button>
+    <div class="why">相關是「談同一件事」，充分是「光靠這些片段就能明確回答」。少了機型、數值或步驟，再相關也不夠。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>充分性判斷器發現片段不夠時，最合理的處置是？</b></p>
+    <button class="opt">A. 讓模型憑自己的記憶補完答案，反正語氣篤定</button>
+    <button class="opt">B. 完全不回應，讓使用者自己重問</button>
+    <button class="opt">C. 先嘗試補救（改寫查詢、換資料源再檢索）；補不到就拒答，說明缺少什麼並指引下一步</button>
+    <div class="why">不充分時硬答是風險所在。可補救就補救，補不到要誠實拒答並指出缺口，讓技師知道該去查什麼。</div>
+  </div>
+
+  <nav class="pager" data-slug="sufficient-context"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'沒有充分性檢查：看起來相關就照答', text:'技師問「<b>OW-6</b> 偏航誤差怎麼處理」，手冊只有 <b>OW-8</b> 的 YW-042 章節。片段<b>看起來很相關</b>，模型便依它篤定地回答，卻是別款機型的做法。' },
+  { title:'相關不等於充分', text:'<b>相關</b>是片段和問題談同一件事；<b>充分（sufficient）</b>是光靠這些片段就能對問題給出明確答案。相關的片段也可能缺了關鍵資訊。' },
+  { title:'把問題拆成需要的資訊', text:'問「PT-230 備援電池電壓低於多少要更換」，需要代碼、檢查項目與<b>更換門檻數值</b>。逐項找證據，片段裡<b>沒有數值</b>，缺一項就判定不充分。' },
+  { title:'讓判斷器來把關', text:'把「問題＋檢索片段」交給<b>判斷器</b>（LLM 或小模型），問：這些內容夠回答嗎？輸出<b>充分／不充分</b>與缺少的資訊。多一次呼叫，換來答題前的把關。' },
+  { title:'不充分時有三條出路', text:'充分就回答並附引用。不充分但可補救，就<b>改寫查詢再檢索</b>或換資料源；補不到就<b>拒答</b>，說明缺哪些資訊並轉人工，而不是硬編答案。' },
+  { title:'研究怎麼說', text:'Joren 等人（ICLR 2025）發現：脈絡充分時強模型多半能答對，但脈絡<b>不充分</b>時，它們常照樣給答案而非拒答；不充分時偶爾也答對，所以不能一律拒答。' },
+  { title:'選擇性生成：答或不答', text:'把<b>充分性</b>與模型<b>自評信心</b>合起來，決定這題答或不答。拒答越多，答出來的越準，但覆蓋率下降；門檻要用自己的評估集調。' },
+  { title:'結果：少答幾題，答的更可信', text:'技師拿到的是有依據的答案，或是「<b>缺少 OW-6 的資料</b>，請查原廠文件或聯絡工程師」。代價是覆蓋率與延遲；拒答要附下一步，才不會讓人卡住。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  const DOCS = [
+    "旋角系統 PT-203 旋角馬達過溫：先停機降溫，檢查馬達冷卻風扇與濾網，確認繞組溫度恢復後才可復歸。",
+    "旋角系統 PT-205 旋角馬達煞車異常：檢查煞車線圈供電與間隙，間隙超出範圍時更換煞車組。",
+    "旋角系統 PT-230 旋角備援電源測試失敗：檢查備援電池電壓與充電迴路，必要時更換電池模組。",
+    "偏航系統 OW-8 YW-042 偏航誤差過大：檢查風向計校正與偏航驅動器狀態，確認偏航煞車釋放正常。",
+    "齒輪箱 GB-117 高速軸軸承溫度過高：檢查潤滑油位與油溫，比對 CMS 振動趨勢，必要時降載運轉並排定檢修。",
+    "變流器 CV-310 功率模組過溫：檢查水冷迴路流量與散熱器積塵，確認環境溫度後再復歸。",
+    "上鎖掛牌 LOTO：作業前切斷並上鎖所有能量來源，掛上個人鎖與標籤，驗證零能量後才可開始。",
+    "高處作業規範：進入輪轂或機艙前，確認天候與海象窗口，並檢查安全帶、救援裝備與雙人作業。",
+    "更換旋角馬達程序：先上鎖掛牌，將葉片順槳鎖定，拆下馬達電纜與固定螺栓，以吊具移出並安裝新馬達。",
+    "旋角馬達冷卻風扇更換：備品料號 PT-MTR-02 的風扇組，更換後需空轉測試並確認旋角馬達溫升正常。",
+    "液壓與煞車：機械煞車片磨耗超過限值時需更換，更換前必須執行上鎖掛牌並確認轉子已鎖定。",
+    "塔架螺栓巡檢：依扭力表抽檢法蘭螺栓，發現鬆動時全圈重新鎖固並登錄工單。"
+  ];
+  /* ok：手冊是否真的涵蓋這題（教學用的標準答案）；need：回答所需的資訊與其證據樣式 */
+  const PRE = [
+    { q:'PT-203 旋角馬達過溫怎麼處理', ok:true, need:[['告警代碼 PT-203',/PT-203/],['停機降溫與檢查項目',/停機降溫/],['復歸條件',/復歸/]] },
+    { q:'PT-230 備援電池電壓低於多少要更換', ok:false, need:[['告警代碼 PT-230',/PT-230/],['檢查備援電池電壓',/電池電壓/],['更換門檻（數值）',/\d+\s*(V|伏)/]] },
+    { q:'OW-6 偏航誤差過大怎麼處理', ok:false, need:[['機型 OW-6',/OW-6/],['偏航誤差的檢查步驟',/YW-042[^。]*檢查/]] },
+    { q:'GB-117 齒輪箱軸承溫度過高怎麼辦', ok:true, need:[['告警代碼 GB-117',/GB-117/],['檢查潤滑油位與油溫',/潤滑油位/],['降載與檢修',/降載/]] },
+    { q:'更換旋角馬達前的安全步驟', ok:true, need:[['上鎖掛牌',/上鎖掛牌/],['葉片順槳鎖定',/順槳鎖定/],['高處作業與救援裝備',/高處作業|救援裝備/]] },
+    { q:'WTG-17 昨天為什麼停機', ok:false, need:[['WTG-17 的事件紀錄',/WTG-17/],['停機原因',/停機原因|事件紀錄/]] },
+    { q:'CV-310 變流器過溫要檢查什麼', ok:true, need:[['告警代碼 CV-310',/CV-310/],['水冷迴路',/水冷迴路/],['散熱器積塵',/散熱器/]] }
+  ];
+  const index = rt.buildIndex(DOCS.map(t => ({ text:t })));
+  const st = { k:3, mode:'check' };
+
+  function needsFor(q){
+    const p = PRE.find(x => x.q === q);
+    if(p) return { preset:p, need:p.need };
+    const codes = [...new Set((q.match(/[A-Za-z]{2,4}-\d{1,4}/g) || []).map(s => s.toUpperCase()))];
+    return { preset:null, need:codes.map(c => ['代碼／機型 ' + c, new RegExp(c.replace(/[-]/g,'\\-'), 'i')]) };
+  }
+  function evaluate(q, k){
+    const hits = rt.searchBM25(index, q, k);
+    const text = hits.map(h => h.doc.text).join('\n');
+    const { preset, need } = needsFor(q);
+    const rows = need.map(([n, re]) => ({ n, ok:re.test(text) }));
+    return { hits, rows, preset, sufficient: rows.length > 0 && rows.every(r => r.ok) };
+  }
+  const firstStep = t => (t.split('：')[1] || t).split('。')[0];
+
+  function run(){
+    const q = $('#q').value.trim();
+    if(!q){ ['#hits','#facets','#resp'].forEach(s => $(s).innerHTML = ''); $('#hits').innerHTML = '<div class="muted">請輸入問題或點選預設問題。</div>'; }
+    else {
+      const r = evaluate(q, st.k);
+      $('#hits').innerHTML = r.hits.map((h, n) => '<div class="hit' + (n === 0 ? ' top' : '') + '"><div class="meta"><span>#' + (n+1) + '</span><span>BM25 ' + h.score.toFixed(2) + '</span></div>' + RagTutor.rt.highlight(h.doc.text, q) + '</div>').join('');
+      $('#facets').innerHTML = r.rows.length
+        ? r.rows.map(x => '<div style="margin-top:3px;color:var(--' + (x.ok ? 'good' : 'bad') + ')">' + (x.ok ? '✓' : '✗') + ' ' + esc(x.n) + (x.ok ? '' : '：取回的片段裡找不到') + '</div>').join('')
+        : '<div class="muted">這個問題沒有可自動檢查的條件（沒有代碼或機型）。請改選預設問題，或在問題中加入代碼，例如 OW-6、WTG-17。</div>';
+      let html;
+      if(st.mode === 'always'){
+        html = '<div class="hit top"><div class="meta"><span>一律回答</span></div>依手冊：' + esc(firstStep(r.hits[0].doc.text)) + '。' +
+          (r.preset && !r.preset.ok ? '<div style="margin-top:6px;color:var(--bad);font-size:12.5px">⚠ 手冊並未涵蓋這個問題，這個答案缺乏依據，卻說得很篤定。</div>' : '') + '</div>';
+      } else if(r.sufficient){
+        html = '<div class="hit top"><div class="meta"><span>判定：充分，可以回答</span></div>依手冊：' + esc(firstStep(r.hits[0].doc.text)) + '。（並附上取回片段作引用）' +
+          (r.preset && !r.preset.ok ? '<div style="margin-top:6px;color:var(--warn);font-size:12.5px">提醒：這題其實沒有完整依據，只是條件剛好都出現在片段裡；簡化模擬的判斷也會有漏網之魚。</div>' : '') + '</div>';
+      } else if(r.rows.length){
+        const miss = r.rows.filter(x => !x.ok).map(x => x.n).join('、');
+        html = '<div class="hit low" style="opacity:1;border-left:3px solid var(--bad)"><div class="meta"><span>判定：不充分，拒答</span></div>手冊未載明，無法回答。缺少：' + esc(miss) + '。請查原廠文件或聯絡工程師。' +
+          (r.preset && r.preset.ok ? '<div style="margin-top:6px;color:var(--warn);font-size:12.5px">這題其實答得出來，是取回太少被誤拒；試著把 k 調大。</div>' : '') + '</div>';
+      } else html = '<div class="muted">沒有可檢查的條件，無法做充分性判斷。</div>';
+      $('#resp').innerHTML = html;
+    }
+    /* 總表：兩種作法並列 */
+    let aWrong = 0, cRight = 0, cWrong = 0, cMiss = 0, cRefuse = 0;
+    PRE.forEach(p => {
+      if(!p.ok) aWrong++;
+      const r = evaluate(p.q, st.k);
+      if(r.sufficient){ if(p.ok) cRight++; else cWrong++; } else { if(p.ok) cMiss++; else cRefuse++; }
+    });
+    const n = PRE.length, okN = PRE.filter(p => p.ok).length;
+    $('#tally').innerHTML = '一律回答：全部 ' + n + ' 題都作答，其中 <b style="color:var(--bad)">' + aWrong + ' 題手冊根本沒寫卻照答</b>。<br>' +
+      '充分性檢查：正確回答 <b>' + cRight + ' / ' + okN + '</b> 題；正確拒答 <b>' + cRefuse + ' / ' + (n - okN) + '</b> 題；誤答 <b>' + cWrong + '</b> 題；誤拒 <b>' + cMiss + '</b> 題。';
+  }
+
+  $('#presets').innerHTML = PRE.map((p, i) => '<button type="button" data-i="' + i + '" class="' + (i === 0 ? 'on' : '') + '">' + esc(p.q) + '</button>').join('');
+  $('#q').value = PRE[0].q;
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    $('#q').value = PRE[+b.dataset.i].q;
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#q').addEventListener('input', () => { $('#presets').querySelectorAll('button').forEach(x => x.classList.remove('on')); run(); });
+  [['#kk','k',Number],['#mode','mode',String]].forEach(([sel, key, cast]) => {
+    $(sel).onclick = e => { const b = e.target.closest('button'); if(!b) return; st[key] = cast(b.dataset.v);
+      $(sel).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  });
+  run();
+})();
+</script>
+</body>
+</html>
