@@ -489,6 +489,20 @@
         "測驗關卡"
       ],
       "date": "2026-10-22"
+    },
+    {
+      "no": 29,
+      "slug": "splade",
+      "file": "lessons/029-splade.html",
+      "title": "SPLADE 學習式稀疏檢索：讓關鍵字檢索聽懂口語",
+      "en": "SPLADE Learned Sparse Retrieval",
+      "level": 3,
+      "summary": "BM25 要詞完全對上才算分。SPLADE 讓語言模型替詞表上的詞打分並加上擴展詞，輸出仍是稀疏向量、可放進倒排索引。本堂用互動範例比較 BM25 與帶擴展的稀疏檢索，並看門檻如何影響索引大小。",
+      "tags": [
+        "高階",
+        "稀疏檢索"
+      ],
+      "date": "2026-10-25"
     }
   ]
 }

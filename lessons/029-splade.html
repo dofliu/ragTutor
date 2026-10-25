@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPLADE 學習式稀疏檢索：讓關鍵字檢索聽懂口語｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識 SPLADE 學習式稀疏檢索：由語言模型替詞表上的詞打分並擴展相關詞，仍用倒排索引檢索，兼顧口語對應與可解釋性。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 029 堂</span><span class="tag lv3">高階</span><span class="tag">約 20 分鐘</span></p>
+  <h1>SPLADE 學習式稀疏檢索：讓關鍵字檢索聽懂口語</h1>
+
+  <p class="lead">BM25 要詞完全對上才算分，技師說「<b>葉片轉不動</b>」，手冊寫的卻是「煞車異常、角度卡住」，就查不到。稠密向量能補這個洞，卻看不出為什麼命中。<b>SPLADE（Sparse Lexical and Expansion Model）</b>讓語言模型替<b>詞表上的每個詞</b>打分並<b>加上相關的擴展詞</b>，輸出仍是稀疏向量，可以直接放進<b>倒排索引</b>：既聽得懂口語，又看得到是哪些詞對上。</p>
+
+  <h2>🎬 動畫：從詞彙不匹配到學習式擴展</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="SPLADE 動畫：口語與手冊用字對不上；語言模型為詞表上每個詞打分；詞彙擴展；log(1+ReLU)；稀疏正則；倒排索引檢索；與 BM25、稠密向量比較；結果"><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 沒有擴展：技師口語和手冊用字對不上</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="1" data-to="1">② SPLADE：讓語言模型替「詞表上的每個詞」打分</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="2" data-to="2">③ 詞彙擴展：一句話變成一組加權的詞</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="3" data-to="3">④ log(1+ReLU)：負值歸零、大值壓扁</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="4" data-to="4">⑤ 稀疏正則：逼大多數詞的權重為 0</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="5" data-to="5">⑥ 稀疏向量可以放進倒排索引</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="6" data-to="6">⑦ 和 BM25、稠密向量放在一起比</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 結果：沿用關鍵字檢索的索引，又能對上口語</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-to="0"><rect x="24" y="112" width="230" height="56" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="139.0" y="144.0" text-anchor="middle" font-size="11.5">技師輸入：「葉片轉不動」</text><path d="M254 140 L284 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="284" y="112" width="150" height="56" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="359.0" y="135.5" text-anchor="middle" font-size="11.5">BM25 倒排索引</text><text x="359.0" y="152.5" text-anchor="middle" font-size="11.5">（詞要完全對上）</text><path d="M434 140 L464 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="464" y="112" width="428" height="56" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="678.0" y="135.5" text-anchor="middle" font-size="11.5">手冊 PT-205：「旋角馬達煞車異常，葉片角度卡住…」</text><text x="678.0" y="152.5" text-anchor="middle" font-size="11.5">沒有「轉不動」這個詞</text><rect x="24" y="198" width="868" height="56" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="458.0" y="230.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">查詢詞與文件詞沒有交集 → PT-205 排不到前面</text><text x="24" y="296" font-size="12.5" font-weight="700" style="fill:var(--bad)">詞彙不匹配（vocabulary mismatch）：同一件事，技師和手冊用不同的字</text><text x="24" y="322" font-size="12" class="t-muted">稠密向量（第 003 堂）能補這個洞，但丟掉了「哪個詞對上」的可解釋性，也要另建向量索引。</text><text x="24" y="382" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="1" data-to="1"><rect x="24" y="112" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="124.0" y="135.5" text-anchor="middle" font-size="11.5">輸入文字</text><text x="124.0" y="152.5" text-anchor="middle" font-size="11.5">「葉片轉不動」</text><path d="M224 140 L254 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="254" y="112" width="230" height="56" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="369.0" y="135.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">BERT 編碼器 + MLM 頭</text><text x="369.0" y="152.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">（掩碼語言模型）</text><path d="M484 140 L514 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="514" y="112" width="378" height="56" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="703.0" y="135.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">詞表上每個詞各一個分數</text><text x="703.0" y="152.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">（BERT 詞表約三萬個詞）</text><text x="24" y="214" font-size="12.5" font-weight="700" style="fill:var(--vec)">MLM 頭原本用來「猜被遮住的字」，所以它會對很多相近的詞打高分。</text><text x="24" y="240" font-size="12" class="t-muted">SPLADE 把這些分數當作「這段文字和詞表上每個詞有多相關」的權重。</text><rect x="24" y="272" width="868" height="52" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="458.0" y="302.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">輸出是一個維度＝詞表大小的向量；訓練目標讓大多數維度為 0（稀疏）</text><text x="24" y="362" font-size="11.5" class="t-muted">來源：Formal 等人，SPLADE（SIGIR 2021）。以下權重為示意，非真實模型輸出。</text></g><g data-from="2" data-to="2"><text x="24" y="122" font-size="12.5" font-weight="700" style="fill:var(--query)">輸入：「葉片轉不動」</text><text x="24" y="149" font-size="11.5">葉片</text><rect x="114" y="136" width="220" height="18" rx="3" style="fill:var(--soft)"/><rect x="114" y="136" width="220" height="18" rx="3" style="fill:var(--good)"/><text x="342" y="149" font-size="11.5" class="t-muted">1.0</text><text x="24" y="175" font-size="11.5">轉不動</text><rect x="114" y="162" width="220" height="18" rx="3" style="fill:var(--soft)"/><rect x="114" y="162" width="220" height="18" rx="3" style="fill:var(--good)"/><text x="342" y="175" font-size="11.5" class="t-muted">1.0</text><text x="24" y="206" font-size="12.5" font-weight="700" style="fill:var(--vec)">↓ 模型加上的擴展詞（原句沒有）</text><text x="24" y="231" font-size="11.5">卡住</text><rect x="114" y="218" width="220" height="18" rx="3" style="fill:var(--soft)"/><rect x="114" y="218" width="176" height="18" rx="3" style="fill:var(--vec)"/><text x="342" y="231" font-size="11.5" class="t-muted">0.8</text><text x="24" y="257" font-size="11.5">煞車</text><rect x="114" y="244" width="220" height="18" rx="3" style="fill:var(--soft)"/><rect x="114" y="244" width="132" height="18" rx="3" style="fill:var(--vec)"/><text x="342" y="257" font-size="11.5" class="t-muted">0.6</text><text x="24" y="283" font-size="11.5">旋角</text><rect x="114" y="270" width="220" height="18" rx="3" style="fill:var(--soft)"/><rect x="114" y="270" width="110" height="18" rx="3" style="fill:var(--vec)"/><text x="342" y="283" font-size="11.5" class="t-muted">0.5</text><text x="24" y="309" font-size="11.5">馬達</text><rect x="114" y="296" width="220" height="18" rx="3" style="fill:var(--soft)"/><rect x="114" y="296" width="88" height="18" rx="3" style="fill:var(--vec)"/><text x="342" y="309" font-size="11.5" class="t-muted">0.4</text><rect x="430" y="136" width="462" height="160" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="661.0" y="177.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">一句話 → 一組「詞：權重」</text><text x="661.0" y="194.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)"></text><text x="661.0" y="211.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">原有的詞保留，另加語意相近、</text><text x="661.0" y="228.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">手冊裡常用的詞；權重越大越重要</text><text x="661.0" y="245.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)"></text><text x="661.0" y="262.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">這就是「Expansion」</text><text x="24" y="342" font-size="12.5" font-weight="700" style="fill:var(--vec)">文件端也做同樣的事：PT-205 那段會多出「轉不動」「煞車」等詞。</text><text x="24" y="392" font-size="11.5" class="t-muted">權重為示意；實際擴展哪些詞由訓練決定。</text></g><g data-from="3" data-to="3"><rect x="24" y="116" width="260" height="52" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="154.0" y="146.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">原始分數 z（可正可負）</text><path d="M284 142 L314 142" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="314" y="116" width="260" height="52" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="444.0" y="146.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">w = log(1 + ReLU(z))</text><path d="M574 142 L604 142" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="604" y="116" width="288" height="52" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="748.0" y="146.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">非負、不會一枝獨秀</text><text x="24" y="212" font-size="12.5" font-weight="700" style="fill:var(--accent)">ReLU：負分數變 0，這個詞就不進向量，向量才會有大量的 0。</text><text x="24" y="240" font-size="12" class="t-muted">log(1+·)：把特別大的分數壓扁，避免少數詞主導，也讓分數更像 BM25 的詞頻飽和。</text><text x="24" y="282" font-size="12.5" font-weight="700" style="fill:var(--llm)">整段文字有很多位置，每個詞取各位置分數的總和（SPLADE）或最大值（SPLADE v2 的 max 版本）。</text><text x="24" y="308" font-size="12" class="t-muted">v2 另外加入向 cross-encoder 蒸餾（第 005 堂）來提升排序品質。</text><text x="24" y="392" font-size="11.5" class="t-muted">公式出自 SPLADE 論文；細節請看延伸閱讀。</text></g><g data-from="4" data-to="4"><text x="24" y="124" font-size="12.5" font-weight="700" style="fill:var(--bad)">沒有稀疏正則：幾乎每個詞都有一點分數</text><rect x="24" y="138" width="10" height="14" style="fill:var(--bad)"/><rect x="38" y="138" width="10" height="26" style="fill:var(--bad)"/><rect x="52" y="138" width="10" height="38" style="fill:var(--bad)"/><rect x="66" y="138" width="10" height="20" style="fill:var(--bad)"/><rect x="80" y="138" width="10" height="32" style="fill:var(--bad)"/><rect x="94" y="138" width="10" height="14" style="fill:var(--bad)"/><rect x="108" y="138" width="10" height="26" style="fill:var(--bad)"/><rect x="122" y="138" width="10" height="38" style="fill:var(--bad)"/><rect x="136" y="138" width="10" height="20" style="fill:var(--bad)"/><rect x="150" y="138" width="10" height="32" style="fill:var(--bad)"/><rect x="164" y="138" width="10" height="14" style="fill:var(--bad)"/><rect x="178" y="138" width="10" height="26" style="fill:var(--bad)"/><rect x="192" y="138" width="10" height="38" style="fill:var(--bad)"/><rect x="206" y="138" width="10" height="20" style="fill:var(--bad)"/><rect x="220" y="138" width="10" height="32" style="fill:var(--bad)"/><rect x="234" y="138" width="10" height="14" style="fill:var(--bad)"/><rect x="248" y="138" width="10" height="26" style="fill:var(--bad)"/><rect x="262" y="138" width="10" height="38" style="fill:var(--bad)"/><rect x="276" y="138" width="10" height="20" style="fill:var(--bad)"/><rect x="290" y="138" width="10" height="32" style="fill:var(--bad)"/><rect x="304" y="138" width="10" height="14" style="fill:var(--bad)"/><rect x="318" y="138" width="10" height="26" style="fill:var(--bad)"/><rect x="332" y="138" width="10" height="38" style="fill:var(--bad)"/><rect x="346" y="138" width="10" height="20" style="fill:var(--bad)"/><rect x="360" y="138" width="10" height="32" style="fill:var(--bad)"/><rect x="374" y="138" width="10" height="14" style="fill:var(--bad)"/><rect x="388" y="138" width="10" height="26" style="fill:var(--bad)"/><rect x="402" y="138" width="10" height="38" style="fill:var(--bad)"/><rect x="416" y="138" width="10" height="20" style="fill:var(--bad)"/><rect x="430" y="138" width="10" height="32" style="fill:var(--bad)"/><rect x="444" y="138" width="10" height="14" style="fill:var(--bad)"/><rect x="458" y="138" width="10" height="26" style="fill:var(--bad)"/><rect x="472" y="138" width="10" height="38" style="fill:var(--bad)"/><rect x="486" y="138" width="10" height="20" style="fill:var(--bad)"/><rect x="500" y="138" width="10" height="32" style="fill:var(--bad)"/><rect x="514" y="138" width="10" height="14" style="fill:var(--bad)"/><rect x="528" y="138" width="10" height="26" style="fill:var(--bad)"/><rect x="542" y="138" width="10" height="38" style="fill:var(--bad)"/><rect x="556" y="138" width="10" height="20" style="fill:var(--bad)"/><rect x="570" y="138" width="10" height="32" style="fill:var(--bad)"/><rect x="584" y="138" width="10" height="14" style="fill:var(--bad)"/><rect x="598" y="138" width="10" height="26" style="fill:var(--bad)"/><rect x="612" y="138" width="10" height="38" style="fill:var(--bad)"/><rect x="626" y="138" width="10" height="20" style="fill:var(--bad)"/><rect x="640" y="138" width="10" height="32" style="fill:var(--bad)"/><rect x="654" y="138" width="10" height="14" style="fill:var(--bad)"/><rect x="668" y="138" width="10" height="26" style="fill:var(--bad)"/><rect x="682" y="138" width="10" height="38" style="fill:var(--bad)"/><rect x="696" y="138" width="10" height="20" style="fill:var(--bad)"/><rect x="710" y="138" width="10" height="32" style="fill:var(--bad)"/><rect x="724" y="138" width="10" height="14" style="fill:var(--bad)"/><rect x="738" y="138" width="10" height="26" style="fill:var(--bad)"/><rect x="752" y="138" width="10" height="38" style="fill:var(--bad)"/><rect x="766" y="138" width="10" height="20" style="fill:var(--bad)"/><rect x="780" y="138" width="10" height="32" style="fill:var(--bad)"/><rect x="794" y="138" width="10" height="14" style="fill:var(--bad)"/><rect x="808" y="138" width="10" height="26" style="fill:var(--bad)"/><rect x="822" y="138" width="10" height="38" style="fill:var(--bad)"/><rect x="836" y="138" width="10" height="20" style="fill:var(--bad)"/><rect x="850" y="138" width="10" height="32" style="fill:var(--bad)"/><text x="24" y="224" font-size="12.5" font-weight="700" style="fill:var(--good)">有稀疏正則：只留下少數有意義的詞</text><rect x="24" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="38" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="52" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="66" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="80" y="238" width="10" height="46" style="fill:var(--good)"/><rect x="94" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="108" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="122" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="136" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="150" y="238" width="10" height="46" style="fill:var(--good)"/><rect x="164" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="178" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="192" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="206" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="220" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="234" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="248" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="262" y="238" width="10" height="46" style="fill:var(--good)"/><rect x="276" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="290" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="304" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="318" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="332" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="346" y="238" width="10" height="46" style="fill:var(--good)"/><rect x="360" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="374" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="388" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="402" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="416" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="430" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="444" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="458" y="238" width="10" height="46" style="fill:var(--good)"/><rect x="472" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="486" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="500" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="514" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="528" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="542" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="556" y="238" width="10" height="46" style="fill:var(--good)"/><rect x="570" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="584" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="598" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="612" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="626" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="640" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="654" y="238" width="10" height="46" style="fill:var(--good)"/><rect x="668" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="682" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="696" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="710" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="724" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="738" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="752" y="238" width="10" height="46" style="fill:var(--good)"/><rect x="766" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="780" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="794" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="808" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="822" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="836" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="850" y="238" width="10" height="3" style="fill:var(--good)"/><rect x="24" y="300" width="868" height="50" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="458.0" y="320.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">訓練時加入 FLOPS 正則，懲罰「很多文件都在同一個詞上有非零權重」</text><text x="458.0" y="337.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">在檢索品質與索引大小／延遲之間取捨，由正則強度控制</text><text x="24" y="392" font-size="11.5" class="t-muted">長條為示意。</text></g><g data-from="5" data-to="5"><rect x="24" y="116" width="200" height="44" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="124.0" y="142.0" text-anchor="middle" font-size="11.5">查詢：卡住 .8 煞車 .6 …</text><text x="24" y="196" font-size="12.5" font-weight="700" style="fill:var(--accent)">倒排索引（詞 → 文件與權重）</text><rect x="24" y="208" width="250" height="36" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="149.0" y="230.0" text-anchor="middle" font-size="11.5">卡住 → PT-205 (0.9)</text><rect x="24" y="250" width="250" height="36" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="149.0" y="272.0" text-anchor="middle" font-size="11.5">煞車 → PT-205 (1.0)</text><rect x="24" y="292" width="250" height="36" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="149.0" y="314.0" text-anchor="middle" font-size="11">馬達 → PT-203 (0.8)、PT-205 (0.7)</text><path d="M274 226 L334 226" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M274 268 L334 268" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M274 310 L334 310" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="334" y="208" width="260" height="120" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="464.0" y="246.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">只翻查「查詢裡有的詞」</text><text x="464.0" y="263.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">把命中詞的 查詢權重×文件權重</text><text x="464.0" y="280.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">加總，就是分數</text><text x="464.0" y="297.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">（內積 dot product）</text><path d="M594 268 L634 268" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="634" y="208" width="258" height="120" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="763.0" y="255.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">PT-205：最高分</text><text x="763.0" y="272.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">PT-203：次之</text><text x="763.0" y="289.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">其餘文件完全不用算</text><text x="24" y="364" font-size="12.5" font-weight="700" style="fill:var(--accent)">和 BM25 用同一種索引結構，現有的全文檢索引擎可以沿用。</text></g><g data-from="6" data-to="6"><rect x="24" y="112" width="150" height="62" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="99.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">BM25</text><rect x="184" y="112" width="330" height="62" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="349.0" y="147.0" text-anchor="middle" font-size="11">詞完全對上才有分；無法理解口語</text><rect x="524" y="112" width="368" height="62" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="708.0" y="147.0" text-anchor="middle" font-size="11">不用訓練，最便宜</text><rect x="24" y="186" width="150" height="62" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="99.0" y="221.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">SPLADE</text><rect x="184" y="186" width="330" height="62" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="349.0" y="221.0" text-anchor="middle" font-size="11">詞表上的加權＋擴展詞；看得到每個詞的貢獻</text><rect x="524" y="186" width="368" height="62" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="708.0" y="221.0" text-anchor="middle" font-size="11">要有模型；索引變大，建索引要跑模型</text><rect x="24" y="260" width="150" height="62" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="99.0" y="295.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">稠密向量</text><rect x="184" y="260" width="330" height="62" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="349.0" y="295.0" text-anchor="middle" font-size="11">語意相近就相近；看不出為什麼</text><rect x="524" y="260" width="368" height="62" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="708.0" y="295.0" text-anchor="middle" font-size="11">要向量索引；可解釋性低</text><text x="24" y="350" font-size="12.5" font-weight="700" style="fill:var(--vec)">三者不是互斥：常把 SPLADE 與稠密向量一起做混合檢索（第 004 堂）。</text><text x="24" y="392" font-size="11.5" class="t-muted">定性比較，未列具體數字。</text></g><g data-from="7"><rect x="24" y="116" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="234.0" y="149.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">沒有擴展</text><text x="234.0" y="166.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">「葉片轉不動」對不上「煞車異常」</text><text x="234.0" y="183.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">PT-205 排不到前面</text><rect x="472" y="116" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="682.0" y="149.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">有學習式擴展</text><text x="682.0" y="166.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">自動補上「卡住」「煞車」</text><text x="682.0" y="183.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">PT-205 命中，並能看到是哪些詞對上的</text><rect x="24" y="228" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="234.0" y="258.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">代價：要跑模型建索引</text><text x="234.0" y="275.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">擴展詞會讓索引變大、偶爾帶進雜訊</text><rect x="472" y="228" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="682.0" y="258.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">領域用語差很多時</text><text x="682.0" y="275.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">要用自己的語料微調或搭配混合檢索</text><text x="24" y="336" font-size="12.5" font-weight="700" style="fill:var(--good)">技師看到的是：命中的手冊段落，加上「因為『卡住』『煞車』這些詞對上了」。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>輸出是「詞表上的加權」</b>編碼器的 MLM 頭替詞表上每個詞打分，多數為 0。每個非零維度都對應一個真實的詞，所以能直接看出「為什麼命中」。</div>
+    <div class="card"><b>擴展詞解決詞彙不匹配</b>「轉不動」會帶出「卡住」「煞車」等手冊常用的詞；文件端也會擴展，查詢與文件兩邊各補一些詞，更容易碰頭。</div>
+    <div class="card"><b>稀疏才能用倒排索引</b>log(1+ReLU) 讓分數非負、不過度集中；稀疏正則（FLOPS）壓低非零詞數。只查「查詢裡有的詞」，延遲與 BM25 同類型。</div>
+    <div class="card"><b>代價在模型與索引</b>要跑模型編碼文件與查詢；擴展詞讓索引變大、偶爾引入雜訊。領域用語差異大時，要微調或與稠密向量、BM25 混合使用。</div>
+  </div>
+
+  <h2>🧪 互動範例：BM25 vs. 帶擴展的稀疏檢索</h2>
+  <div class="prose"><p>下面有 8 段《OW-8 運維手冊》片段（<b>虛構</b>）。選一個口語問題，比較只靠「詞對上」的 BM25，與「原詞＋擴展詞加權、內積計分」的稀疏檢索。你可以調整<b>權重門檻</b>：門檻越高，保留的擴展詞越少、索引越小，但可能又回到對不上的老問題。</p>
+  <p><b>這是簡化模擬：</b>真實的 SPLADE 擴展詞權重由訓練好的模型輸出；這裡用一張<b>手寫的擴展表</b>代替，只是為了看清楚機制，不代表任何真實模型的行為。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><input type="text" id="q" style="flex:1;min-width:220px" aria-label="輸入問題" placeholder="輸入口語問題，例如：葉片轉不動"></div>
+    <div class="row"><b style="font-size:13px">擴展權重門檻：</b>
+      <div class="seg" id="th"><button type="button" data-v="0" class="on">0（全留）</button><button type="button" data-v="0.4">0.4</button><button type="button" data-v="0.6">0.6</button><button type="button" data-v="0.85">0.85（幾乎不留）</button></div></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono)">查詢展開後的詞（深色＝原詞；淺色＝擴展詞）</div>
+    <div id="qvec" style="font-size:13.5px;margin-bottom:6px"></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+      <div><div class="muted" style="font-size:12.5px;font-family:var(--mono)">BM25（只比對原詞）</div><div class="hits" id="hA"></div></div>
+      <div><div class="muted" style="font-size:12.5px;font-family:var(--mono)">稀疏擴展檢索（內積）</div><div class="hits" id="hB"></div></div>
+    </div>
+    <div class="muted" id="tally" style="font-size:13px;margin-top:8px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>用 Hugging Face <code>transformers</code> 實作 SPLADE 的編碼：取 MLM 頭的輸出，做 <code>log(1+ReLU)</code>，沿序列取最大值，只留非零的詞。範例用的 <code>naver/splade-cocondenser-ensembledistil</code> 是英文模型，所以手冊片段改用英文示意（內容仍為虛構）；中文語料請換成支援中文的稀疏模型或自行微調。檢索部分用字典模擬倒排索引。</p></div>
+<pre class="code"><code><span class="k">import</span> torch
+<span class="k">from</span> transformers <span class="k">import</span> AutoTokenizer, AutoModelForMaskedLM
+
+NAME = <span class="s">"naver/splade-cocondenser-ensembledistil"</span>
+tok = AutoTokenizer.<span class="f">from_pretrained</span>(NAME)
+model = AutoModelForMaskedLM.<span class="f">from_pretrained</span>(NAME).<span class="f">eval</span>()
+
+<span class="k">def</span> <span class="f">encode</span>(text, top=<span class="s">None</span>):
+    <span class="s">"""回傳 {詞: 權重}，只含非零的詞"""</span>
+    batch = <span class="f">tok</span>(text, return_tensors=<span class="s">"pt"</span>, truncation=<span class="k">True</span>)
+    <span class="k">with</span> torch.<span class="f">no_grad</span>():
+        logits = <span class="f">model</span>(**batch).logits                    <span class="c"># (1, 序列長度, 詞表大小)</span>
+    w = torch.<span class="f">log1p</span>(torch.<span class="f">relu</span>(logits))                    <span class="c"># log(1 + ReLU)</span>
+    w = (w * batch[<span class="s">"attention_mask"</span>].<span class="f">unsqueeze</span>(-1)).<span class="f">max</span>(dim=1).values[0]   <span class="c"># 沿序列取最大值</span>
+    idx = w.<span class="f">nonzero</span>().<span class="f">squeeze</span>(-1).<span class="f">tolist</span>()
+    vec = {tok.<span class="f">convert_ids_to_tokens</span>(i): w[i].<span class="f">item</span>() <span class="k">for</span> i <span class="k">in</span> idx}
+    <span class="k">if</span> top:                                               <span class="c"># 可再裁剪，只留權重最高的幾個詞</span>
+        vec = <span class="f">dict</span>(<span class="f">sorted</span>(vec.<span class="f">items</span>(), key=<span class="k">lambda</span> kv: -kv[1])[:top])
+    <span class="k">return</span> vec
+
+DOCS = [
+    <span class="s">"PT-205 pitch motor brake fault: check brake coil supply and air gap; replace brake set if out of range."</span>,
+    <span class="s">"PT-203 pitch motor overtemperature: stop, cool down, check cooling fan and filter before reset."</span>,
+    <span class="s">"PT-230 pitch backup power test failed: check backup battery voltage and charging circuit."</span>,
+    <span class="s">"GB-117 gearbox high-speed shaft bearing temperature high: check oil level and vibration trend."</span>,
+]
+
+<span class="c"># 建索引：倒排索引 詞 -&gt; [(文件編號, 權重)]</span>
+inverted = {}
+<span class="k">for</span> doc_id, text <span class="k">in</span> <span class="f">enumerate</span>(DOCS):
+    <span class="k">for</span> term, weight <span class="k">in</span> <span class="f">encode</span>(text).<span class="f">items</span>():
+        inverted.<span class="f">setdefault</span>(term, []).<span class="f">append</span>((doc_id, weight))
+
+<span class="k">def</span> <span class="f">search</span>(query, k=<span class="s">3</span>):
+    scores = {}
+    q = <span class="f">encode</span>(query)
+    <span class="k">for</span> term, qw <span class="k">in</span> q.<span class="f">items</span>():                            <span class="c"># 只翻查「查詢裡有的詞」</span>
+        <span class="k">for</span> doc_id, dw <span class="k">in</span> inverted.<span class="f">get</span>(term, []):
+            scores[doc_id] = scores.<span class="f">get</span>(doc_id, 0.0) + qw * dw  <span class="c"># 內積</span>
+    <span class="k">return</span> <span class="f">sorted</span>(scores.<span class="f">items</span>(), key=<span class="k">lambda</span> kv: -kv[1])[:k], q
+
+hits, q = <span class="f">search</span>(<span class="s">"blade will not turn"</span>)       <span class="c"># 口語問法</span>
+<span class="k">for</span> doc_id, score <span class="k">in</span> hits:
+    <span class="f">print</span>(<span class="f">round</span>(score, 2), DOCS[doc_id])
+<span class="f">print</span>(<span class="f">sorted</span>(q.<span class="f">items</span>(), key=<span class="k">lambda</span> kv: -kv[1])[:10])    <span class="c"># 看看模型替查詢加了哪些擴展詞</span></code></pre>
+  <div class="prose"><p>最後一行是 SPLADE 的優點：能直接把查詢展開後的詞印出來檢視。實務上通常不自己寫倒排索引，而是交給支援稀疏向量的搜尋引擎或向量資料庫；上線前要用自己的評估集（第 021 堂）比較它和 BM25、稠密向量的差異，不要預設一定更好。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>BM25（第 004 堂）</th><th>稠密向量（第 003 堂）</th><th>ColBERT（第 018 堂）</th><th>向量壓縮（第 027 堂）</th><th>SPLADE</th></tr>
+    <tr><th>表示方式</th><td>詞頻統計的稀疏向量</td><td>每段一個稠密向量</td><td>每個詞一個向量</td><td>縮小稠密向量</td><td>詞表上的加權稀疏向量</td></tr>
+    <tr><th>能對上口語嗎</th><td>不能，詞要對上</td><td>能</td><td>能，且逐詞比對</td><td>同稠密向量</td><td>能，靠擴展詞</td></tr>
+    <tr><th>可解釋性</th><td>高</td><td>低</td><td>中（可看逐詞對應）</td><td>低</td><td>高，可印出展開的詞</td></tr>
+    <tr><th>索引</th><td>倒排索引</td><td>向量索引（ANN）</td><td>大量詞向量</td><td>較小的向量索引</td><td>倒排索引（比 BM25 大）</td></tr>
+    <tr><th>需要模型</th><td>不需要</td><td>嵌入模型</td><td>專用模型</td><td>嵌入模型</td><td>專用稀疏模型</td></tr>
+    <tr><th>適合用在</th><td>代碼、料號等精確詞</td><td>語意改寫、跨語言</td><td>要精細比對的場景</td><td>索引太大時</td><td>要口語對應又想保留關鍵字檢索設施與可解釋性</td></tr>
+  </table>
+
+  <h2>⚠️ SPLADE 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>語言與領域不符</b>：模型在什麼語料訓練，就擅長什麼。拿英文模型查中文手冊，或拿通用模型查大量專有代碼，效果可能不如 BM25；要選對語言的模型，並用自己的資料評估。</li>
+      <li><b>擴展詞帶進雜訊</b>：「煞車」可能同時擴展出不相關的設備。要檢視展開結果，必要時裁剪低權重的詞。</li>
+      <li><b>索引比 BM25 大、查詢更慢</b>：每段文字的非零詞比原詞多，查詢端也會展開多個詞；稀疏正則與裁剪就是在調這個平衡。</li>
+      <li><b>代碼與料號被稀釋</b>：<code>PT-203</code> 這類精確字串被切成子詞，擴展可能讓它和 <code>PT-230</code> 靠得更近。精確代碼的查詢，仍建議同時保留 BM25 或做混合檢索（第 004 堂）。</li>
+      <li><b>文件更新要重新編碼</b>：模型換版或文件改動，都要重新跑模型建索引，成本比 BM25 高。</li>
+      <li><b>不要拿它取代評估</b>：是否比 BM25 或稠密向量好，取決於你的資料。用第 021 堂的方法建評估集再決定。</li>
+      <li><b>不適合的場景</b>：語料很小、關鍵字都很固定，或沒有資源維護模型與重編碼流程時，BM25 加稠密向量的混合通常已足夠。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的擴展表是手寫的簡化模擬，不代表真實模型的輸出。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Formal、Piwowarski、Clinchant，<a href="https://arxiv.org/abs/2107.05720">SPLADE: Sparse Lexical and Expansion Model for First Stage Ranking</a>（SIGIR 2021）；Formal 等人，<a href="https://arxiv.org/abs/2109.10086">SPLADE v2</a>（max 池化與蒸餾）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>SPLADE 的輸出為什麼能放進倒排索引？</b></p>
+    <button class="opt">A. 因為它把整段文字壓成一個 768 維的稠密向量</button>
+    <button class="opt">B. 因為它輸出的是詞表上的加權向量，且透過稀疏正則讓大多數詞的權重為 0，每個非零維度對應一個詞</button>
+    <button class="opt">C. 因為它不使用任何神經網路</button>
+    <div class="why">SPLADE 的向量維度就是詞表大小，非零的才是有意義的詞；稀疏正則讓非零很少，就能像 BM25 一樣用倒排索引。</div>
+  </div>
+  <div class="quiz card" data-answer="0">
+    <p><b>技師問「葉片轉不動」，手冊寫「角度卡住、煞車異常」。SPLADE 比 BM25 容易命中，主要靠什麼？</b></p>
+    <button class="opt">A. 模型為查詢與文件加上語意相近的擴展詞（如「卡住」「煞車」），讓兩邊有共同的詞</button>
+    <button class="opt">B. 把所有文件的權重都調高</button>
+    <button class="opt">C. 完全忽略查詢中的原詞</button>
+    <div class="why">學習式的詞彙擴展讓查詢與文件在詞表上有交集，這是它解決詞彙不匹配的方式；代價是索引變大與可能帶進雜訊。</div>
+  </div>
+
+  <nav class="pager" data-slug="splade"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'沒有擴展：口語和手冊用字對不上', text:'技師輸入「<b>葉片轉不動</b>」，手冊 PT-205 寫的是「煞車異常、角度<b>卡住</b>」。BM25 要詞<b>完全對上</b>才有分，這段文件排不到前面，這就是<b>詞彙不匹配</b>。' },
+  { title:'讓語言模型替詞表上的詞打分', text:'<b>SPLADE</b> 用 BERT 的 <b>MLM 頭</b>，為詞表上<b>每個詞</b>算一個分數，代表這段文字和該詞有多相關。輸出維度等於詞表大小，不是一個黑盒的稠密向量。' },
+  { title:'詞彙擴展：一句話變成一組加權的詞', text:'「葉片轉不動」除了原詞，還會帶出<b>卡住、煞車、旋角、馬達</b>等相近的詞並給權重。文件端也會做同樣的擴展，查詢與文件兩邊就有了<b>共同的詞</b>。' },
+  { title:'log(1+ReLU)：負值歸零、大值壓扁', text:'原始分數先過 <b>ReLU</b>（負值變 0，這個詞就不進向量），再取 <b>log(1+x)</b> 壓扁過大的值。整段文字的各位置再合併成每個詞一個權重（v2 用取最大值）。' },
+  { title:'稀疏正則：逼大多數詞為 0', text:'若不限制，幾乎每個詞都有一點分數，索引會爆炸。訓練時加入<b>稀疏正則（FLOPS）</b>，壓低非零詞數，在檢索品質與索引大小、延遲之間取捨。' },
+  { title:'稀疏向量可以放進倒排索引', text:'每個詞對應一串「文件與權重」。查詢時只翻查<b>查詢裡有的詞</b>，把查詢權重乘文件權重加總（<b>內積</b>）。和 BM25 同類型的索引，沿用既有的全文檢索設施。' },
+  { title:'和 BM25、稠密向量放在一起比', text:'BM25 便宜但詞要對上；稠密向量懂語意但<b>看不出為什麼命中</b>；SPLADE 居中：能對上口語，又能看到是哪些詞貢獻分數。三者可以混合使用。' },
+  { title:'結果：沿用關鍵字檢索的索引，又能對上口語', text:'技師的「葉片轉不動」能命中 <b>PT-205</b>，還能看到是「卡住」「煞車」對上的。代價是要跑模型、索引較大、擴展可能有雜訊，要用自己的評估集驗證。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  const DOCS = [
+    "PT-203 旋角馬達過溫：馬達溫度過高會觸發保護而跳脫，先停機降溫，檢查冷卻風扇與濾網，確認溫度恢復後才可復歸。",
+    "PT-205 旋角馬達煞車異常：葉片角度卡住或無法移動時，檢查煞車線圈供電與間隙，間隙超出範圍時更換煞車組。",
+    "PT-230 旋角備援電源測試失敗：檢查備援電池電壓與充電迴路，必要時更換電池模組。",
+    "YW-042 偏航誤差過大：檢查風向計校正與偏航驅動器狀態，確認偏航煞車釋放正常。",
+    "GB-117 齒輪箱高速軸軸承溫度過高：檢查油溫與潤滑油位，比對 CMS 振動趨勢，必要時降載運轉。",
+    "CV-310 變流器功率模組過溫：檢查水冷迴路流量與散熱器積塵，確認環境溫度後再復歸。",
+    "順槳程序：發生嚴重故障時，將葉片順槳至安全角度，使機組安全停機，再進行後續檢查。",
+    "上鎖掛牌 LOTO：作業前切斷並上鎖所有能量來源，掛上個人鎖與標籤，驗證零能量後才可開始。"
+  ];
+  /* 手寫的擴展表（模擬「學到的」擴展詞與權重，教學用，非真實模型輸出）：詞 -> [[擴展詞, 權重]] */
+  const EXP = {
+    '轉不動':[['卡住',.8],['煞車',.6],['旋角',.5],['馬達',.4]],
+    '葉片':[['旋角',.5],['順槳',.3]],
+    '太燙':[['過溫',.9],['溫度',.6],['降溫',.5],['風扇',.3]],
+    '電池沒電':[['電池',.9],['電壓',.6],['備援',.5]],
+    '沒電':[['電池',.9],['電壓',.6],['備援',.5]],
+    '異音':[['軸承',.7],['齒輪箱',.6],['振動',.6]],
+    '機艙':[['齒輪箱',.3]],
+    '馬達':[['旋角',.4]],
+    '煞車':[['卡住',.4],['轉不動',.3]],
+    '過溫':[['太燙',.4],['溫度',.5]],
+    '電池':[['沒電',.4],['備援',.3]],
+    '軸承':[['異音',.4],['振動',.3]],
+    '卡住':[['轉不動',.4]],
+    '風扇':[['過溫',.2]],
+    '備援':[['電池',.3]]
+  };
+  const VOCAB = [...new Set([...Object.keys(EXP), ...Object.values(EXP).flat().map(e => e[0]),
+    '旋角','過溫','溫度','電壓','停機','降溫','濾網','偏航','齒輪箱','軸承','油溫','振動','順槳','復歸','跳脫','變流器','水冷','PT-203','PT-205','PT-230','YW-042','GB-117','CV-310'])]
+    .sort((a, b) => b.length - a.length);
+  const termsOf = text => VOCAB.filter(t => text.toLowerCase().includes(t.toLowerCase()));
+  const PRE = [
+    { q:'葉片轉不動', target:1 },
+    { q:'馬達太燙', target:0 },
+    { q:'電池沒電', target:2 },
+    { q:'機艙有異音', target:4 }
+  ];
+  const index = rt.buildIndex(DOCS.map(t => ({ text:t })));
+  const st = { th:0 };
+
+  /* 稀疏化：原詞權重 1，擴展詞權重取表內值（低於門檻者剔除） */
+  function sparse(terms, th){
+    const v = new Map();
+    terms.forEach(t => v.set(t, 1));
+    terms.forEach(t => (EXP[t] || []).forEach(([e, w]) => { if(w >= th) v.set(e, Math.max(v.get(e) || 0, w)); }));
+    return v;
+  }
+  const dvecs = th => DOCS.map(d => sparse(termsOf(d), th));
+  function dot(a, b){ let s = 0; a.forEach((w, t) => { if(b.has(t)) s += w * b.get(t); }); return s; }
+  function runBoth(q, th){
+    const qv = sparse(termsOf(q), th), dv = dvecs(th);
+    const A = rt.searchBM25(index, q, 3);
+    const B = dv.map((v, i) => ({ i, score:dot(qv, v) })).filter(x => x.score > 0).sort((a, b) => b.score - a.score).slice(0, 3);
+    return { qv, dv, A, B, qOrig:new Set(termsOf(q)) };
+  }
+  const cell = (n, text, label, rank, target, q) => '<div class="hit' + (n === 0 ? ' top' : '') + '"><div class="meta"><span>#' + (n+1) + (target === rank ? ' ✓ 目標' : '') + '</span><span>' + label + '</span></div>' + rt.highlight(text, q) + '</div>';
+
+  function run(){
+    const q = $('#q').value.trim();
+    const pre = PRE.find(p => p.q === q);
+    if(!q){ ['#qvec','#hA','#hB'].forEach(s => $(s).innerHTML = ''); $('#hA').innerHTML = '<div class="muted">請輸入問題或點選預設問題。</div>'; }
+    else {
+      const r = runBoth(q, st.th), tg = pre ? pre.target : -1;
+      $('#qvec').innerHTML = r.qv.size
+        ? [...r.qv].sort((a, b) => b[1] - a[1]).map(([t, w]) => '<span style="display:inline-block;margin:2px 6px 2px 0;padding:1px 7px;border:1px solid var(--line);border-radius:var(--radius);' + (r.qOrig.has(t) ? 'background:var(--soft);font-weight:700' : 'color:var(--muted)') + '">' + esc(t) + ' ' + w.toFixed(1) + '</span>').join('')
+        : '<span class="muted">查詢裡沒有認得的詞（這個模擬的詞表很小），請改選預設問題。</span>';
+      $('#hA').innerHTML = r.A.filter(h => h.score > 0).map((h, n) => cell(n, h.doc.text, 'BM25 ' + h.score.toFixed(2), h.i, tg, q)).join('') || '<div class="muted">沒有任何文件與查詢共用詞，BM25 找不到東西。</div>';
+      $('#hB').innerHTML = r.B.map((h, n) => cell(n, DOCS[h.i], '內積 ' + h.score.toFixed(2), h.i, tg, q)).join('') || '<div class="muted">沒有任何共同的詞。</div>';
+    }
+    /* 總表與索引大小 */
+    let a = 0, b = 0;
+    PRE.forEach(p => { const r = runBoth(p.q, st.th);
+      if(r.A[0] && r.A[0].score > 0 && r.A[0].i === p.target) a++;
+      if(r.B[0] && r.B[0].i === p.target) b++; });
+    const base = dvecs(2).reduce((s, v) => s + v.size, 0), cur = dvecs(st.th).reduce((s, v) => s + v.size, 0);
+    $('#tally').innerHTML = '4 個預設問題中，目標段落排第 1 名：BM25 <b>' + a + ' / 4</b>，稀疏擴展 <b>' + b + ' / 4</b>。<br>' +
+      '索引非零詞數（8 段文件）：只留原詞 <b>' + base + '</b>；目前門檻 <b>' + cur + '</b>（約 ' + (cur / base).toFixed(1) + ' 倍）。門檻越低，擴展越多、索引越大。';
+  }
+
+  $('#presets').innerHTML = PRE.map((p, i) => '<button type="button" data-i="' + i + '" class="' + (i === 0 ? 'on' : '') + '">' + esc(p.q) + '</button>').join('');
+  $('#q').value = PRE[0].q;
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    $('#q').value = PRE[+b.dataset.i].q;
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#q').addEventListener('input', () => { $('#presets').querySelectorAll('button').forEach(x => x.classList.remove('on')); run(); });
+  $('#th').onclick = e => { const b = e.target.closest('button'); if(!b) return; st.th = +b.dataset.v;
+    $('#th').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  run();
+})();
+</script>
+</body>
+</html>

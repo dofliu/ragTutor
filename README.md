@@ -41,6 +41,7 @@
 | 027 | [向量壓縮：Matryoshka 截斷與量化，讓索引小一個數量級](https://dofliu.github.io/ragTutor/lessons/027-vector-compression.html) |
 | 028 | [充分上下文與拒答：檢索到的內容，夠回答嗎？](https://dofliu.github.io/ragTutor/lessons/028-sufficient-context.html) |
 | 🎯 關卡 7 | [測驗關卡 7：引用、快取、向量壓縮與充分上下文（第 025–028 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-7-cite-cache-compress-sufficient.html) |
+| 029 | [SPLADE 學習式稀疏檢索：讓關鍵字檢索聽懂口語](https://dofliu.github.io/ragTutor/lessons/029-splade.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 
