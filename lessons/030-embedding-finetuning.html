@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>領域嵌入微調：用合成查詢與困難負例，教嵌入模型聽懂你的領域｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識領域嵌入微調：用 LLM 合成查詢產生訓練配對，搭配對比學習與困難負例，讓嵌入模型學會你領域的說法，並用留出集驗收。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 030 堂</span><span class="tag lv3">高階</span><span class="tag">約 20 分鐘</span></p>
+  <h1>領域嵌入微調：用合成查詢與困難負例，教嵌入模型聽懂你的領域</h1>
+
+  <p class="lead">通用嵌入模型沒看過風場的語料，技師說「<b>葉片轉不動</b>」，它不知道這常指向「煞車卡住」。與其一直改提示詞，不如<b>微調嵌入模型本身</b>：用 LLM 替沒標註的工單<b>合成（問題, 段落）配對</b>，以<b>對比學習</b>拉近正例、推遠負例，再挖<b>困難負例</b>逼模型分辨相似段落，最後用沒練過的真實問法驗收。</p>
+
+  <h2>🎬 動畫：從通用模型到領域模型</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="領域嵌入微調動畫：通用模型對不上現場說法；沒有標註配對；LLM 合成查詢；對比學習；困難負例；偽負例；評估；結果"><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-to="0">① 沒有微調：通用嵌入模型不懂風場的說法</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="1" data-to="1">② 想用自己的語料微調，卻沒有標註好的問答配對</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="2" data-to="2">③ 用 LLM 讀每段工單，合成「技師可能怎麼問」</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="3" data-to="3">④ 對比學習：拉近正確配對，推遠 batch 內其他段落</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="4" data-to="4">⑤ 困難負例：長得像、但不是答案的段落</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="5" data-to="5">⑥ 小心偽負例：「負例」其實可能是答案</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="6" data-to="6">⑦ 評估：用沒練過的真實問法驗收</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 結果：同一份索引，換成懂你領域的模型</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-to="0"><rect x="24" y="112" width="210" height="56" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="129.0" y="135.5" text-anchor="middle" font-size="11.5">技師輸入</text><text x="129.0" y="152.5" text-anchor="middle" font-size="11.5">「葉片轉不動」</text><path d="M234 140 L264 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="264" y="112" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="364.0" y="135.5" text-anchor="middle" font-size="11.5">通用嵌入模型</text><text x="364.0" y="152.5" text-anchor="middle" font-size="11.5">（沒看過風場語料）</text><path d="M464 140 L494 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="494" y="112" width="398" height="56" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="693.0" y="144.0" text-anchor="middle" font-size="11.5">依向量相似度排序的工單段落</text><rect x="24" y="196" width="868" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="458.0" y="217.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">#1 PT-203 旋角馬達過溫（只因為都有「旋角馬達」）</text><rect x="24" y="238" width="868" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="458.0" y="259.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">#2 YW-042 偏航誤差過大</text><rect x="24" y="280" width="868" height="34" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="458.0" y="301.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">#5 PT-205 旋角馬達煞車異常（真正的答案）排在後面</text><text x="24" y="346" font-size="12.5" font-weight="700" style="fill:var(--bad)">通用模型沒學過「轉不動」＝「煞車卡住」這類現場說法，近義關係靠不住。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="1" data-to="1"><rect x="24" y="112" width="260" height="56" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="154.0" y="135.5" text-anchor="middle" font-size="11.5">手上有的：數萬段</text><text x="154.0" y="152.5" text-anchor="middle" font-size="11.5">工單與手冊（沒有標註）</text><path d="M284 140 L314 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="314" y="112" width="260" height="56" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="444.0" y="135.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">缺的：哪個問題</text><text x="444.0" y="152.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">對應哪一段（配對）</text><path d="M574 140 L604 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="604" y="112" width="288" height="56" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="748.0" y="135.5" text-anchor="middle" font-size="11.5">人工標註：慢、貴、</text><text x="748.0" y="152.5" text-anchor="middle" font-size="11.5">要資深技師的時間</text><text x="24" y="214" font-size="12.5" font-weight="700" style="fill:var(--accent)">微調嵌入模型的訓練資料長這樣：（問題, 正確段落）成對的樣本。</text><text x="24" y="242" font-size="12" style="fill:var(--accent)">沒有配對，就沒辦法告訴模型「這兩句話應該靠近」。</text><rect x="24" y="272" width="868" height="52" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="458.0" y="302.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">想法：讓 LLM 替沒標註的段落「反推問題」，自動做出訓練配對</text><text x="24" y="362" font-size="11.5" class="t-muted">做法出自 InPars、Promptagator、GPL 等研究；細節請看延伸閱讀。</text></g><g data-from="2" data-to="2"><rect x="24" y="112" width="400" height="70" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="224.0" y="134.0" text-anchor="middle" font-size="11.5">工單段落 WO-2026-0412（虛構）</text><text x="224.0" y="151.0" text-anchor="middle" font-size="11.5">旋角馬達煞車線圈供電不穩，</text><text x="224.0" y="168.0" text-anchor="middle" font-size="11.5">葉片角度卡住，更換煞車組。</text><path d="M424 147 L464 147" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="464" y="112" width="130" height="70" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="529.0" y="142.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM</text><text x="529.0" y="159.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">產生問題</text><path d="M594 147 L624 147" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="624" y="112" width="268" height="70" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="758.0" y="134.0" text-anchor="middle" font-size="11.5">技師口吻的問題</text><text x="758.0" y="151.0" text-anchor="middle" font-size="11.5">「葉片轉不動怎麼辦」</text><text x="758.0" y="168.0" text-anchor="middle" font-size="11.5">「角度卡住要換什麼」</text><text x="24" y="228" font-size="12.5" font-weight="700" style="fill:var(--query)">每段文件可以產生好幾個問題，數萬段就能得到數萬筆（問題, 段落）配對。</text><text x="24" y="256" font-size="12" style="fill:var(--query)">提示詞要規定口吻（現場口語、簡短）和問題類型，否則會產生一堆教科書式的問題。</text><rect x="24" y="284" width="868" height="52" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="458.0" y="314.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">品質把關：過濾太籠統的問題；用既有檢索確認「問題真的能找回原段落」</text><text x="24" y="392" font-size="11.5" class="t-muted">合成的問題是訓練資料，不是驗收資料。</text></g><g data-from="3" data-to="3"><text x="24" y="124" font-size="12.5" font-weight="700" style="fill:var(--vec)">一個 batch（示意 3 組配對）</text><rect x="24" y="138" width="150" height="34" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="99.0" y="159.0" text-anchor="middle" font-size="11.5">q1「葉片轉不動」</text><rect x="24" y="180" width="150" height="34" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="99.0" y="201.0" text-anchor="middle" font-size="11.5">q2「馬達太燙」</text><rect x="24" y="222" width="150" height="34" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="99.0" y="243.0" text-anchor="middle" font-size="11.5">q3「電池沒電」</text><rect x="470" y="138" width="200" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="570.0" y="159.0" text-anchor="middle" font-size="11.5">p1 PT-205 煞車卡住</text><rect x="470" y="180" width="200" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="570.0" y="201.0" text-anchor="middle" font-size="11.5">p2 PT-203 過溫跳脫</text><rect x="470" y="222" width="200" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="570.0" y="243.0" text-anchor="middle" font-size="11.5">p3 PT-230 備援電池</text><path d="M174 155 L470 155" class="flow" style="fill:none;stroke-width:2.2;stroke:var(--good)"/><path d="M174 197 L470 197" class="flow" style="fill:none;stroke-width:2.2;stroke:var(--good)"/><path d="M174 239 L470 239" class="flow" style="fill:none;stroke-width:2.2;stroke:var(--good)"/><text x="300" y="148" font-size="11.5" font-weight="700" style="fill:var(--good)">拉近</text><rect x="700" y="138" width="192" height="118" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="796.0" y="175.5" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--vec)">同一個 batch 裡</text><text x="796.0" y="192.5" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--vec)">別人的段落</text><text x="796.0" y="209.5" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--vec)">自動當成負例</text><text x="796.0" y="226.5" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--vec)">（in-batch negatives）</text><text x="24" y="290" font-size="12" style="fill:var(--vec)">損失函數讓「q1 與 p1」的相似度，高過「q1 與 p2、p3」；反覆調整嵌入模型的權重。</text><text x="24" y="316" font-size="12" style="fill:var(--vec)">好處：不用另外找負例，batch 越大，負例越多、訓練越有鑑別力。</text><text x="24" y="392" font-size="11.5" class="t-muted">示意；實際用 sentence-transformers 的 MultipleNegativesRankingLoss 這類損失。</text></g><g data-from="4" data-to="4"><rect x="24" y="112" width="260" height="48" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="154.0" y="140.0" text-anchor="middle" font-size="11.5">問題：「葉片轉不動」</text><rect x="24" y="184" width="420" height="48" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="234.0" y="212.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">正例：PT-205 煞車線圈供電不穩，角度卡住</text><rect x="24" y="244" width="420" height="48" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="234.0" y="272.0" text-anchor="middle" font-size="11.5">隨機負例：CV-310 變流器水冷（太容易分辨）</text><rect x="472" y="184" width="420" height="48" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="682.0" y="212.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">困難負例：PT-203 旋角馬達過溫（很像，但不對）</text><text x="24" y="330" font-size="12.5" font-weight="700" style="fill:var(--warn)">隨機負例太好分，學不到東西。困難負例（hard negatives）逼模型學會細微差異。</text><text x="24" y="358" font-size="12" style="fill:var(--warn)">挖法：用現有模型檢索，取排名前面但不是正解的段落，再加進訓練的負例。</text><text x="24" y="396" font-size="11.5" class="t-muted">負例越難越有效，但也越容易挖到偽負例（下一步）。</text></g><g data-from="5" data-to="5"><rect x="24" y="112" width="420" height="56" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="234.0" y="135.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">問題：「旋角馬達過熱怎麼辦」</text><text x="234.0" y="152.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">挖到的「困難負例」：PT-203 過溫（其實就是答案）</text><rect x="472" y="112" width="420" height="56" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="682.0" y="135.5" text-anchor="middle" font-size="11.5">把答案當負例訓練</text><text x="682.0" y="152.5" text-anchor="middle" font-size="11.5">→ 模型被教壞：該靠近的被推開</text><text x="24" y="212" font-size="12.5" font-weight="700" style="fill:var(--llm)">因為知識庫裡常有多段都能回答同一個問題，「排名前面但不是標註正解」不等於「錯」。</text><rect x="24" y="238" width="420" height="56" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="234.0" y="261.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">做法 1：用 cross-encoder 重新打分</text><text x="234.0" y="278.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">分數高的別當負例（第 005 堂）</text><rect x="472" y="238" width="420" height="56" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="682.0" y="261.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">做法 2：跳過最前面幾名，</text><text x="682.0" y="278.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">只從中段排名挖負例</text><text x="24" y="330" font-size="12" style="fill:var(--llm)">GPL 的作法：讓 cross-encoder 替（問題, 段落）打軟標籤，再訓練模型去逼近分數差距。</text><text x="24" y="392" font-size="11.5" class="t-muted">GPL：Wang 等人，NAACL 2022。</text></g><g data-from="6" data-to="6"><rect x="24" y="112" width="260" height="60" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="154.0" y="137.5" text-anchor="middle" font-size="11.5">合成問題</text><text x="154.0" y="154.5" text-anchor="middle" font-size="11.5">（拿來訓練）</text><rect x="310" y="112" width="260" height="60" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="440.0" y="137.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">真實問法的留出集</text><text x="440.0" y="154.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">（沒參與訓練，用來驗收）</text><rect x="596" y="112" width="296" height="60" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="744.0" y="137.5" text-anchor="middle" font-size="11.5">評估指標</text><text x="744.0" y="154.5" text-anchor="middle" font-size="11.5">Recall@k、MRR（第 021 堂）</text><text x="24" y="218" font-size="12.5" font-weight="700" style="fill:var(--doc)">在合成問題上變好是意料中的事，不能證明模型真的更懂你的領域。</text><rect x="24" y="244" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="234.0" y="274.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">微調前</text><text x="234.0" y="291.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">留出集 Recall@3 = ?</text><rect x="472" y="244" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="682.0" y="274.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">微調後</text><text x="682.0" y="291.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">留出集 Recall@3 = ?（要看自己的資料）</text><text x="24" y="350" font-size="12" style="fill:var(--doc)">同時檢查通用問題有沒有退步（災難性遺忘）；兩者都要在你自己的評估集量。</text><text x="24" y="392" font-size="11.5" class="t-muted">此處不放數字，因為結果取決於你的語料與模型。</text></g><g data-from="7"><rect x="24" y="116" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="234.0" y="149.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">微調前</text><text x="234.0" y="166.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">「葉片轉不動」對不上「煞車異常」</text><text x="234.0" y="183.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">PT-205 排在第 5 名</text><rect x="472" y="116" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="682.0" y="149.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">微調後（合成配對＋困難負例）</text><text x="682.0" y="166.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">學會現場說法與子系統的對應</text><text x="682.0" y="183.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">PT-205 排到前面</text><rect x="24" y="228" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="234.0" y="250.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">代價：</text><text x="234.0" y="267.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">要產生資料、訓練；模型一換，</text><text x="234.0" y="284.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">整份索引要重新嵌入</text><rect x="472" y="228" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="682.0" y="250.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">搭配：</text><text x="682.0" y="267.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">仍可與 BM25 做混合檢索，</text><text x="682.0" y="284.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">再接重排序</text><text x="24" y="336" font-size="12.5" font-weight="700" style="fill:var(--good)">技師的口語問法，不需要改問題，檢索就更常命中對的工單。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>配對資料靠合成</b>讓 LLM 讀無標註的段落，反推技師口吻的問題，得到（問題, 段落）配對。提示詞要規定口吻，並用既有檢索過濾掉太籠統的問題。</div>
+    <div class="card"><b>對比學習拉近與推遠</b>正確配對的向量被拉近；同一個 batch 內其他段落自動當負例（in-batch negatives）。batch 越大，負例越多。</div>
+    <div class="card"><b>困難負例教細節，也有風險</b>「很像但不是答案」的段落最有教學價值，但也最容易挖到偽負例（其實也能回答）。可用 cross-encoder 過濾或改用軟標籤（GPL）。</div>
+    <div class="card"><b>用留出集驗收，換模型要重建索引</b>合成問題上變好不代表真的更好，要用沒練過的真實問法量 Recall@k，並檢查通用問題有沒有退步；模型一換，整份索引要重新嵌入。</div>
+  </div>
+
+  <h2>🧪 互動範例：加入合成配對與困難負例</h2>
+  <div class="prose"><p>下面有 8 段<b>維修工單</b>（<b>虛構</b>）。左邊是「未微調」的向量檢索（TF-IDF 模擬通用嵌入）；右邊是用你選的<b>合成配對數</b>「微調」後的版本。測試用的 4 個問法<b>沒有出現在訓練配對裡</b>，只是和訓練問法有部分共用的詞。可以切換是否使用<b>困難負例</b>，看看相似段落（PT-203 與 PT-205）會不會被混淆。</p>
+  <p><b>這是簡化模擬：</b>真實微調是調整神經網路的權重；這裡只用「訓練配對教出的詞對應」來擴充查詢向量，用來看清楚<b>資料怎麼影響結果</b>，不代表任何真實模型的行為與數字。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><input type="text" id="q" style="flex:1;min-width:220px" aria-label="輸入問題" placeholder="輸入問題，例如：葉片卡住不動"></div>
+    <div class="row"><b style="font-size:13px">合成配對數：</b>
+      <div class="seg" id="np"><button type="button" data-v="0" class="on">0（未微調）</button><button type="button" data-v="3">3 組</button><button type="button" data-v="6">6 組</button></div>
+      <b style="font-size:13px">困難負例：</b>
+      <div class="seg" id="hn"><button type="button" data-v="0" class="on">不用</button><button type="button" data-v="1">使用</button></div></div>
+    <div class="muted" style="font-size:12.5px;font-family:var(--mono)">目前用到的合成訓練配對</div>
+    <div id="pairs" style="font-size:13px;margin-bottom:8px"></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+      <div><div class="muted" style="font-size:12.5px;font-family:var(--mono)">未微調（通用向量）</div><div class="hits" id="hA"></div></div>
+      <div><div class="muted" style="font-size:12.5px;font-family:var(--mono)">微調後（模擬）</div><div class="hits" id="hB"></div></div>
+    </div>
+    <div class="muted" id="tally" style="font-size:13px;margin-top:8px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>用 <code>anthropic</code> 替工單合成問題，再用 <code>sentence-transformers</code> 以 <code>MultipleNegativesRankingLoss</code> 微調。損失函數的輸入是（問題, 正例）或（問題, 正例, 困難負例）三元組，同一個 batch 內的其他正例會自動成為 in-batch negatives。範例用的基底模型名稱請換成你選用、支援中文的嵌入模型；資料量與超參數需自行調整與評估。</p></div>
+<pre class="code"><code><span class="k">import</span> json, anthropic
+<span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer, losses, InputExample
+<span class="k">from</span> torch.utils.data <span class="k">import</span> DataLoader
+
+client = anthropic.<span class="f">Anthropic</span>()
+
+PASSAGES = [
+    <span class="s">"WO-2026-0412 WTG-07 PT-205：旋角馬達煞車線圈供電不穩，葉片角度卡住，更換煞車組 PT-BRK-02 後恢復。"</span>,
+    <span class="s">"WO-2026-0415 WTG-12 PT-203：旋角馬達過溫跳脫，冷卻風扇濾網積塵，清潔濾網並降溫後復歸。"</span>,
+    <span class="s">"WO-2026-0420 WTG-21 PT-230：備援電源測試失敗，電池電壓偏低，更換電池模組。"</span>,
+]
+
+<span class="k">def</span> <span class="f">synth_queries</span>(passage, n=<span class="s">3</span>):
+    <span class="s">"""讓 LLM 以現場技師的口吻，替一段工單反推 n 個問題"""</span>
+    msg = client.messages.<span class="f">create</span>(
+        model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">400</span>,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+            <span class="s">f"以下是風機維修工單。請用現場技師的口語，寫出 {n} 個可以用這段工單回答的簡短問題，"</span>
+            <span class="s">f"不要直接照抄工單用字。只回傳 JSON 字串陣列。\n\n{passage}"</span>}],
+    )
+    <span class="k">return</span> json.<span class="f">loads</span>(msg.content[<span class="s">0</span>].text)
+
+<span class="c"># 1) 合成（問題, 段落）配對</span>
+pairs = [(q, p) <span class="k">for</span> p <span class="k">in</span> PASSAGES <span class="k">for</span> q <span class="k">in</span> <span class="f">synth_queries</span>(p)]
+
+<span class="c"># 2) 用現有模型挖困難負例：排名前面、但不是該問題的正解段落</span>
+base = <span class="f">SentenceTransformer</span>(<span class="s">"你的基底嵌入模型"</span>)
+p_emb = base.<span class="f">encode</span>(PASSAGES, normalize_embeddings=<span class="k">True</span>)
+examples = []
+<span class="k">for</span> q, pos <span class="k">in</span> pairs:
+    scores = p_emb @ base.<span class="f">encode</span>(q, normalize_embeddings=<span class="k">True</span>)
+    ranked = [PASSAGES[i] <span class="k">for</span> i <span class="k">in</span> scores.<span class="f">argsort</span>()[::-<span class="s">1</span>] <span class="k">if</span> PASSAGES[i] != pos]
+    <span class="c"># 實務上要再用 cross-encoder 過濾偽負例，或跳過最前面幾名</span>
+    examples.<span class="f">append</span>(<span class="f">InputExample</span>(texts=[q, pos, ranked[<span class="s">0</span>]]))
+
+<span class="c"># 3) 對比學習微調（同一個 batch 的其他正例自動成為 in-batch negatives）</span>
+loader = <span class="f">DataLoader</span>(examples, shuffle=<span class="k">True</span>, batch_size=<span class="s">32</span>)
+loss = losses.<span class="f">MultipleNegativesRankingLoss</span>(base)
+base.<span class="f">fit</span>(train_objectives=[(loader, loss)], epochs=<span class="s">1</span>, warmup_steps=<span class="s">10</span>)
+base.<span class="f">save</span>(<span class="s">"ow8-embedder-v1"</span>)   <span class="c"># 換模型後，整份索引都要用新模型重新嵌入</span></code></pre>
+  <div class="prose"><p>上線前要用<b>留出的真實問法</b>（第 021 堂）比較微調前後的 Recall@k，並同時檢查通用問題有沒有退步。若 <code>fit</code> 介面在你安裝的 sentence-transformers 版本不同，請依官方文件調整；訓練也可改用較新的 Trainer 介面。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>查詢改寫（第 006 堂）</th><th>HyDE（第 007 堂）</th><th>混合檢索（第 004 堂）</th><th>SPLADE（第 029 堂）</th><th>嵌入微調</th></tr>
+    <tr><th>改的是什麼</th><td>查詢文字</td><td>查詢（用假設答案取代）</td><td>檢索方式組合</td><td>稀疏表示與擴展</td><td>嵌入模型本身</td></tr>
+    <tr><th>學到領域說法</th><td>靠 LLM 的通用知識</td><td>靠 LLM 的通用知識</td><td>不學習</td><td>靠訓練語料</td><td>直接學你的語料</td></tr>
+    <tr><th>每次查詢成本</th><td>多一次 LLM 呼叫</td><td>多一次 LLM 呼叫</td><td>兩種檢索</td><td>查詢要過模型</td><td>不增加（同樣的嵌入呼叫）</td></tr>
+    <tr><th>一次性成本</th><td>幾乎沒有</td><td>幾乎沒有</td><td>少</td><td>建索引要跑模型</td><td>合成資料、訓練、整份索引重嵌入</td></tr>
+    <tr><th>主要風險</th><td>改寫偏離原意</td><td>假設答案幻覺</td><td>權重要調</td><td>擴展帶進雜訊</td><td>偽負例、遺忘通用能力、過度擬合合成問題</td></tr>
+    <tr><th>適合用在</th><td>問題口語、模糊</td><td>問題與文件措辭差很遠</td><td>同時需要精確詞與語意</td><td>要可解釋的口語對應</td><td>領域用語固定且量大、其他手段不夠時</td></tr>
+  </table>
+
+  <h2>⚠️ 嵌入微調常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>偽負例</b>：把其實能回答的段落當負例，會把模型教壞。挖困難負例時要過濾（cross-encoder 打分、跳過頂端排名），或改用軟標籤。</li>
+      <li><b>在合成問題上驗收</b>：訓練與驗收用同一批合成問題，數字一定漂亮。要留一批真實問法（或人工審過的問題）當測試集。</li>
+      <li><b>合成問題品質差</b>：LLM 若照抄原文用字，模型只學到「字面比對」；要在提示詞中要求口語、換說法，並抽樣檢查。</li>
+      <li><b>遺忘通用能力</b>：只用單一領域資料訓練太久，可能讓一般問題變差。控制訓練量，並同時評估通用問題。</li>
+      <li><b>模型一換，索引全重來</b>：向量空間改變，舊向量不能與新模型的查詢向量混用，必須整份重新嵌入。要規劃版本與切換流程。</li>
+      <li><b>先試便宜的方法</b>：查詢改寫、混合檢索、重排序、情境化檢索常常已足夠。資料量小、用語常變，或沒有評估集時，不建議一開始就微調。</li>
+      <li><b>資料外洩與授權</b>：把內部工單送到外部 LLM 合成問題前，先確認資料分級與授權（第 024 堂）。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊與工單內容及數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例是簡化模擬，不代表真實微調的行為與數字。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Wang 等人，<a href="https://arxiv.org/abs/2112.07577">GPL: Generative Pseudo Labeling for Unsupervised Domain Adaptation of Dense Retrieval</a>（NAACL 2022）；Sentence Transformers 官方文件中的 <code>MultipleNegativesRankingLoss</code> 與訓練說明。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>為什麼挖「困難負例」時，要擔心偽負例？</b></p>
+    <button class="opt">A. 因為困難負例一定比隨機負例少</button>
+    <button class="opt">B. 因為排名很前面但不是標註正解的段落，其實可能也能回答這個問題，把它當負例會把模型教壞</button>
+    <button class="opt">C. 因為偽負例會讓訓練速度變慢</button>
+    <div class="why">知識庫常有多段內容都能回答同一問題；「排名高但不是標註正解」不等於「錯」。可用 cross-encoder 過濾或跳過最前面幾名。</div>
+  </div>
+  <div class="quiz card" data-answer="0">
+    <p><b>微調嵌入模型並上線後，下列哪件事一定要做？</b></p>
+    <button class="opt">A. 用新模型把整份知識庫重新嵌入、重建向量索引</button>
+    <button class="opt">B. 只重新嵌入新進的文件，舊向量照用</button>
+    <button class="opt">C. 把查詢向量改回舊模型來產生</button>
+    <div class="why">新舊模型的向量空間不同，不能混用；查詢與文件必須由同一個模型嵌入，所以要整份重新嵌入。</div>
+  </div>
+
+  <nav class="pager" data-slug="embedding-finetuning"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'沒有微調：通用模型不懂現場說法', text:'技師輸入「<b>葉片轉不動</b>」，通用嵌入模型沒看過風場語料，只因為都有「旋角馬達」就把<b>過溫</b>段落排前面，真正的答案 PT-205 排在後面。' },
+  { title:'沒有標註配對，就沒辦法微調', text:'微調嵌入模型需要（<b>問題, 正確段落</b>）成對的資料。手上只有大量沒標註的工單與手冊，請資深技師逐筆標註又慢又貴。' },
+  { title:'用 LLM 合成「技師會怎麼問」', text:'讓 LLM 讀每段工單，<b>反推</b>幾個技師口吻的問題，自動得到（問題, 段落）配對。提示詞要規定口吻，並用既有檢索<b>過濾</b>掉太籠統的問題。' },
+  { title:'對比學習：拉近正例、推遠負例', text:'訓練時把正確配對的向量<b>拉近</b>，同一個 batch 裡<b>別人的段落</b>自動當負例（<b>in-batch negatives</b>）推遠。batch 越大，負例越多。' },
+  { title:'困難負例：很像但不是答案', text:'隨機負例太容易分辨。用現有模型檢索，取<b>排名前面卻不是正解</b>的段落（例如 PT-203 對 PT-205）當<b>困難負例</b>，逼模型學會細微差異。' },
+  { title:'小心偽負例', text:'知識庫裡常有多段都能回答同一個問題，「排名高但不是標註正解」<b>不等於錯</b>。可用 cross-encoder 重新打分過濾，或跳過最前面幾名；GPL 則用 cross-encoder 的<b>軟標籤</b>。' },
+  { title:'用沒練過的真實問法驗收', text:'在合成問題上變好是<b>意料中的事</b>。要用沒參與訓練的真實問法留出集，量 <b>Recall@k</b>，並檢查通用問題有沒有退步。' },
+  { title:'結果：同一份索引，換成懂領域的模型', text:'微調後，「葉片轉不動」更常命中 <b>PT-205</b>。代價是要產生資料、訓練，模型一換<b>整份索引要重新嵌入</b>；仍可與 BM25、重排序搭配。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  const DOCS = [
+    "WO-2026-0412 WTG-07 PT-205：旋角馬達煞車線圈供電不穩，葉片角度卡住，更換煞車組後恢復。",
+    "WO-2026-0415 WTG-12 PT-203：旋角馬達過溫跳脫，冷卻風扇濾網積塵，清潔濾網並降溫後復歸。",
+    "WO-2026-0420 WTG-21 PT-230：備援電源測試失敗，電池電壓偏低，更換電池模組。",
+    "WO-2026-0433 WTG-03 YW-042：偏航誤差過大，風向計校正偏移，重新校正後復歸。",
+    "WO-2026-0441 WTG-15 GB-117：齒輪箱高速軸軸承溫度過高，潤滑油位偏低，補油並追蹤振動趨勢。",
+    "WO-2026-0450 WTG-30 CV-310：變流器功率模組過溫，水冷迴路流量不足，清理散熱器積塵。",
+    "WO-2026-0458 WTG-09 PT-211：三支葉片角度偏差過大，旋角編碼器校正漂移，重新校正編碼器。",
+    "WO-2026-0463 WTG-25 YW-042：偏航驅動器減速機漏油，更換油封並補充潤滑油。"
+  ];
+  /* 合成的訓練配對（q：LLM 反推的問題；doc：正例；neg：挖到的困難負例） */
+  const TRAIN = [
+    { q:'葉片轉不動', doc:0, neg:1 },
+    { q:'馬達太燙跳機', doc:1, neg:0 },
+    { q:'電池沒電', doc:2, neg:1 },
+    { q:'機艙有異音', doc:4, neg:7 },
+    { q:'葉片角度對不齊', doc:6, neg:0 },
+    { q:'水冷流量不夠', doc:5, neg:1 }
+  ];
+  /* 留出的測試問法：沒出現在訓練配對中 */
+  const PRE = [
+    { q:'葉片卡住不動', target:0 },
+    { q:'旋角馬達太燙', target:1 },
+    { q:'電池沒電了', target:2 },
+    { q:'機艙異音很大', target:4 }
+  ];
+  const index = rt.buildIndex(DOCS.map(t => ({ text:t })));
+  const dset = DOCS.map(t => new Set(rt.tokenize(t)));
+  const st = { np:0, hn:0 };
+
+  /* 簡化的「微調」：訓練配對教出「問題裡的詞 → 正例段落的詞」的對應；困難負例則壓低只屬於負例的詞 */
+  function learn(n, hn){
+    const assoc = new Map();
+    TRAIN.slice(0, n).forEach(p => {
+      const gaps = [...new Set(rt.tokenize(p.q))].filter(t => !dset[p.doc].has(t));
+      gaps.forEach(g => {
+        const m = assoc.get(g) || new Map();
+        dset[p.doc].forEach(t => m.set(t, (m.get(t) || 0) + index.idf(t)));
+        if(hn) dset[p.neg].forEach(t => { if(!dset[p.doc].has(t)) m.set(t, (m.get(t) || 0) - index.idf(t)); });
+        assoc.set(g, m);
+      });
+    });
+    return assoc;
+  }
+  function searchTuned(q, n, hn, k=3){
+    const qv = index.vec(rt.tokenize(q)), assoc = learn(n, hn);
+    [...new Set(rt.tokenize(q))].forEach(g => (assoc.get(g) || new Map()).forEach((w, t) => qv.set(t, (qv.get(t) || 0) + 0.35 * w)));
+    return index.docs.map((d, i) => ({ i, doc:d, score:rt.cosine(qv, index.vecs[i]) })).sort((a, b) => b.score - a.score).slice(0, k);
+  }
+  const cell = (n, text, label, rank, target, q) => '<div class="hit' + (n === 0 ? ' top' : '') + '"><div class="meta"><span>#' + (n+1) + (target === rank ? ' ✓ 目標' : '') + '</span><span>' + label + '</span></div>' + rt.highlight(text, q) + '</div>';
+
+  function run(){
+    const q = $('#q').value.trim();
+    const pre = PRE.find(p => p.q === q), tg = pre ? pre.target : -1;
+    $('#pairs').innerHTML = st.np ? TRAIN.slice(0, st.np).map(p => '<div>・「' + esc(p.q) + '」→ ' + esc(DOCS[p.doc].slice(0, 28)) + '…' + (st.hn ? '　<span class="muted">困難負例：' + esc(DOCS[p.neg].slice(15, 22)) + '</span>' : '') + '</div>').join('') : '<span class="muted">尚未加入訓練配對（等同通用模型）。</span>';
+    if(!q){ $('#hA').innerHTML = '<div class="muted">請輸入問題或點選預設問題。</div>'; $('#hB').innerHTML = ''; }
+    else {
+      const A = rt.searchVector(index, q, 3).filter(h => h.score > 0), B = searchTuned(q, st.np, st.hn).filter(h => h.score > 0);
+      $('#hA').innerHTML = A.map((h, n) => cell(n, h.doc.text, '餘弦 ' + h.score.toFixed(2), h.i, tg, q)).join('') || '<div class="muted">沒有相似的段落。</div>';
+      $('#hB').innerHTML = B.map((h, n) => cell(n, h.doc, '餘弦 ' + h.score.toFixed(2), h.i, tg, q)).join('') || '<div class="muted">沒有相似的段落。</div>';
+    }
+    let a = 0, b = 0;
+    PRE.forEach(p => {
+      const ra = rt.searchVector(index, p.q, 1)[0], rb = searchTuned(p.q, st.np, st.hn, 1)[0];
+      if(ra && ra.score > 0 && ra.i === p.target) a++;
+      if(rb && rb.score > 0 && rb.i === p.target) b++;
+    });
+    $('#tally').innerHTML = '4 個留出問法中，目標工單排第 1 名：未微調 <b>' + a + ' / 4</b>，目前設定 <b>' + b + ' / 4</b>。';
+  }
+
+  $('#presets').innerHTML = PRE.map((p, i) => '<button type="button" data-i="' + i + '" class="' + (i === 0 ? 'on' : '') + '">' + esc(p.q) + '</button>').join('');
+  $('#q').value = PRE[0].q;
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    $('#q').value = PRE[+b.dataset.i].q;
+    $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#q').addEventListener('input', () => { $('#presets').querySelectorAll('button').forEach(x => x.classList.remove('on')); run(); });
+  [['#np', 'np'], ['#hn', 'hn']].forEach(([sel, key]) => { $(sel).onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    st[key] = +b.dataset.v; $(sel).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); }; });
+  run();
+  window.__demo = { st, run, PRE, searchTuned, index };
+})();
+</script>
+</body>
+</html>

@@ -503,6 +503,20 @@
         "稀疏檢索"
       ],
       "date": "2026-10-25"
+    },
+    {
+      "no": 30,
+      "slug": "embedding-finetuning",
+      "file": "lessons/030-embedding-finetuning.html",
+      "title": "領域嵌入微調：用合成查詢與困難負例，教嵌入模型聽懂你的領域",
+      "en": "Domain Embedding Fine-tuning",
+      "level": 3,
+      "summary": "通用嵌入模型不懂現場說法。用 LLM 合成（問題, 段落）配對，以對比學習與困難負例微調嵌入模型，並用留出的真實問法驗收。本堂用互動範例看配對數與困難負例如何影響結果。",
+      "tags": [
+        "高階",
+        "嵌入"
+      ],
+      "date": "2026-10-26"
     }
   ]
 }

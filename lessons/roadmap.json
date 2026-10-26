@@ -29,6 +29,7 @@
     { "slug": "semantic-caching", "title": "語意快取：相似的問題，直接重用上次的答案", "en": "Semantic Caching", "level": 2, "status": "done", "file": "lessons/026-semantic-caching.html", "scenario": "值班人員用不同說法重複查詢 PT-203 過溫，相似度達門檻就重用上次答案；PT-203 與 PT-230、OW-8 與 OW-6 需守門" },
     { "slug": "vector-compression", "title": "向量壓縮：Matryoshka 截斷與量化", "en": "Embedding Compression: Matryoshka & Quantization", "level": 2, "status": "done", "file": "lessons/027-vector-compression.html", "scenario": "手冊、工單與巡檢報告切成百萬片段後，用 Matryoshka 截斷、int8／二元量化縮小索引，並以二元粗篩加高精度重算保住品質；PT-203 與 PT-230 這類近似代碼最容易被混淆" },
     { "slug": "sufficient-context", "title": "充分上下文與拒答：檢索到的內容，夠回答嗎？", "en": "Sufficient Context & Abstention", "level": 2, "status": "done", "file": "lessons/028-sufficient-context.html", "scenario": "技師問 OW-6 偏航誤差或 PT-230 備援電池更換電壓，手冊只有 OW-8 內容或沒有數值；逐項檢查所需資訊，不充分就補檢索或拒答並說明缺什麼" },
-    { "slug": "splade", "title": "SPLADE 學習式稀疏檢索：讓關鍵字檢索聽懂口語", "en": "SPLADE Learned Sparse Retrieval", "level": 3, "status": "done", "file": "lessons/029-splade.html", "scenario": "技師口語問「葉片轉不動」，手冊寫的是「煞車異常、角度卡住」；學習式擴展補上共同的詞，再用倒排索引檢索" }
+    { "slug": "splade", "title": "SPLADE 學習式稀疏檢索：讓關鍵字檢索聽懂口語", "en": "SPLADE Learned Sparse Retrieval", "level": 3, "status": "done", "file": "lessons/029-splade.html", "scenario": "技師口語問「葉片轉不動」，手冊寫的是「煞車異常、角度卡住」；學習式擴展補上共同的詞，再用倒排索引檢索" },
+    { "slug": "embedding-finetuning", "title": "領域嵌入微調：用合成查詢與困難負例，教嵌入模型聽懂你的領域", "en": "Domain Embedding Fine-tuning", "level": 3, "status": "done", "file": "lessons/030-embedding-finetuning.html", "scenario": "用維修工單合成技師口吻的問題，搭配困難負例（PT-203 對 PT-205）微調嵌入模型，並用留出的真實問法驗收" }
   ]
 }
