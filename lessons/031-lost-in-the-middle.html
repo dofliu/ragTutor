@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>上下文排序：Lost in the Middle 與兩端排列｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識 Lost in the Middle：關鍵資訊放在提示詞中間最容易被忽略，學會少放、兩端排列、編號引用與位置掃描驗證。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 031 堂</span><span class="tag lv2">進階</span><span class="tag">約 15 分鐘</span></p>
+  <h1>上下文排序：Lost in the Middle 與兩端排列</h1>
+
+  <p class="lead">檢索找對了，答案卻還是漏東漏西？原因可能是<b>段落放的位置</b>。研究發現，語言模型在長脈絡中，關鍵資訊在<b>開頭或結尾</b>時表現最好，落在<b>中間</b>時明顯變差（Lost in the Middle）。對策很實際：<b>少放幾段</b>、把最相關的段落排在<b>兩端</b>、替段落編號並要求引用，最後用自己的模型<b>掃描位置</b>驗證。</p>
+
+  <h2>🎬 動畫：把關鍵段落放到看得清楚的位置</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="上下文排序動畫：關鍵段落落在中間被忽略；U 形曲線；段落越多越差；少放；兩端排列；編號引用；位置掃描；結果"><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="0" data-to="0">① 沒有排序：10 段全塞進去，關鍵段落剛好落在中間</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="1" data-to="1">② 現象：關鍵資訊放在開頭或結尾最好，放中間最容易被忽略</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="2" data-to="2">③ 另一個因素：放進去的段落越多，整體表現越差</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="3" data-to="3">④ 對策 1：少放一點——先重排序，只留最相關的幾段</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="4" data-to="4">⑤ 對策 2：兩端排列——最相關的放最前面與最後面</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="5" data-to="5">⑥ 對策 3：替段落編號，要求先列出引用再回答</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="6" data-to="6">⑦ 驗證：把答案段落放在不同位置，量自己模型的表現</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 結果：同樣的檢索結果，換個排法就能用得更好</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-from="0" data-to="0"><rect x="24" y="116" width="80" height="46" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="64.0" y="134.5" text-anchor="middle" font-size="11.5">其他</text><text x="64.0" y="151.5" text-anchor="middle" font-size="11.5">段落</text><rect x="110" y="116" width="80" height="46" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="150.0" y="134.5" text-anchor="middle" font-size="11.5">其他</text><text x="150.0" y="151.5" text-anchor="middle" font-size="11.5">段落</text><rect x="196" y="116" width="80" height="46" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="236.0" y="134.5" text-anchor="middle" font-size="11.5">其他</text><text x="236.0" y="151.5" text-anchor="middle" font-size="11.5">段落</text><rect x="282" y="116" width="80" height="46" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="322.0" y="134.5" text-anchor="middle" font-size="11.5">其他</text><text x="322.0" y="151.5" text-anchor="middle" font-size="11.5">段落</text><rect x="368" y="116" width="80" height="46" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="408.0" y="134.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">排除</text><text x="408.0" y="151.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">步驟</text><rect x="454" y="116" width="80" height="46" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="494.0" y="134.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">上鎖</text><text x="494.0" y="151.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">掛牌</text><rect x="540" y="116" width="80" height="46" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="580.0" y="134.5" text-anchor="middle" font-size="11.5">其他</text><text x="580.0" y="151.5" text-anchor="middle" font-size="11.5">段落</text><rect x="626" y="116" width="80" height="46" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="666.0" y="134.5" text-anchor="middle" font-size="11.5">其他</text><text x="666.0" y="151.5" text-anchor="middle" font-size="11.5">段落</text><rect x="712" y="116" width="80" height="46" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="752.0" y="134.5" text-anchor="middle" font-size="11.5">其他</text><text x="752.0" y="151.5" text-anchor="middle" font-size="11.5">段落</text><rect x="798" y="116" width="80" height="46" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="838.0" y="134.5" text-anchor="middle" font-size="11.5">其他</text><text x="838.0" y="151.5" text-anchor="middle" font-size="11.5">段落</text><text x="24" y="184" font-size="12" font-weight="700" style="fill:var(--bad)">檢索回傳 10 段，照檔案順序塞進提示詞；真正需要的兩段剛好在正中間。</text><path d="M458 196 L458 222" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="226" width="420" height="52" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="234.0" y="247.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM 讀完 10 段，回答：</text><text x="234.0" y="264.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">「補氮氣預充壓力即可。」</text><rect x="472" y="226" width="420" height="52" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="682.0" y="247.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">漏掉最重要的安全步驟</text><text x="682.0" y="264.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">先洩壓、上鎖掛牌（LOTO）</text><path d="M444 252 L472 252" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="316" font-size="12" font-weight="700" style="fill:var(--bad)">檢索其實有找對，是「放的位置」讓模型沒用到。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="1" data-to="1"><path d="M60 124 L60 312 L880 312" style="fill:none;stroke:var(--line);stroke-width:1.4"/><path d="M80 150 C 300 310, 640 310, 860 150" style="fill:none;stroke:var(--accent);stroke-width:2.6"/><circle cx="80" cy="150" r="7" style="fill:var(--good)"/><circle cx="860" cy="150" r="7" style="fill:var(--good)"/><circle cx="470" cy="270" r="7" style="fill:var(--bad)"/><text x="70" y="134" font-size="11.5" style="fill:var(--muted)">模型用得好的程度（示意）</text><text x="80" y="338" font-size="12" font-weight="700" style="fill:var(--good)">開頭</text><text text-anchor="middle" x="470" y="338" font-size="12" font-weight="700" style="fill:var(--bad)">中間</text><text text-anchor="end" x="860" y="338" font-size="12" font-weight="700" style="fill:var(--good)">結尾</text><text x="500" y="236" font-size="12" font-weight="700" style="fill:var(--bad)">中間最容易被忽略</text><text x="24" y="366" font-size="12" font-weight="700" style="fill:var(--accent)">這就是 Lost in the Middle：U 形曲線（Liu 等人，2023；TACL 2024）。</text><text x="24" y="396" font-size="11.5" class="t-muted">曲線為示意，不是實測數字；實際形狀因模型而異。</text></g><g data-from="2" data-to="2"><text x="24" y="122" font-size="12" font-weight="700" style="fill:var(--query)">放 3 段</text><rect x="24" y="130" width="124" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="86.0" y="151.0" text-anchor="middle" font-size="11.5">精選段落</text><rect x="156" y="130" width="124" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="218.0" y="151.0" text-anchor="middle" font-size="11.5">精選段落</text><rect x="288" y="130" width="124" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="350.0" y="151.0" text-anchor="middle" font-size="11.5">精選段落</text><text x="24" y="196" font-size="12" font-weight="700" style="fill:var(--query)">放 20 段</text><rect x="24.0" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="67.4" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="110.8" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="154.2" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="197.6" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="241.0" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="284.4" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="327.8" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="371.2" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="414.59999999999997" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><rect x="458.0" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><rect x="501.4" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="544.8" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="588.1999999999999" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="631.6" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="675.0" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="718.4" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="761.8" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="805.1999999999999" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><rect x="848.6" y="204" width="40" height="34" rx="3" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="24" y="266" font-size="12" font-weight="700" style="fill:var(--query)">論文也觀察到：輸入脈絡越長，整體表現越差，連專為長脈絡設計的模型也一樣。</text><text x="24" y="294" font-size="12" style="fill:var(--query)">段落越多，雜訊越多、關鍵段落越難被挑出；多塞不等於多保險。</text><rect x="24" y="316" width="868" height="42" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="458.0" y="341.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">所以「放多少段」和「怎麼排」是兩個要分開調的旋鈕</text><text x="24" y="392" font-size="11.5" class="t-muted">重點：不要為了「保險」把 top-k 開到最大。</text></g><g data-from="3" data-to="3"><rect x="24" y="116" width="170" height="56" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="109.0" y="139.5" text-anchor="middle" font-size="11.5">向量檢索召回</text><text x="109.0" y="156.5" text-anchor="middle" font-size="11.5">較多段（例如 20）</text><path d="M194 144 L224 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="224" y="116" width="170" height="56" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="309.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">重排序</text><text x="309.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">Cross-encoder</text><path d="M394 144 L424 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="424" y="116" width="170" height="56" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="509.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">只留最相關</text><text x="509.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">少數幾段（例如 4）</text><path d="M594 144 L624 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="624" y="116" width="268" height="56" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="758.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM</text><text x="758.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">脈絡短、雜訊少</text><text x="24" y="214" font-size="12" font-weight="700" style="fill:var(--vec)">先用第 005 堂的重排序把順序排準，再決定要留幾段，其餘直接丟掉。</text><text x="24" y="242" font-size="12" style="fill:var(--vec)">也可用第 012 堂的上下文壓縮，把每段只留下與問題有關的句子。</text><rect x="24" y="270" width="868" height="52" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="458.0" y="291.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">代價：留太少可能漏掉需要多段合併才能回答的資訊</text><text x="458.0" y="308.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">（例如「排除步驟」加「安全注意事項」），要用評估集決定 k</text><text x="24" y="392" font-size="11.5" class="t-muted">示意數字：k 要用自己的評估集調。</text></g><g data-from="4" data-to="4"><text x="24" y="122" font-size="12" style="fill:var(--muted)">檢索與重排序後的分數順序</text><rect x="24" y="130" width="134" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="91.0" y="154.0" text-anchor="middle" font-size="11.5">#1 最相關</text><rect x="170" y="130" width="134" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="237.0" y="154.0" text-anchor="middle" font-size="11.5">#2</text><rect x="316" y="130" width="134" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="383.0" y="154.0" text-anchor="middle" font-size="11.5">#3</text><rect x="462" y="130" width="134" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="529.0" y="154.0" text-anchor="middle" font-size="11.5">#4</text><rect x="608" y="130" width="134" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="675.0" y="154.0" text-anchor="middle" font-size="11.5">#5</text><rect x="754" y="130" width="134" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="821.0" y="154.0" text-anchor="middle" font-size="11.5">#6</text><path d="M458 176 L458 190" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="196" font-size="12" font-weight="700" style="fill:var(--good)">兩端排列後，放進提示詞的順序</text><rect x="24" y="206" width="134" height="40" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="91.0" y="230.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">#1 最相關</text><rect x="170" y="206" width="134" height="40" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="237.0" y="230.0" text-anchor="middle" font-size="11.5">#3</text><rect x="316" y="206" width="134" height="40" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="383.0" y="230.0" text-anchor="middle" font-size="11.5">#5</text><rect x="462" y="206" width="134" height="40" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="529.0" y="230.0" text-anchor="middle" font-size="11.5">#6</text><rect x="608" y="206" width="134" height="40" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="675.0" y="230.0" text-anchor="middle" font-size="11.5">#4</text><rect x="754" y="206" width="134" height="40" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="821.0" y="230.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">#2 次相關</text><text x="24" y="276" font-size="12" font-weight="700" style="fill:var(--good)">#1 放最前面，#2 放最後面，排名較低的放中間；前後兩端是模型最容易用到的位置。</text><text x="24" y="304" font-size="12" style="fill:var(--good)">LangChain 的 LongContextReorder 就是這種做法；自己寫只要幾行（見程式範例）。</text><text x="24" y="392" font-size="11.5" class="t-muted">只重排順序，不增減內容，幾乎不增加成本。</text></g><g data-from="5" data-to="5"><rect x="24" y="112" width="430" height="132" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="239.0" y="148.0" text-anchor="middle" font-size="11.5">提示詞（節錄）</text><text x="239.0" y="165.0" text-anchor="middle" font-size="11.5">[1] HY-120 油壓偏低…　[2] HY-120 作業安全…</text><text x="239.0" y="182.0" text-anchor="middle" font-size="11.5">[3] 巡檢報告…　[4] HY-135 油溫過高…</text><text x="239.0" y="199.0" text-anchor="middle" font-size="11.5">請先列出你會用到的段落編號，</text><text x="239.0" y="216.0" text-anchor="middle" font-size="11.5">再只根據這些段落回答，並標註 [編號]</text><path d="M454 178 L484 178" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="484" y="112" width="408" height="132" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="688.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">模型回答</text><text x="688.0" y="173.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">用到：[1]、[2]</text><text x="688.0" y="190.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">先洩壓並上鎖掛牌 [2]，</text><text x="688.0" y="207.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">再量測蓄壓器預充壓力 [1]</text><text x="24" y="284" font-size="12" font-weight="700" style="fill:var(--llm)">編號加上「先列出引用」，逼模型把每一段都掃過，而不只讀開頭與結尾。</text><text x="24" y="312" font-size="12" style="fill:var(--llm)">這是實務上的提示設計，不是論文保證有效；對應第 025 堂的引用與歸因。</text><text x="24" y="392" font-size="11.5" class="t-muted">效果要在自己的模型上驗證（下一步）。</text></g><g data-from="6" data-to="6"><rect x="104" y="128" width="200" height="110" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6;stroke-dasharray:4 4"/><text x="204.0" y="187.0" text-anchor="middle" font-size="22" font-weight="700" style="fill:var(--doc)">?</text><text x="204" y="262" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">答案段落放在開頭</text><rect x="364" y="128" width="200" height="110" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6;stroke-dasharray:4 4"/><text x="464.0" y="187.0" text-anchor="middle" font-size="22" font-weight="700" style="fill:var(--doc)">?</text><text x="464" y="262" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">答案段落放在中間</text><rect x="624" y="128" width="200" height="110" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6;stroke-dasharray:4 4"/><text x="724.0" y="187.0" text-anchor="middle" font-size="22" font-weight="700" style="fill:var(--doc)">?</text><text x="724" y="262" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--doc)">答案段落放在結尾</text><text x="24" y="300" font-size="12" font-weight="700" style="fill:var(--doc)">固定問題與其他段落，只移動答案段落的位置，各跑多次，量正確率（Recall 或答對率，第 021 堂）。</text><text x="24" y="328" font-size="12" style="fill:var(--doc)">若曲線很平，代表你的模型對位置不敏感，就不必花力氣重排。</text><text x="24" y="392" font-size="11.5" class="t-muted">此處不放數字：結果取決於模型、提示與段落長度。</text></g><g data-from="7"><rect x="24" y="116" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="234.0" y="149.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">沒有排序處理</text><text x="234.0" y="166.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">關鍵段落落在中間</text><text x="234.0" y="183.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">安全步驟被漏掉</text><rect x="472" y="116" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="682.0" y="149.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">少放＋兩端排列＋編號引用</text><text x="682.0" y="166.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">關鍵段落在最前或最後</text><text x="682.0" y="183.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">答案同時包含排除步驟與安全步驟</text><rect x="24" y="228" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="234.0" y="250.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">代價：</text><text x="234.0" y="267.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">要多一步重排序、要自己的評估集</text><text x="234.0" y="284.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">才知道哪個排法對你的模型有效</text><rect x="472" y="228" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="682.0" y="250.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">搭配：</text><text x="682.0" y="267.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">重排序（第 005 堂）、壓縮（第 012 堂）</text><text x="682.0" y="284.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">與引用（第 025 堂）</text><text x="24" y="336" font-size="12.5" font-weight="700" style="fill:var(--good)">檢索沒有變，只是把答案放到模型看得最清楚的位置。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>位置會影響結果</b>Liu 等人發現：相關資訊在輸入的開頭或結尾時，表現通常最好；在中間時明顯下降，呈 U 形。檢索找對了，也可能因為擺錯位置而沒被用到。</div>
+    <div class="card"><b>越長越差</b>同一篇研究也觀察到，輸入脈絡越長，整體表現越下降。把 top-k 開到最大不是保險，先用重排序與壓縮縮短脈絡。</div>
+    <div class="card"><b>兩端排列</b>把排名最前的段落放在最前面，次相關的放在最後面，排名較低的放中間。只改順序、不增減內容，成本幾乎是零。</div>
+    <div class="card"><b>量過才算數</b>不同模型對位置的敏感度不同。固定問題，只移動答案段落的位置，掃描開頭、中間、結尾的正確率；曲線平，就不必重排。</div>
+  </div>
+
+  <h2>🧪 互動範例：改變段落順序，看關鍵段落落在哪裡</h2>
+  <div class="prose"><p>下面有 10 段《OW-8 運維手冊》液壓與煞車章節的內容（<b>虛構</b>）。系統用 BM25 取出前 k 段，再依你選的方式排列。每段旁的長條代表<b>該位置的模擬注意力權重</b>；標示 ★ 的是這題真正需要的段落。比較三種排法下，★ 段落能拿到多少權重。</p>
+  <p><b>這是簡化模擬：</b>權重曲線是我們假設的 U 形示意，用來看清楚排列的效果，<b>不是</b>任何真實模型的量測，也不代表實際數字。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><b style="font-size:13px">放進提示詞的段落數 k：</b>
+      <div class="seg" id="kk"><button type="button" data-v="4">4 段</button><button type="button" data-v="7">7 段</button><button type="button" data-v="10" class="on">10 段</button></div></div>
+    <div class="row"><b style="font-size:13px">排列方式：</b>
+      <div class="seg" id="od"><button type="button" data-v="file" class="on">檔案順序</button><button type="button" data-v="score">分數高→低</button><button type="button" data-v="ends">兩端排列</button></div></div>
+    <div class="hits" id="hits"></div>
+    <div class="muted" id="tally" style="font-size:13px;margin-top:8px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>下面的程式做兩件事：<code>reorder_ends</code> 把依分數排序的段落改成兩端排列；<code>position_sweep</code> 把「答案段落」依序放在不同位置，用 <code>anthropic</code> 的 <code>claude-sonnet-5</code> 重複提問，統計答對率，驗證你的模型到底受不受位置影響。示範用 3 個干擾段落，實務上請放接近上線時的段落數並多跑幾次。</p></div>
+<pre class="code"><code><span class="k">import</span> anthropic
+
+client = anthropic.<span class="f">Anthropic</span>()
+
+GOLD = <span class="s">"HY-120 作業安全：拆卸任何液壓管路前，先洩壓並執行上鎖掛牌（LOTO），確認壓力表歸零。"</span>
+FILLERS = [
+    <span class="s">"HY-120 液壓站油壓偏低：蓄壓器氮氣預充壓力不足時，先量測預充壓力，再補充氮氣。"</span>,
+    <span class="s">"HY-141 濾芯壓差過大：濾芯堵塞，依週期更換濾芯，備品料號 HY-FLT-01。"</span>,
+    <span class="s">"HY-160 管路接頭滲油：O 型環老化，更換 O 型環並確認鎖固扭力。"</span>,
+]
+QUESTION = <span class="s">"WTG-18 液壓站油壓偏低，我要拆管路檢查，拆之前有什麼安全步驟？"</span>
+
+<span class="k">def</span> <span class="f">reorder_ends</span>(ranked):
+    <span class="s">"""ranked 依相關性由高到低；回傳最相關在最前、次相關在最後、其餘在中間"""</span>
+    front, back = [], []
+    <span class="k">for</span> i, doc <span class="k">in</span> <span class="f">enumerate</span>(ranked):
+        (front <span class="k">if</span> i % <span class="s">2</span> == <span class="s">0</span> <span class="k">else</span> back).<span class="f">append</span>(doc)
+    <span class="k">return</span> front + back[::-<span class="s">1</span>]
+
+<span class="k">def</span> <span class="f">ask</span>(docs):
+    ctx = <span class="s">"\n"</span>.<span class="f">join</span>(<span class="s">f"[{i+1}] {d}"</span> <span class="k">for</span> i, d <span class="k">in</span> <span class="f">enumerate</span>(docs))
+    msg = client.messages.<span class="f">create</span>(
+        model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">300</span>,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+            <span class="s">f"只根據下列手冊段落回答，並標註引用編號。\n\n{ctx}\n\n問題：{QUESTION}"</span>}],
+    )
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text
+
+<span class="k">def</span> <span class="f">position_sweep</span>(trials=<span class="s">5</span>):
+    <span class="s">"""固定問題與干擾段落，只移動答案段落的位置，統計答案是否提到上鎖掛牌"""</span>
+    <span class="k">for</span> pos <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(FILLERS) + <span class="s">1</span>):
+        docs = FILLERS[:pos] + [GOLD] + FILLERS[pos:]
+        hits = <span class="f">sum</span>((<span class="s">"上鎖掛牌"</span> <span class="k">in</span> <span class="f">ask</span>(docs)) <span class="k">or</span> (<span class="s">"LOTO"</span> <span class="k">in</span> <span class="f">ask</span>(docs)) <span class="k">for</span> _ <span class="k">in</span> <span class="f">range</span>(trials))
+        <span class="f">print</span>(<span class="s">f"答案放在第 {pos+1} 位：{hits}/{trials}"</span>)
+
+<span class="c"># 實際使用：檢索 → 重排序（第 005 堂）→ 留前幾段 → 兩端排列 → 提問</span>
+ranked = [GOLD] + FILLERS            <span class="c"># 假設已依分數排好</span>
+<span class="f">print</span>(<span class="f">ask</span>(<span class="f">reorder_ends</span>(ranked)))
+<span class="f">position_sweep</span>()</code></pre>
+  <div class="prose"><p>上面的判斷用字串比對，只是最小示範；正式評估請用第 021 堂的方法，並對每個位置重複多次取平均（<code>position_sweep</code> 為了精簡，每次判斷會呼叫模型兩次，可自行改成只呼叫一次後再檢查）。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>重排序（第 005 堂）</th><th>上下文壓縮（第 012 堂）</th><th>長上下文 vs RAG（第 022 堂）</th><th>引用與歸因（第 025 堂）</th><th>上下文排序</th></tr>
+    <tr><th>改的是什麼</th><td>候選段落的排名</td><td>每段的內容長度</td><td>整體架構選擇</td><td>答案的可追溯性</td><td>段落放進提示詞的順序</td></tr>
+    <tr><th>解決的問題</th><td>找對、排準</td><td>雜訊與長度</td><td>該不該全塞</td><td>能否回頭查證</td><td>關鍵段落被中間位置埋沒</td></tr>
+    <tr><th>額外成本</th><td>多一次模型打分</td><td>多一次壓縮</td><td>脈絡 token 費用高</td><td>提示與輸出變長</td><td>幾乎為零（只改順序）</td></tr>
+    <tr><th>主要風險</th><td>延遲增加</td><td>壓縮掉關鍵句</td><td>越長越差</td><td>引用本身可能錯</td><td>不同模型敏感度不同，效果要自己量</td></tr>
+    <tr><th>適合用在</th><td>召回量大、需要精排</td><td>每段很長、問題很窄</td><td>文件量小且固定</td><td>需要稽核與信任</td><td>一次放多段、答案需要整合多段時</td></tr>
+  </table>
+
+  <h2>⚠️ 上下文排序常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>把論文結論當成所有模型的定律</b>：Lost in the Middle 是在特定任務與當時的模型上的觀察，不同模型、不同長度的敏感度都不同。要用自己的模型做位置掃描，別直接假設。</li>
+      <li><b>只排序、不縮短</b>：段落多到上千字時，兩端排列救不了整體變差的問題。先用重排序與壓縮控制長度。</li>
+      <li><b>排序破壞原有脈絡</b>：同一份手冊的步驟 1、2、3 被打散，模型可能讀不順。需要保持順序的內容，改用父子文件檢索（第 008 堂）整段回傳。</li>
+      <li><b>忘了答案常需要多段</b>：「排除步驟」加「安全注意事項」要同時出現，兩段都得放在好位置，不能只顧第一名。</li>
+      <li><b>只有一兩段時不需要</b>：k 很小時位置差異有限，排序的效益也小，先確認有問題再處理。</li>
+      <li><b>評估要固定其他變因</b>：掃描位置時，問題、段落內容與提示詞都要固定，只動位置，並重複多次，否則看不出是位置還是隨機性。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊與工單內容及數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的權重曲線為示意，不代表真實模型的行為與數字。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Liu 等人，<a href="https://arxiv.org/abs/2307.03172">Lost in the Middle: How Language Models Use Long Contexts</a>（Transactions of the ACL，2024）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="2">
+    <p><b>檢索已經找到了正確段落，答案卻仍然漏掉關鍵資訊。依 Lost in the Middle 的觀察，最值得先檢查什麼？</b></p>
+    <button class="opt">A. 換成維度更高的嵌入模型</button>
+    <button class="opt">B. 把 top-k 開到最大，讓模型看到更多</button>
+    <button class="opt">C. 關鍵段落是否落在提示詞中間，以及放進去的段落是不是太多</button>
+    <div class="why">研究發現相關資訊在開頭或結尾時表現較好、在中間時變差，且輸入越長整體越差。檢查位置與段落數，比盲目增加內容更有效。</div>
+  </div>
+  <div class="quiz card" data-answer="1">
+    <p><b>「兩端排列」是怎麼放段落的？</b></p>
+    <button class="opt">A. 完全隨機打散</button>
+    <button class="opt">B. 最相關的放最前面，次相關的放最後面，排名較低的放中間</button>
+    <button class="opt">C. 把分數最低的放最前面與最後面</button>
+    <div class="why">兩端是模型最容易用到的位置，所以把最相關的段落放在那裡；排名較低的放中間，即使被忽略損失也較小。</div>
+  </div>
+
+  <nav class="pager" data-slug="lost-in-the-middle"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'關鍵段落剛好落在中間', text:'檢索回傳 <b>10 段</b>，照檔案順序全塞進去。真正需要的「排除步驟」與「<b>上鎖掛牌</b>」落在正中間，模型的回答漏掉了安全步驟。' },
+  { title:'現象：U 形曲線', text:'Liu 等人發現，相關資訊在輸入的<b>開頭或結尾</b>時表現最好，在<b>中間</b>時明顯變差，稱為 <b>Lost in the Middle</b>。曲線為示意，實際因模型而異。' },
+  { title:'段落越多，整體越差', text:'同一篇研究也觀察到<b>脈絡越長，表現越下降</b>。把 top-k 開到最大並不是保險，雜訊增加，關鍵段落反而更難被挑出來。' },
+  { title:'對策 1：先重排序，少放一點', text:'先用<b>重排序</b>排準，只留最相關的少數幾段，也可搭配<b>上下文壓縮</b>。代價是若留太少，可能漏掉需要多段合併的資訊，要用評估集決定 k。' },
+  { title:'對策 2：兩端排列', text:'把<b>最相關</b>放最前面，<b>次相關</b>放最後面，排名較低的放中間。只改順序、不增減內容，成本幾乎為零，LangChain 的 LongContextReorder 即是此做法。' },
+  { title:'對策 3：編號並要求引用', text:'給每段<b>編號</b>，要求模型<b>先列出用到的段落</b>再回答，逼它掃過每一段。這是實務上的提示設計，效果需自己驗證，也呼應第 025 堂。' },
+  { title:'驗證：掃描答案的位置', text:'固定問題與其他段落，<b>只移動答案段落</b>的位置（開頭、中間、結尾），各跑多次量正確率。曲線很平，代表你的模型不敏感，就不必費力重排。' },
+  { title:'結果：同樣的檢索，用得更好', text:'少放、兩端排列、編號引用之後，關鍵段落落在<b>模型看得最清楚的位置</b>，答案同時包含排除步驟與<b>安全步驟</b>。代價是多一步重排與評估。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  const DOCS = [
+    "HY-120 液壓站油壓偏低：蓄壓器氮氣預充壓力不足時，先量測預充壓力，再補充氮氣至規定值。",
+    "HY-120 作業安全：拆卸任何液壓管路前，先洩壓並執行上鎖掛牌（LOTO），確認壓力表歸零。",
+    "HY-135 液壓油溫過高：油冷卻器散熱片積塵，清潔散熱片並檢查冷卻風扇運轉。",
+    "HY-135 作業安全：油溫過高時先停機降溫，避免高溫油液燙傷，並戴耐熱手套。",
+    "HY-141 濾芯壓差過大：濾芯堵塞，依週期更換濾芯，備品料號 HY-FLT-01。",
+    "HY-150 機械煞車片磨耗：煞車片厚度低於下限，更換煞車片並檢查煞車盤。",
+    "HY-160 管路接頭滲油：O 型環老化，更換 O 型環並確認鎖固扭力。",
+    "HY-122 液壓泵浦異音：吸油口進氣，檢查油位與吸油濾網。",
+    "巡檢報告 WTG-18：液壓站油位偏低，管路接頭有滲油痕跡，已排工單追蹤。",
+    "技術通報 TB-2026-07：蓄壓器氮氣預充壓力須在低溫季節前複測。"
+  ];
+  const PRE = [
+    { q:'管路接頭滲油要怎麼處理，拆管路前有什麼安全事項', keys:[6, 1] },
+    { q:'液壓油溫過高怎麼處理，有什麼安全注意事項', keys:[2, 3] },
+    { q:'蓄壓器預充壓力不足怎麼補，有什麼要留意', keys:[0, 9] }
+  ];
+  const index = rt.buildIndex(DOCS.map(t => ({ text:t })));
+  const st = { p:0, k:10, od:'file' };
+
+  /* 示意用的 U 形位置權重：兩端 1.0、正中間約 0.3（假設值，非實測） */
+  const weight = (p, k) => k < 2 ? 1 : 0.3 + 0.7 * Math.pow(Math.abs(2 * p / (k - 1) - 1), 1.5);
+  /* 兩端排列：最相關在最前、次相關在最後 */
+  function ends(ranked){
+    const f = [], b = [];
+    ranked.forEach((h, i) => (i % 2 === 0 ? f : b).push(h));
+    return f.concat(b.reverse());
+  }
+  function arrange(od, top){
+    if(od === 'file') return top.slice().sort((a, b) => a.i - b.i);
+    if(od === 'score') return top.slice();
+    return ends(top);
+  }
+  function metric(od){
+    const q = PRE[st.p], top = rt.searchBM25(index, q.q, st.k);
+    const ord = arrange(od, top), k = ord.length;
+    const got = q.keys.map(key => { const pos = ord.findIndex(h => h.i === key); return pos < 0 ? null : weight(pos, k); });
+    const ok = got.filter(x => x !== null);
+    return { ord, got, avg: ok.length ? ok.reduce((a, b) => a + b, 0) / q.keys.length : 0, miss: got.filter(x => x === null).length };
+  }
+
+  function run(){
+    const q = PRE[st.p], m = metric(st.od), k = m.ord.length;
+    $('#hits').innerHTML = m.ord.map((h, p) => {
+      const w = weight(p, k), key = q.keys.includes(h.i);
+      return '<div class="hit' + (key ? ' top' : ' low') + '"><div class="meta"><span>位置 ' + (p+1) + ' / ' + k + (key ? ' ★ 關鍵段落' : '') + '</span><span>模擬權重 ' + w.toFixed(2) + '</span></div>' +
+        esc(h.doc.text) + '<div class="score-bar"><b style="width:' + Math.round(w * 100) + '%;background:var(' + (key ? '--good' : '--muted') + ')"></b></div></div>';
+    }).join('');
+    const all = ['file', 'score', 'ends'].map(o => ({ o, r:metric(o) }));
+    const nm = { file:'檔案順序', score:'分數高→低', ends:'兩端排列' };
+    $('#tally').innerHTML = '關鍵段落（★）的平均模擬權重：' + all.map(x => nm[x.o] + ' <b>' + x.r.avg.toFixed(2) + '</b>' + (x.r.miss ? '（有 ' + x.r.miss + ' 段沒被選進來）' : '')).join('　｜　') + '。目前：<b>' + nm[st.od] + '</b>。';
+  }
+
+  $('#presets').innerHTML = PRE.map((p, i) => '<button type="button" data-i="' + i + '" class="' + (i === 0 ? 'on' : '') + '">' + esc(p.q) + '</button>').join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    st.p = +b.dataset.i; $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  [['#kk', 'k', Number], ['#od', 'od', String]].forEach(([sel, key, cast]) => { $(sel).onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    st[key] = cast(b.dataset.v); $(sel).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); }; });
+  run();
+  window.__demo = { st, run, metric, PRE, index };
+})();
+</script>
+</body>
+</html>

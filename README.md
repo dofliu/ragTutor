@@ -43,6 +43,7 @@
 | 🎯 關卡 7 | [測驗關卡 7：引用、快取、向量壓縮與充分上下文（第 025–028 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-7-cite-cache-compress-sufficient.html) |
 | 029 | [SPLADE 學習式稀疏檢索：讓關鍵字檢索聽懂口語](https://dofliu.github.io/ragTutor/lessons/029-splade.html) |
 | 030 | [領域嵌入微調：用合成查詢與困難負例，教嵌入模型聽懂你的領域](https://dofliu.github.io/ragTutor/lessons/030-embedding-finetuning.html) |
+| 031 | [上下文排序：Lost in the Middle 與兩端排列](https://dofliu.github.io/ragTutor/lessons/031-lost-in-the-middle.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 
