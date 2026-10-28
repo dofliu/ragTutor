@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>測驗關卡 8：SPLADE、嵌入微調、上下文排序與對話式 RAG｜RAG 動畫教室</title>
+<meta name="description" content="第 029–032 堂複習測驗：SPLADE、領域嵌入微調、上下文排序、對話式 RAG，8 題，答錯會連回該堂複習。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">關卡 8</span><span class="tag">複習第 029–032 堂</span><span class="tag">約 8 分鐘</span></p>
+  <h1>SPLADE、嵌入微調、上下文排序與對話式 RAG</h1>
+  <p class="lead">SPLADE 讓關鍵字檢索聽懂口語，領域微調教嵌入模型聽懂現場說法，上下文排序避免關鍵段落被埋在中間，對話式 RAG 把追問補成完整的問題。共 8 題，每堂各 2 題。</p>
+  <div class="callout">涵蓋課程：<a href="029-splade.html">SPLADE</a>、<a href="030-embedding-finetuning.html">領域嵌入微調</a>、<a href="031-lost-in-the-middle.html">上下文排序</a>、<a href="032-conversational-rag.html">對話式 RAG</a>。選項順序每次都會重新排列；最佳成績只存在你的瀏覽器裡。</div>
+
+  <h2>🧩 開考前，先快速回顧</h2>
+  <div class="keypoints"><div class="card"><b>SPLADE</b>詞表上的稀疏加權與擴展詞，可用倒排索引；代價在模型與索引變大。 <a href="029-splade.html">回到這一堂 →</a></div><div class="card"><b>領域嵌入微調</b>LLM 合成配對、對比學習、困難負例；用留出的真實問法驗收。 <a href="030-embedding-finetuning.html">回到這一堂 →</a></div><div class="card"><b>上下文排序</b>相關資訊在中間最容易被忽略；少放、兩端排列，並掃描位置驗證。 <a href="031-lost-in-the-middle.html">回到這一堂 →</a></div><div class="card"><b>對話式 RAG</b>追問先改寫成獨立問題再檢索；生成仍帶歷史；小心改寫漏掉機型。 <a href="032-conversational-rag.html">回到這一堂 →</a></div></div>
+  <h2>📝 測驗（8 題）</h2>
+  <div id="quiz"></div>
+
+  <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。</div>
+
+  <nav class="pager" data-slug="quiz-8-splade-finetune-order-conversation"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.quizSet({ el:'#quiz', id:'quiz-8-splade-finetune-order-conversation', pass:6,
+  names:{"029-splade": "第 029 堂 SPLADE", "030-embedding-finetuning": "第 030 堂 領域嵌入微調", "031-lost-in-the-middle": "第 031 堂 上下文排序", "032-conversational-rag": "第 032 堂 對話式 RAG"},
+  questions:[
+ {
+  "from": "029-splade",
+  "q": "SPLADE 為每段文字產生的向量，最接近下列哪一種？",
+  "opts": [
+   "詞表大小的稀疏向量，多數維度為 0，每個非零維度對應一個詞",
+   "幾百維、每一維都有值的稠密向量",
+   "每個詞各一條的多向量序列"
+  ],
+  "a": 0,
+  "why": "SPLADE 用 MLM 頭替詞表上的詞打分，輸出是稀疏的詞權重，所以能看出命中的是哪些詞。"
+ },
+ {
+  "from": "029-splade",
+  "q": "為什麼 SPLADE 產生的向量可以用倒排索引來檢索？",
+  "opts": [
+   "因為它把向量壓成了二元碼",
+   "因為它只有一個維度",
+   "因為它稀疏且每個維度對應一個詞，查詢時只需走訪查詢中非零詞的清單"
+  ],
+  "a": 2,
+  "why": "稀疏加上維度即詞，檢索只看查詢裡有的詞，延遲與 BM25 同類型；這是稠密向量做不到的。"
+ },
+ {
+  "from": "030-embedding-finetuning",
+  "q": "領域嵌入微調時，合成（問題, 段落）配對通常怎麼產生？",
+  "opts": [
+   "讓 LLM 讀無標註的段落，反推技師口吻的問題",
+   "直接把段落本身當作問題",
+   "把問題隨機配上任一段落"
+  ],
+  "a": 0,
+  "why": "用 LLM 從段落反推問題，就能在沒有人工標註時得到訓練配對；提示要規定口吻，並過濾太籠統的問題。"
+ },
+ {
+  "from": "030-embedding-finetuning",
+  "q": "挖「困難負例」時，最需要提防的風險是什麼？",
+  "opts": [
+   "負例數量太少而無法訓練",
+   "挖到偽負例：其實也能回答問題的段落被當成錯誤答案",
+   "嵌入維度會自動變大"
+  ],
+  "a": 1,
+  "why": "很像但不是答案的段落最有教學價值，但也可能其實是正確答案；可用 cross-encoder 過濾或改用軟標籤。"
+ },
+ {
+  "from": "031-lost-in-the-middle",
+  "q": "要驗證自己的模型是否受段落位置影響，掃描位置時應該怎麼做？",
+  "opts": [
+   "同時更換問題、段落與提示詞",
+   "固定問題與其他段落，只移動答案段落的位置，各跑多次",
+   "只跑一次，看答案順不順"
+  ],
+  "a": 1,
+  "why": "只動位置、其他變因固定並重複多次，才能分辨是位置的影響還是隨機性。"
+ },
+ {
+  "from": "031-lost-in-the-middle",
+  "q": "為什麼不建議為了保險把 top-k 開到最大？",
+  "opts": [
+   "因為嵌入模型不支援太大的 k",
+   "因為輸入脈絡越長整體表現越下降，多塞的雜訊會讓關鍵段落更難被挑出",
+   "因為 k 越大檢索速度一定越快"
+  ],
+  "a": 1,
+  "why": "研究也觀察到脈絡越長表現越差；先用重排序與壓縮縮短脈絡，再決定留幾段。"
+ },
+ {
+  "from": "032-conversational-rag",
+  "q": "把追問改寫成獨立問題時，改寫器應該輸出什麼？",
+  "opts": [
+   "只輸出補完整的問題，不要回答",
+   "直接輸出答案，省下後面的檢索",
+   "輸出整段對話的摘要"
+  ],
+  "a": 0,
+  "why": "改寫器只負責把問題補完整；若順便回答，後續流程會拿到未經查證的內容。"
+ },
+ {
+  "from": "032-conversational-rag",
+  "q": "使用者已經從旋角改問偏航，改寫器卻把旋角的條件硬接進來。較合適的防範是？",
+  "opts": [
+   "提示允許「無關就原句輸出」，並可同時檢索原句與改寫句再融合",
+   "一律拼接整段歷史",
+   "每輪都不改寫"
+  ],
+  "a": 0,
+  "why": "話題已換就不該帶舊脈絡；提示要允許原句輸出，雙路檢索再用 RRF 融合可降低改寫出錯的風險。"
+ }
+]
+});
+</script>
+</body>
+</html>

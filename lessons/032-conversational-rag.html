@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>對話式 RAG：多輪追問先改寫成獨立問題｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識對話式 RAG：追問常有代名詞與省略，直接檢索會失敗；先用對話歷史把問題改寫成獨立問題，再檢索，並比較拼接歷史與改寫的差異。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 032 堂</span><span class="tag lv2">進階</span><span class="tag">約 15 分鐘</span></p>
+  <h1>對話式 RAG：多輪追問先改寫成獨立問題</h1>
+
+  <p class="lead">技師問完「PT-203 旋角馬達過溫怎麼處理」，接著問「<b>那進輪轂之前有什麼安全步驟？</b>」，人一看就懂，檢索系統卻只看到一句沒有主詞的話。多輪對話的追問常有<b>代名詞、省略與接續</b>，直接拿去檢索會失敗。對策是先用對話歷史把追問<b>改寫成不看上下文也讀得懂的獨立問題</b>（standalone question），再交給檢索；回答時則仍然帶著對話歷史。</p>
+
+  <h2>🎬 動畫：把追問補成完整的問題</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="對話式 RAG 動畫：追問無法單獨檢索；追問的特徵；拼接歷史；改寫成獨立問題；檢索；生成仍帶歷史；風險；結果"><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="0" data-to="0">① 沒有改寫：把追問原封不動拿去檢索</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="1" data-to="1">② 追問的特徵：代名詞、省略主詞、接續上一輪</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="2" data-to="2">③ 做法一：把整段對話歷史接在問題前面</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="3" data-to="3">④ 做法二：先改寫成「不用看上下文也讀得懂」的獨立問題</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="4" data-to="4">⑤ 用改寫後的問題檢索（可再搭配混合檢索與重排序）</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="5" data-to="5">⑥ 檢索用改寫句，回答時仍帶著對話歷史</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="6" data-to="6">⑦ 風險：改寫錯誤，或話題已經換了還硬帶舊脈絡</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 結果：追問也能找到正確的手冊段落</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-from="0" data-to="0"><rect x="24" y="112" width="420" height="40" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="234.0" y="136.0" text-anchor="middle" font-size="11.5">第 1 輪：「WTG-07 出現 PT-203，旋角馬達過溫怎麼處理？」</text><rect x="24" y="164" width="420" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="234.0" y="188.0" text-anchor="middle" font-size="11.5">助理：先檢查冷卻風扇與散熱片積塵…</text><rect x="24" y="216" width="420" height="40" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="234.0" y="240.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">第 2 輪：「那進輪轂之前有什麼安全步驟？」</text><path d="M444 236 L484 236" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="484" y="196" width="408" height="80" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="688.0" y="223.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">只拿這一句去檢索</text><text x="688.0" y="240.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">句中沒有 PT-203、旋角、機型</text><text x="688.0" y="257.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">命中的是別的子系統的安全段落</text><text x="24" y="296" font-size="12" font-weight="700" style="fill:var(--bad)">人讀得懂「那」指的是 PT-203 的處理，檢索系統看不到前一輪。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="1" data-to="1"><rect x="24" y="116" width="276" height="100" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="162.0" y="153.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">代名詞</text><text x="162.0" y="170.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">「它要換哪個備品？」</text><text x="162.0" y="187.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">它 = 旋角馬達</text><rect x="316" y="116" width="276" height="100" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="454.0" y="153.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">省略</text><text x="454.0" y="170.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">「那 OW-6 呢？」</text><text x="454.0" y="187.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">省略了 PT-203 與問題</text><rect x="608" y="116" width="276" height="100" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="746.0" y="153.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">接續</text><text x="746.0" y="170.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">「再多說一點」</text><text x="746.0" y="187.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">要接上一輪的主題</text><text x="24" y="256" font-size="12" font-weight="700" style="fill:var(--query)">單獨看這些句子，檢索系統無從得知主題、機型與告警代碼。</text><text x="24" y="284" font-size="12" font-weight="700" style="fill:var(--query)">所以多輪對話的檢索，第一件事是把「依賴上下文」的問題補完整。</text><text x="24" y="392" font-size="11.5" class="t-muted">重點：檢索的輸入必須自己讀得懂。</text></g><g data-from="2" data-to="2"><rect x="24" y="112" width="868" height="44" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="458.0" y="138.0" text-anchor="middle" font-size="11.5">檢索輸入 =「WTG-07 出現 PT-203 … 助理：先檢查冷卻風扇 … 那進輪轂之前有什麼安全步驟？」</text><path d="M458 156 L458 186" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="190" width="420" height="60" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="234.0" y="215.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">好處：</text><text x="234.0" y="232.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">主題詞（PT-203）進到了檢索輸入</text><rect x="472" y="190" width="420" height="60" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="682.0" y="215.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">壞處：</text><text x="682.0" y="232.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">太長、雜訊多；舊話題的詞會把結果拉回去</text><text x="24" y="284" font-size="12" font-weight="700" style="fill:var(--warn)">對話越長，越早的內容越會稀釋當前問題；使用者換話題時更糟。</text><text x="24" y="312" font-size="12" font-weight="700" style="fill:var(--warn)">它是簡單可用的備案，但不是好的預設。</text><text x="24" y="392" font-size="11.5" class="t-muted">互動範例會比較「拼接歷史」與其他做法。</text></g><g data-from="3" data-to="3"><rect x="24" y="116" width="250" height="92" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="149.0" y="157.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">對話歷史</text><text x="149.0" y="174.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">第 1 輪問答</text><rect x="24" y="220" width="250" height="44" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="149.0" y="237.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">新問題：「那進輪轂之前</text><text x="149.0" y="254.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">有什麼安全步驟？」</text><path d="M274 162 L324 190" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M274 242 L324 214" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="324" y="160" width="200" height="68" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="424.0" y="181.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM 改寫</text><text x="424.0" y="198.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">（問題改寫 question</text><text x="424.0" y="215.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">rewriting）</text><path d="M524 194 L574 194" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="574" y="150" width="318" height="88" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="733.0" y="181.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">獨立問題：</text><text x="733.0" y="198.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">「PT-203 旋角馬達過溫處理前，</text><text x="733.0" y="215.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">進入輪轂的安全步驟（OW-8）」</text><text x="24" y="300" font-size="12" font-weight="700" style="fill:var(--llm)">提示重點：補上代名詞指的對象、機型與告警代碼；只改寫、不回答。</text><text x="24" y="328" font-size="11.5" font-weight="700" style="fill:var(--llm)">學術上稱為 question rewriting，QReCC（Anantha 等人，NAACL 2021）把它與檢索、閱讀並列為三個子任務。</text><text x="24" y="392" font-size="11.5" class="t-muted">LangChain 的 history-aware retriever 就是這個做法。</text></g><g data-from="4" data-to="4"><rect x="24" y="116" width="250" height="56" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="149.0" y="148.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">獨立問題</text><path d="M274 144 L304 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="304" y="116" width="250" height="56" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="429.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">檢索</text><text x="429.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">BM25／向量／混合</text><path d="M554 144 L584 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="584" y="116" width="308" height="56" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="738.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">命中：PT-203 作業安全（OW-8）</text><text x="738.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">上鎖掛牌與先順槳</text><text x="24" y="216" font-size="12" font-weight="700" style="fill:var(--vec)">改寫之後，這個問題跟第一輪一樣是「完整的查詢」，可以直接套用前面學過的技術：</text><text x="24" y="244" font-size="12" font-weight="700" style="fill:var(--vec)">混合檢索（第 004 堂）、重排序（第 005 堂）、中繼資料過濾（第 011 堂）。</text><text x="24" y="272" font-size="12" font-weight="700" style="fill:var(--vec)">機型與子系統被補進問題，也讓過濾條件更好抽取。</text><text x="24" y="392" font-size="11.5" class="t-muted">改寫只是前處理，後面的檢索管線不用改。</text></g><g data-from="5" data-to="5"><rect x="24" y="112" width="260" height="70" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="154.0" y="142.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">給檢索：</text><text x="154.0" y="159.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">改寫後的獨立問題</text><rect x="24" y="200" width="260" height="70" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="154.0" y="230.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">給生成：</text><text x="154.0" y="247.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">原問題＋對話歷史＋檢索片段</text><path d="M284 147 L334 147" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M284 235 L334 235" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="334" y="112" width="230" height="70" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="449.0" y="142.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">檢索輸入要乾淨</text><text x="449.0" y="159.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">單句、資訊完整</text><rect x="334" y="200" width="230" height="70" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="449.0" y="230.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">生成要接得上話</text><text x="449.0" y="247.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">語氣與指代自然</text><rect x="604" y="150" width="288" height="82" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="748.0" y="178.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">回答：</text><text x="748.0" y="195.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">「先順槳並鎖定葉輪，</text><text x="748.0" y="212.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">再上鎖掛牌，才進輪轂。」</text><text x="24" y="310" font-size="12" font-weight="700" style="fill:var(--accent)">改寫句只負責找資料；回答時仍把對話歷史給模型，這樣答案才讀起來連貫。</text><text x="24" y="392" font-size="11.5" class="t-muted">兩個階段用不同的輸入，是對話式 RAG 的關鍵設計。</text></g><g data-from="6" data-to="6"><rect x="24" y="116" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="234.0" y="138.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">改寫漏掉機型</text><text x="234.0" y="155.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">「它的備品料號」被改寫成</text><text x="234.0" y="172.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">「旋角馬達備品料號」→ 找到 OW-8，但問的是 OW-6</text><rect x="472" y="116" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="682.0" y="138.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">話題已換還硬帶舊脈絡</text><text x="682.0" y="155.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">使用者改問偏航，卻被改寫成</text><text x="682.0" y="172.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">旋角相關的問題</text><text x="24" y="224" font-size="12" font-weight="700" style="fill:var(--warn)">對策：提示要求保留機型與代碼；改寫結果記錄下來可稽核。</text><text x="24" y="252" font-size="11.5" font-weight="700" style="fill:var(--warn)">對策：新舊話題的判斷放進提示（沒有關聯就原句輸出），或同時檢索原句與改寫句，再用 RRF 融合。</text><text x="24" y="280" font-size="12" font-weight="700" style="fill:var(--warn)">對策：把改寫句顯示給使用者看，並允許修正。</text><text x="24" y="392" font-size="11.5" class="t-muted">改寫多一次模型呼叫，會增加延遲與成本。</text></g><g data-from="7"><rect x="24" y="116" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="234.0" y="149.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">沒有改寫</text><text x="234.0" y="166.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">追問原句進檢索</text><text x="234.0" y="183.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">找不到對的段落</text><rect x="472" y="116" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="682.0" y="149.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">改寫成獨立問題</text><text x="682.0" y="166.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">機型、代碼補齊</text><text x="682.0" y="183.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">追問也命中對的段落</text><rect x="24" y="228" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="234.0" y="258.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">代價：</text><text x="234.0" y="275.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">多一次模型呼叫；改寫可能出錯</text><rect x="472" y="228" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="682.0" y="258.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">搭配：</text><text x="682.0" y="275.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">查詢改寫（第 006 堂）、混合檢索、重排序</text><text x="24" y="336" font-size="12.5" font-weight="700" style="fill:var(--good)">檢索看得懂的問題，才能找到對的手冊段落。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>追問不能單獨檢索</b>「那 OW-6 呢？」「它的料號？」依賴前面的輪次。檢索系統只看輸入的那一句，沒有主題、機型與告警代碼，就找不到對的段落。</div>
+    <div class="card"><b>改寫成獨立問題</b>把對話歷史與新問題交給 LLM，要求補上指代對象與省略的條件，只改寫、不回答。這是 QReCC 等研究中 question rewriting 的做法，也是 LangChain history-aware retriever 的核心。</div>
+    <div class="card"><b>檢索與生成用不同輸入</b>檢索要單句、資訊完整；生成要帶對話歷史才接得上話。兩個階段各取所需，改寫之後的檢索管線完全不用改。</div>
+    <div class="card"><b>改寫也會出錯</b>漏掉機型、把已經換掉的話題硬接回去，都會讓檢索偏掉。要求保留機型與代碼、讓使用者看得到改寫句，並可同時檢索原句與改寫句再融合。</div>
+  </div>
+
+  <h2>🧪 互動範例：同一個追問，四種處理方式</h2>
+  <div class="prose"><p>下面有一段技師與系統的多輪對話，知識庫是 12 段《OW-8 運維手冊》與 OW-6 對照內容（<b>虛構</b>）。選一輪追問，比較四種進檢索的輸入：<b>原句</b>、<b>拼接全部歷史</b>、<b>改寫成獨立問題</b>、<b>改寫漏掉機型（錯誤示範）</b>。系統用 BM25 取前 N 段（N＝這題需要的段落數，多半是 1 段），★ 是這題真正需要的段落。</p>
+  <p><b>改寫句是事先寫好的</b>，用來模擬 LLM 的輸出；真實系統的改寫品質取決於模型與提示，結果會不同。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="row"><b style="font-size:13px">看哪一輪：</b><div class="seg" id="turn"></div></div>
+    <div class="row"><b style="font-size:13px">檢索輸入：</b>
+      <div class="seg" id="md"><button type="button" data-v="raw" class="on">原句</button><button type="button" data-v="concat">拼接全部歷史</button><button type="button" data-v="rewrite">改寫成獨立問題</button><button type="button" data-v="bad">改寫漏掉機型</button></div></div>
+    <div class="muted" id="qin" style="font-size:13px"></div>
+    <div class="hits" id="hits"></div>
+    <div class="muted" id="tally" style="font-size:13px;margin-top:8px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p><code>condense</code> 用 <code>anthropic</code> 的 <code>claude-sonnet-5</code> 把追問改寫成獨立問題；沒有歷史時直接回傳原句。<code>retrieve_with_history</code> 檢索用改寫句，回答時則把歷史一起交給模型。檢索函式用最簡單的字元重疊示意，實務上請換成前面課程的混合檢索與重排序。</p></div>
+<pre class="code"><code><span class="k">import</span> anthropic
+
+client = anthropic.<span class="f">Anthropic</span>()
+
+DOCS = [
+    <span class="s">"PT-203 旋角馬達過溫（OW-8）：檢查冷卻風扇與散熱片積塵，量測馬達繞組溫度。"</span>,
+    <span class="s">"PT-203 作業安全（OW-8）：進入輪轂前先順槳、鎖定葉輪，並執行上鎖掛牌（LOTO）。"</span>,
+    <span class="s">"旋角馬達備品（OW-8）：料號 PT-MTR-02，更換時需同時檢查編碼器線路。"</span>,
+    <span class="s">"PT-203 旋角馬達過溫（OW-6）：舊款機型，檢查馬達冷卻風道與溫度感測器。"</span>,
+]
+
+<span class="k">def</span> <span class="f">retrieve</span>(query, k=<span class="s">2</span>):
+    <span class="s">"""示意：以查詢字元與段落的重疊數排序；請換成混合檢索與重排序"""</span>
+    score = <span class="k">lambda</span> d: <span class="f">len</span>(<span class="f">set</span>(query) &amp; <span class="f">set</span>(d))
+    <span class="k">return</span> <span class="f">sorted</span>(DOCS, key=score, reverse=<span class="k">True</span>)[:k]
+
+<span class="k">def</span> <span class="f">condense</span>(history, question):
+    <span class="s">"""把追問改寫成獨立問題；history 是 [{"role":..., "content":...}, ...]"""</span>
+    <span class="k">if not</span> history:
+        <span class="k">return</span> question
+    msg = client.messages.<span class="f">create</span>(
+        model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">200</span>,
+        system=<span class="s">"你是查詢改寫器。根據對話歷史，把使用者最後一個問題改寫成不看歷史也讀得懂的獨立問題："</span>
+               <span class="s">"補上代名詞指的對象、機型與告警代碼；若問題已經獨立或換了話題，原句輸出；只輸出問題，不要回答。"</span>,
+        messages=history + [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: question}],
+    )
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text.<span class="f">strip</span>()
+
+<span class="k">def</span> <span class="f">retrieve_with_history</span>(history, question):
+    standalone = <span class="f">condense</span>(history, question)
+    <span class="f">print</span>(<span class="s">f"改寫後：{standalone}"</span>)             <span class="c"># 記錄下來，方便稽核與除錯</span>
+    ctx = <span class="s">"\n"</span>.<span class="f">join</span>(<span class="f">retrieve</span>(standalone))  <span class="c"># 檢索用改寫句</span>
+    msg = client.messages.<span class="f">create</span>(            <span class="c"># 生成仍帶對話歷史</span>
+        model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">300</span>,
+        messages=history + [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+            <span class="s">f"只根據下列手冊段落回答。\n\n{ctx}\n\n問題：{question}"</span>}],
+    )
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text
+
+history = [
+    {<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"WTG-07 出現 PT-203，旋角馬達過溫怎麼處理？"</span>},
+    {<span class="s">"role"</span>: <span class="s">"assistant"</span>, <span class="s">"content"</span>: <span class="s">"先檢查冷卻風扇與散熱片積塵，並量測馬達繞組溫度。"</span>},
+]
+<span class="f">print</span>(<span class="f">retrieve_with_history</span>(history, <span class="s">"那進輪轂之前有什麼安全步驟？"</span>))</code></pre>
+  <div class="prose"><p>正式系統建議把原問題、改寫句與檢索結果一起寫進日誌，才能追查「為什麼找到這段」。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>查詢改寫（第 006 堂）</th><th>HyDE（第 007 堂）</th><th>中繼資料過濾（第 011 堂）</th><th>充分上下文（第 028 堂）</th><th>對話式 RAG</th></tr>
+    <tr><th>改的是什麼</th><td>單輪的口語問題</td><td>用假設答案代替問題</td><td>從問題抽出過濾條件</td><td>判斷片段夠不夠</td><td>多輪追問，補上歷史中的條件</td></tr>
+    <tr><th>解決的問題</th><td>用詞與手冊不一致</td><td>問題與文件形式落差</td><td>機型、子系統混雜</td><td>片段相關卻不足</td><td>追問沒有主詞，單獨檢索失敗</td></tr>
+    <tr><th>輸入</th><td>當前問題</td><td>當前問題</td><td>當前問題與欄位</td><td>問題與片段</td><td>對話歷史＋當前問題</td></tr>
+    <tr><th>額外成本</th><td>一次模型呼叫</td><td>一次生成</td><td>要有中繼資料</td><td>一次判斷</td><td>每輪追問多一次模型呼叫</td></tr>
+    <tr><th>主要風險</th><td>改寫跑偏</td><td>假設答案含錯誤</td><td>解析錯條件</td><td>判斷不準</td><td>漏掉機型、話題切換時硬帶舊脈絡</td></tr>
+  </table>
+
+  <h2>⚠️ 對話式 RAG 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>把整段歷史直接拼進檢索</b>：越長越雜，早期的話題會稀釋當前問題。只當備案，不當預設。</li>
+      <li><b>改寫漏掉關鍵條件</b>：機型、告警代碼、風機編號被省略，就會找到別的機型的手冊。提示要明確要求保留，並抽查改寫結果。</li>
+      <li><b>話題已換還硬接</b>：使用者從旋角改問偏航，改寫不該把旋角帶進來。提示要允許「無關就原句輸出」，也可同時檢索原句與改寫句再融合（第 010 堂的 RRF）。</li>
+      <li><b>改寫時順便回答</b>：改寫器只輸出問題。若它同時給答案，會讓後續流程拿到未經查證的內容。</li>
+      <li><b>歷史越來越長</b>：只取最近幾輪或先摘要舊歷史，否則改寫本身也會變慢變貴。</li>
+      <li><b>單輪問答不需要</b>：每個問題都獨立的系統（例如單次查告警代碼）不必多這一步，省下一次呼叫。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊與工單內容及數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的改寫句為事先寫好的模擬，不代表真實模型的輸出。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Anantha 等人，<a href="https://arxiv.org/abs/2010.04898">Open-Domain Question Answering Goes Conversational via Question Rewriting</a>（NAACL 2021，提出 QReCC 資料集）；LangChain 文件中的 <code>create_history_aware_retriever</code>。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>技師在第二輪只輸入「它要換哪個備品？」，系統直接拿這句去檢索卻失敗。最主要的原因是？</b></p>
+    <button class="opt">A. 嵌入模型維度太低</button>
+    <button class="opt">B. 這句話依賴前一輪才知道「它」是什麼，單獨檢索缺少主題與機型</button>
+    <button class="opt">C. 手冊的切塊太大</button>
+    <div class="why">追問的指代與省略要靠對話歷史補完。先改寫成獨立問題，檢索系統才拿得到主題、機型與代碼。</div>
+  </div>
+  <div class="quiz card" data-answer="0">
+    <p><b>對話式 RAG 中，檢索與生成兩個階段各自應該拿到什麼？</b></p>
+    <button class="opt">A. 檢索用改寫後的獨立問題；生成用原問題加對話歷史與檢索片段</button>
+    <button class="opt">B. 兩者都只用改寫後的問題</button>
+    <button class="opt">C. 兩者都用整段對話歷史</button>
+    <div class="why">檢索要單句、資訊完整；生成要接得上話，所以仍需要對話歷史。</div>
+  </div>
+
+  <nav class="pager" data-slug="conversational-rag"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'追問直接檢索，找不到', text:'技師第二輪問「<b>那進輪轂之前有什麼安全步驟？</b>」。這句沒有告警代碼、沒有子系統，檢索系統看不到前一輪，找回來的是不相關的安全段落。' },
+  { title:'追問的特徵', text:'追問常有<b>代名詞</b>（它）、<b>省略</b>（那 OW-6 呢）與<b>接續</b>（再多說一點）。單獨看都缺少主題，所以要先把問題<b>補完整</b>再檢索。' },
+  { title:'做法一：拼接整段歷史', text:'把歷史全接在問題前面，主題詞會進來，但輸入<b>又長又雜</b>，舊話題越多越稀釋當前問題，換話題時更糟。可當備案，不適合當預設。' },
+  { title:'做法二：改寫成獨立問題', text:'把<b>對話歷史＋新問題</b>交給 LLM，補上代名詞指的對象、機型與代碼，<b>只改寫不回答</b>。QReCC 研究把 question rewriting 列為獨立子任務。' },
+  { title:'用改寫句檢索', text:'改寫後的問題跟第一輪一樣是<b>完整的查詢</b>，可直接用前面學的混合檢索、重排序與中繼資料過濾。命中的是 PT-203 的上鎖掛牌段落。' },
+  { title:'生成仍帶著歷史', text:'<b>檢索</b>用乾淨的單句；<b>生成</b>則把原問題、對話歷史與檢索片段一起給模型，答案才接得上話。兩個階段各取所需。' },
+  { title:'風險：改寫會出錯', text:'改寫可能<b>漏掉機型</b>，或在使用者已換話題時硬接舊脈絡。對策：提示要求保留條件、無關就原句輸出、顯示改寫句，並可原句與改寫句<b>雙路檢索再融合</b>。' },
+  { title:'結果：追問也找得到', text:'沒有改寫時追問找不到；改寫成獨立問題後，<b>機型與代碼補齊</b>，命中對的段落。代價是每輪多一次模型呼叫，且要抽查改寫品質。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  const DOCS = [
+    "PT-203 旋角馬達過溫（OW-8）：檢查冷卻風扇與散熱片積塵，量測馬達繞組溫度，確認負載是否過高。",
+    "PT-203 作業安全（OW-8）：進入輪轂前先順槳、鎖定葉輪，並執行上鎖掛牌（LOTO）。",
+    "PT-203 旋角馬達過溫（OW-6）：舊款機型，檢查馬達冷卻風道與溫度感測器，必要時更換感測器。",
+    "旋角馬達備品（OW-8）：旋角馬達料號 PT-MTR-02，更換時需同時檢查編碼器線路。",
+    "旋角馬達備品（OW-6）：舊款旋角馬達料號 PT-MTR-01，與 OW-8 不通用，庫存請向備品管理人員確認。",
+    "PT-205 旋角馬達煞車異常（OW-8）：檢查煞車線圈電壓與煞車片間隙。",
+    "PT-230 旋角備援電源測試失敗（OW-8）：檢查備援電池電壓與充電迴路。",
+    "YW-042 偏航誤差過大（OW-8）：檢查風向計校準與偏航煞車磨耗。",
+    "PT-211 三支葉片角度偏差過大（OW-8）：檢查各葉片角度編碼器與校零。",
+    "PT-205 作業安全（OW-8）：進入輪轂前先確認煞車已釋放，並執行上鎖掛牌（LOTO）。",
+    "YW-042 作業安全（OW-8）：進入機艙前確認偏航已鎖定，並執行上鎖掛牌（LOTO）。",
+    "PT-230 備品（OW-8）：備援電池料號 PT-BAT-01，更換時需同時檢查充電迴路。"
+  ];
+  const CONV = [
+    { name:'WTG-07 旋角馬達過溫（OW-8）', turns:[
+      { u:'WTG-07（OW-8）出現 PT-203，旋角馬達過溫怎麼排除，要不要先看散熱？', rw:'WTG-07（OW-8）出現 PT-203，旋角馬達過溫怎麼排除，要不要先看散熱？', bad:'WTG-07（OW-8）出現 PT-203，旋角馬達過溫怎麼排除，要不要先看散熱？', keys:[0] },
+      { u:'那進入輪轂前要先確認什麼？', rw:'PT-203 旋角馬達過溫處理前，進入輪轂的作業安全步驟（OW-8）', bad:'進入輪轂前要先確認什麼', keys:[1] },
+      { u:'要換的話，要準備什麼備品？', rw:'OW-8 旋角馬達更換要準備的備品與料號', bad:'更換要準備的備品與料號', keys:[3] }
+    ]},
+    { name:'OW-6 與 OW-8 對照', turns:[
+      { u:'OW-6 的 PT-203 怎麼查？', rw:'OW-6 的 PT-203 旋角馬達過溫怎麼查？', bad:'OW-6 的 PT-203 旋角馬達過溫怎麼查？', keys:[2] },
+      { u:'那它的備品料號呢？', rw:'OW-6 旋角馬達的備品料號', bad:'旋角馬達備品料號', keys:[4] },
+      { u:'跟 OW-8 通用嗎？', rw:'OW-6 旋角馬達備品 PT-MTR-01 與 OW-8 旋角馬達備品 PT-MTR-02 是否通用', bad:'備品是否通用', keys:[3,4] }
+    ]}
+  ];
+  const index = rt.buildIndex(DOCS.map(t => ({ text:t })));
+  const st = { c:0, t:1, md:'raw' };
+  const MD = { raw:'原句', concat:'拼接全部歷史', rewrite:'改寫成獨立問題', bad:'改寫漏掉機型' };
+
+  function input(c, t, md){
+    const turns = CONV[c].turns, tn = turns[t];
+    if(md === 'raw') return tn.u;
+    if(md === 'concat') return turns.slice(0, t + 1).map(x => x.u).join(' ');
+    return md === 'rewrite' ? tn.rw : tn.bad;
+  }
+  function metric(c, t, md){
+    const q = input(c, t, md), keys = CONV[c].turns[t].keys;
+    const top = rt.searchBM25(index, q, keys.length);
+    const found = keys.filter(k => top.some(h => h.i === k)).length;
+    return { q, top, ok: found === keys.length };
+  }
+  function run(){
+    const keys = CONV[st.c].turns[st.t].keys, m = metric(st.c, st.t, st.md);
+    $('#qin').innerHTML = '進檢索的輸入：<b>' + esc(m.q) + '</b>';
+    $('#hits').innerHTML = m.top.map((h, r) => {
+      const key = keys.includes(h.i);
+      return '<div class="hit' + (key ? ' top' : ' low') + '"><div class="meta"><span>第 ' + (r+1) + ' 名' + (key ? ' ★ 需要的段落' : '') + '</span><span>BM25 ' + h.score.toFixed(2) + '</span></div>' + esc(h.doc.text) + '</div>';
+    }).join('');
+    const parts = Object.keys(MD).map(md => {
+      const n = CONV[st.c].turns.filter((_, t) => metric(st.c, t, md).ok).length;
+      return MD[md] + ' <b>' + n + '/3</b>';
+    });
+    $('#tally').innerHTML = (m.ok ? '✅ 這一輪取回的段落涵蓋所需段落。' : '⚠️ 這一輪取回的段落沒有涵蓋所需段落。') + '整段對話三輪中，找到所需段落的輪數：' + parts.join('　｜　') + '。';
+  }
+  function drawTurns(){
+    $('#turn').innerHTML = CONV[st.c].turns.map((x, i) => '<button type="button" data-v="' + i + '" class="' + (i === st.t ? 'on' : '') + '">第 ' + (i+1) + ' 輪：' + esc(x.u) + '</button>').join('');
+  }
+  $('#presets').innerHTML = CONV.map((p, i) => '<button type="button" data-i="' + i + '" class="' + (i === 0 ? 'on' : '') + '">' + esc(p.name) + '</button>').join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    st.c = +b.dataset.i; st.t = 1; $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); drawTurns(); run(); };
+  $('#turn').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    st.t = +b.dataset.v; drawTurns(); run(); };
+  $('#md').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    st.md = b.dataset.v; $('#md').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  drawTurns(); run();
+  window.__demo = { st, run, metric, CONV, index };
+})();
+</script>
+</body>
+</html>

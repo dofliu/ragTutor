@@ -531,6 +531,34 @@
         "生成"
       ],
       "date": "2026-10-27"
+    },
+    {
+      "no": 32,
+      "slug": "conversational-rag",
+      "file": "lessons/032-conversational-rag.html",
+      "title": "對話式 RAG：多輪追問先改寫成獨立問題",
+      "en": "Conversational RAG & Question Rewriting",
+      "level": 2,
+      "summary": "追問常有代名詞與省略，直接檢索會失敗。先用對話歷史把問題改寫成獨立問題再檢索，生成時仍帶著歷史。本堂用互動範例比較原句、拼接歷史與改寫的差異。",
+      "tags": [
+        "進階",
+        "查詢"
+      ],
+      "date": "2026-10-28"
+    },
+    {
+      "type": "quiz",
+      "quiz": 8,
+      "slug": "quiz-8-splade-finetune-order-conversation",
+      "file": "lessons/quiz-8-splade-finetune-order-conversation.html",
+      "title": "測驗關卡 8：SPLADE、嵌入微調、上下文排序與對話式 RAG",
+      "en": "Checkpoint 8 · Lessons 029–032",
+      "level": 0,
+      "summary": "第 029–032 堂複習：SPLADE、領域嵌入微調、上下文排序、對話式 RAG。8 題，答完立即看解析，答錯會指向該回頭複習的課程。",
+      "tags": [
+        "測驗關卡"
+      ],
+      "date": "2026-10-28"
     }
   ]
 }
