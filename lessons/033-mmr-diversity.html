@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MMR 多樣性重排：前 k 名不要全是同一件事｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識 MMR（最大邊際相關）：相關性排序常讓前 k 名都是重複內容，MMR 在每一步同時考慮與問題的相關度和與已選片段的相似度，用 λ 調整多樣性。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 033 堂</span><span class="tag lv2">進階</span><span class="tag">約 15 分鐘</span></p>
+  <h1>MMR 多樣性重排：前 k 名不要全是同一件事</h1>
+
+  <p class="lead">技師問「PT-203 旋角馬達過溫怎麼處理」，前 4 名卻是手冊、技術通報、工單與舊款手冊，<b>全都在講清潔散熱</b>，負載、感測器、安全步驟一個也沒進來。相關性排序替每一段各自打分，不看彼此重複。<b>MMR（Maximal Marginal Relevance，最大邊際相關）</b>在每一步挑片段時，同時考慮「跟問題像不像」與「跟已經選的像不像」，用同樣的 k 個名額涵蓋更多角度。</p>
+
+  <h2>🎬 動畫：讓名額留給新的角度</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="MMR 多樣性重排動畫：前 k 名重複；原因；公式；逐步挑選；λ 旋鈕；管線位置；風險；結果"><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="0" data-to="0">① 沒有 MMR：前 k 名全是同一件事的不同版本</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="1" data-to="1">② 原因：相關性排序只看「像不像問題」，不看「彼此像不像」</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="2" data-to="2">③ MMR：每一步都在「相關」與「與已選不重複」之間取捨</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="3" data-to="3">④ 逐步挑選：很像已選的候選被扣分，新角度的候選勝出</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="4" data-to="4">⑤ λ 是旋鈕：從純相關性一路調到純多樣性</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="5" data-to="5">⑥ 放在哪：先取較大的候選池，再用 MMR 選出最後的 k 段</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="6" data-to="6">⑦ 風險：多樣不等於正確，也可能把有用的佐證刪掉</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 結果：同樣 k 段，涵蓋的面向更多</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-from="0" data-to="0"><rect x="24" y="108" width="300" height="36" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="174.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">問題：「PT-203 旋角馬達過溫怎麼處理？」</text><path d="M324 126 L364 126" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="364" y="108" width="528" height="32" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="628.0" y="128.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">《OW-8 手冊》：清潔冷卻風扇與散熱片</text><rect x="364" y="148" width="528" height="32" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="628.0" y="168.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">技術通報：清潔冷卻風扇與散熱片</text><rect x="364" y="188" width="528" height="32" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="628.0" y="208.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">工單 WO-2026-0412：清潔風扇與散熱片</text><rect x="364" y="228" width="528" height="32" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="628.0" y="248.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">《OW-6 手冊》：檢查冷卻風扇與散熱片</text><text x="24" y="296" font-size="12" font-weight="700" style="fill:var(--bad)">k = 4 個名額，4 段講的都是「清潔散熱」，內容幾乎一樣。</text><text x="24" y="322" font-size="11.5" font-weight="700" style="fill:var(--bad)">沒進來的面向：負載過高、溫度感測器漂移、進輪轂的上鎖掛牌安全、備品料號。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="1" data-to="1"><rect x="24" y="112" width="276" height="96" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="162.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">手冊、通報、工單</text><text x="162.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">都在講同一個故障</text><text x="162.0" y="181.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">所以每段都「很像問題」</text><rect x="316" y="112" width="276" height="96" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="454.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">它們彼此也幾乎一樣</text><text x="454.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">互相相似度很高</text><text x="454.0" y="181.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">卻都排在最前面</text><rect x="608" y="112" width="284" height="96" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="750.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">結果：重複內容佔滿名額</text><text x="750.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">context window 被浪費</text><text x="750.0" y="181.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">模型看不到其他角度</text><text x="24" y="256" font-size="12" font-weight="700" style="fill:var(--query)">相關性排序（向量相似度、BM25）替每一段各自打分，不會看已經選了什麼。</text><text x="24" y="284" font-size="12" font-weight="700" style="fill:var(--query)">知識庫裡同一件事常有多個來源：手冊、技術通報、工單、新舊機型版本。</text><text x="24" y="392" font-size="11.5" class="t-muted">重點：重複是知識庫的常態，不是例外。</text></g><g data-from="2" data-to="2"><rect x="24" y="112" width="868" height="52" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="458.0" y="142.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">MMR(d) = λ · 相似度(d, 問題) − (1 − λ) · max 相似度(d, 已選的每一段)</text><rect x="24" y="184" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="234.0" y="214.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">第一項：相關性</text><text x="234.0" y="231.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">這一段跟問題有多像（越高越好）</text><rect x="472" y="184" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="682.0" y="214.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">第二項：冗餘度（要扣掉）</text><text x="682.0" y="231.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">這一段跟「已選」中最像的那段有多像</text><text x="24" y="292" font-size="12" font-weight="700" style="fill:var(--llm)">每一輪從候選池挑出分數最高的一段，放進已選，重複到湊滿 k 段為止。</text><text x="24" y="318" font-size="11.5" font-weight="700" style="fill:var(--llm)">出處：Carbonell 與 Goldstein，SIGIR 1998，最初用於文件重排與摘要。</text><text x="24" y="392" font-size="11.5" class="t-muted">MMR = Maximal Marginal Relevance，最大邊際相關。</text></g><g data-from="3" data-to="3"><rect x="24" y="112" width="250" height="48" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="149.0" y="131.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">第 1 輪：已選為空</text><text x="149.0" y="148.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">選相關性最高：手冊清潔散熱</text><rect x="24" y="176" width="250" height="48" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="149.0" y="195.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">第 2 輪候選：技術通報</text><text x="149.0" y="212.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">與問題很像，但與已選很像</text><rect x="24" y="240" width="250" height="48" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="149.0" y="259.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">第 2 輪候選：負載過高</text><text x="149.0" y="276.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">與問題夠像，與已選不同</text><path d="M274 200 L324 200" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="324" y="176" width="250" height="48" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="449.0" y="195.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">技術通報：扣分</text><text x="449.0" y="212.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">冗餘度高，被擠到後面</text><path d="M274 264 L324 264" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="324" y="240" width="250" height="48" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="449.0" y="259.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">負載過高：入選</text><text x="449.0" y="276.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">新角度，補上缺的面向</text><rect x="612" y="112" width="280" height="176" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="752.0" y="161.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">已選清單變化</text><text x="752.0" y="178.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">1. 手冊：清潔散熱</text><text x="752.0" y="195.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">2. 負載過高</text><text x="752.0" y="212.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">3. 感測器漂移（依此類推）</text><text x="752.0" y="229.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">重複的通報與工單</text><text x="752.0" y="246.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">因此一直排在後面</text><text x="24" y="326" font-size="12" font-weight="700" style="fill:var(--vec)">關鍵：候選的分數會隨「已選什麼」而改變，這是它跟一般排序最大的不同。</text><text x="24" y="392" font-size="11.5" class="t-muted">此圖只示意判斷方向，不代表實際分數。</text></g><g data-from="4" data-to="4"><path d="M60 170 L860 170" style="fill:none;stroke:var(--line);stroke-width:2"/><circle cx="60" cy="170" r="9" style="fill:var(--query)"/><circle cx="460" cy="170" r="9" style="fill:var(--accent)"/><circle cx="860" cy="170" r="9" style="fill:var(--good)"/><rect x="24" y="112" width="200" height="40" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="124.0" y="136.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">λ = 1：只看相關性</text><rect x="360" y="112" width="200" height="40" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="460.0" y="136.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">λ 居中：兩邊兼顧</text><rect x="696" y="112" width="200" height="40" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="796.0" y="136.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">λ = 0：只求不重複</text><text x="60" y="204" font-size="11.5" font-weight="700" style="fill:var(--query)">退化成一般排序</text><text x="380" y="204" font-size="11.5" font-weight="700" style="fill:var(--accent)">常見起點 0.5 左右</text><text x="700" y="204" font-size="11.5" font-weight="700" style="fill:var(--good)">可能混進不相關的段落</text><text x="24" y="262" font-size="12" font-weight="700" style="fill:var(--warn)">λ 越小，越願意犧牲一點相關性來換取多樣；λ 越大，結果越接近原本的排序。</text><text x="24" y="290" font-size="12" font-weight="700" style="fill:var(--warn)">沒有放諸四海皆準的值，要用自己的問題集與第 021 堂的指標去調。</text><text x="24" y="392" font-size="11.5" class="t-muted">注意：LangChain 的 lambda_mult 方向相同（1 為最小多樣性，0 為最大多樣性）。</text></g><g data-from="5" data-to="5"><rect x="24" y="116" width="130" height="56" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="89.0" y="148.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">問題</text><rect x="200" y="116" width="170" height="56" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="285.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">向量檢索</text><text x="285.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">取前 fetch_k 段</text><rect x="406" y="116" width="150" height="56" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="481.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">MMR</text><text x="481.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">選出 k 段</text><rect x="592" y="116" width="130" height="56" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="657.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM</text><text x="657.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">生成答案</text><rect x="762" y="116" width="130" height="56" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="827.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">答案</text><text x="827.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">涵蓋多面向</text><path d="M154 144 L200 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M370 144 L406 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M556 144 L592 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M722 144 L762 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="224" font-size="12" font-weight="700" style="fill:var(--accent)">先撈一批較大的候選（例如 k 的幾倍），再用 MMR 從中挑出最後要給模型的 k 段。</text><text x="24" y="252" font-size="12" font-weight="700" style="fill:var(--accent)">可以接在重排序（第 005 堂）之後，也可以直接作用在向量檢索的結果上。</text><text x="24" y="280" font-size="12" font-weight="700" style="fill:var(--accent)">MMR 只需要「問題與段落」「段落與段落」的相似度，計算量遠小於呼叫 LLM。</text><text x="24" y="392" font-size="11.5" class="t-muted">向量資料庫與 LangChain 等框架都內建 MMR 檢索模式。</text></g><g data-from="6" data-to="6"><rect x="24" y="112" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="234.0" y="142.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">λ 調太小</text><text x="234.0" y="159.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">為了不重複，混進不相關的段落</text><rect x="472" y="112" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="682.0" y="142.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">有價值的重複被刪掉</text><text x="682.0" y="159.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">多個來源互相佐證的訊息被去重</text><rect x="24" y="198" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="234.0" y="228.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">相似度看的是嵌入</text><text x="234.0" y="245.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">「換句話說」的內容也可能被視為重複</text><rect x="472" y="198" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="682.0" y="228.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">多樣不等於正確</text><text x="682.0" y="245.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">它不會判斷哪個角度才是答案</text><text x="24" y="306" font-size="11.5" font-weight="700" style="fill:var(--warn)">對策：用評估集調 λ；需要佐證時先把重複來源合併並保留出處，而不是讓 MMR 隨意刪。</text><text x="24" y="392" font-size="11.5" class="t-muted">若重複的是完全相同的文字，直接在索引階段去重更單純。</text></g><g data-from="7"><rect x="24" y="112" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="234.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">沒有 MMR</text><text x="234.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">前 4 名都在講清潔散熱</text><text x="234.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">缺少負載、感測器、安全</text><rect x="472" y="112" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="682.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">用 MMR</text><text x="682.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">同樣 4 段</text><text x="682.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">涵蓋散熱、負載、感測器、安全</text><rect x="24" y="224" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="234.0" y="254.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">代價：</text><text x="234.0" y="271.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">多一個 λ 要調，計算量略增</text><rect x="472" y="224" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="682.0" y="254.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">搭配：</text><text x="682.0" y="271.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">混合檢索、重排序、引用與歸因</text><text x="24" y="336" font-size="12.5" font-weight="700" style="fill:var(--good)">名額有限時，與其多給一份重複的內容，不如多給一個新的角度。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>相關不等於有用</b>知識庫裡同一件事常有手冊、通報、工單與新舊版本。每段都「很像問題」，前 k 名就被重複內容佔滿，浪費 context window。</div>
+    <div class="card"><b>MMR 的取捨</b>每輪選出「λ × 與問題的相似度 − (1 − λ) × 與已選片段的最大相似度」最高的一段。已選什麼會改變候選的分數，這是它與一般排序的差別。</div>
+    <div class="card"><b>λ 是旋鈕</b>λ = 1 等於原本的相關性排序，λ = 0 只求不重複。實務上從居中的值開始，用自己的問題集與評估指標調整。</div>
+    <div class="card"><b>多樣不等於正確</b>λ 太小會混進不相關的段落；多來源佐證的訊息也可能被去重。MMR 是在候選池上的重排，不取代檢索品質與評估。</div>
+  </div>
+
+  <h2>🧪 互動範例：同一批候選，用與不用 MMR</h2>
+  <div class="prose"><p>知識庫是 19 段虛構的《OW-8 運維手冊》與相關文件，其中有不少<b>幾乎重複</b>的內容（手冊、技術通報、工單講同一件事）。系統先用 TF-IDF 餘弦相似度取前 <b>fetch_k</b> 段當候選池，再選出 <b>k</b> 段。上排是「不用 MMR」的前 k 名，下排是「用 MMR」的結果。拉動 <b>λ</b>，看涵蓋的面向與重複程度怎麼變。</p>
+  <p>每段右上標示它屬於哪個<b>面向</b>（事先標好）；「涵蓋面向」只計入這個問題需要的面向。相似度用瀏覽器內的詞袋向量，只是示意，真實系統請用嵌入模型。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="muted" id="qin" style="font-size:13px"></div>
+    <div class="row"><b style="font-size:13px">λ（相關性 ↔ 多樣性）：</b><input type="range" id="lam" min="0" max="1" step="0.05" value="0.5" style="flex:1;min-width:160px"><b id="lamv" style="font-size:13px;font-family:var(--mono)"></b></div>
+    <div class="row"><b style="font-size:13px">k（要選幾段）：</b><input type="range" id="kk" min="2" max="5" step="1" value="4" style="width:140px"><b id="kv" style="font-size:13px;font-family:var(--mono)"></b>
+      <b style="font-size:13px;margin-left:12px">fetch_k（候選池）：</b><input type="range" id="fk" min="5" max="14" step="1" value="7" style="width:140px"><b id="fv" style="font-size:13px;font-family:var(--mono)"></b></div>
+    <div><b style="font-size:13px">不用 MMR：前 k 名</b></div>
+    <div class="hits" id="h0"></div>
+    <div class="muted" id="s0" style="font-size:13px"></div>
+    <div><b style="font-size:13px">用 MMR 選出的 k 段</b></div>
+    <div class="hits" id="h1"></div>
+    <div class="muted" id="s1" style="font-size:13px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>下面用 <code>numpy</code> 實作 MMR：輸入問題向量與候選向量（已正規化），每輪選出分數最高的一段。向量由 <code>embed</code> 產生，這裡以 <code>sentence-transformers</code> 為例；生成答案時用 <code>anthropic</code> 的 <code>claude-sonnet-5</code>。</p></div>
+<pre class="code"><code><span class="k">import</span> numpy <span class="k">as</span> np
+<span class="k">import</span> anthropic
+<span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer
+
+model = <span class="f">SentenceTransformer</span>(<span class="s">"BAAI/bge-m3"</span>)
+client = anthropic.<span class="f">Anthropic</span>()
+
+DOCS = [
+    <span class="s">"PT-203（OW-8）：檢查冷卻風扇與散熱片積塵並清潔。"</span>,
+    <span class="s">"技術通報 TB-2026-017：PT-203 先清潔冷卻風扇與散熱片。"</span>,
+    <span class="s">"工單 WO-2026-0412：PT-203，已清潔風扇與散熱片後復歸。"</span>,
+    <span class="s">"PT-203 也可能是負載過高：檢查葉片角度調整頻率與繞組溫度趨勢。"</span>,
+    <span class="s">"溫度感測器漂移會誤報 PT-203：比對繞組實測溫度與感測器讀值。"</span>,
+    <span class="s">"PT-203 作業安全：進入輪轂前先順槳、鎖定葉輪並執行上鎖掛牌（LOTO）。"</span>,
+]
+
+<span class="k">def</span> <span class="f">embed</span>(texts):
+    <span class="k">return</span> model.<span class="f">encode</span>(texts, normalize_embeddings=<span class="k">True</span>)   <span class="c"># 正規化後內積即餘弦相似度</span>
+
+<span class="k">def</span> <span class="f">mmr</span>(q_vec, d_vecs, k=<span class="s">3</span>, lam=<span class="s">0.5</span>, fetch_k=<span class="s">6</span>):
+    <span class="s">"""回傳被選中的文件索引；lam=1 等於一般相關性排序"""</span>
+    rel = d_vecs @ q_vec                                  <span class="c"># 與問題的相似度</span>
+    pool = <span class="f">list</span>(np.<span class="f">argsort</span>(-rel)[:fetch_k])               <span class="c"># 候選池：相關性前 fetch_k 名</span>
+    chosen = []
+    <span class="k">while</span> pool <span class="k">and</span> <span class="f">len</span>(chosen) &lt; k:
+        <span class="k">def</span> <span class="f">score</span>(i):
+            redundancy = <span class="f">max</span>((d_vecs[i] @ d_vecs[j] <span class="k">for</span> j <span class="k">in</span> chosen), default=<span class="s">0.0</span>)
+            <span class="k">return</span> lam * rel[i] - (<span class="s">1</span> - lam) * redundancy
+        best = <span class="f">max</span>(pool, key=score)
+        chosen.<span class="f">append</span>(best)
+        pool.<span class="f">remove</span>(best)
+    <span class="k">return</span> chosen
+
+query = <span class="s">"PT-203 旋角馬達過溫要怎麼處理？"</span>
+q_vec = <span class="f">embed</span>([query])[<span class="s">0</span>]
+d_vecs = <span class="f">embed</span>(DOCS)
+picked = <span class="f">mmr</span>(q_vec, d_vecs, k=<span class="s">3</span>, lam=<span class="s">0.5</span>)
+ctx = <span class="s">"\n"</span>.<span class="f">join</span>(DOCS[i] <span class="k">for</span> i <span class="k">in</span> picked)
+
+msg = client.messages.<span class="f">create</span>(
+    model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">400</span>,
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">f"只根據下列手冊段落回答。\n\n{ctx}\n\n問題：{query}"</span>}],
+)
+<span class="f">print</span>(msg.content[<span class="s">0</span>].text)</code></pre>
+  <div class="prose"><p>許多向量資料庫與框架已內建 MMR 檢索模式（例如 LangChain 向量庫的 <code>max_marginal_relevance_search</code>，參數有 <code>fetch_k</code> 與 <code>lambda_mult</code>），可先用內建版本，不必自己寫。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>重排序（第 005 堂）</th><th>上下文壓縮（第 012 堂）</th><th>上下文排序（第 031 堂）</th><th>語意快取（第 026 堂）</th><th>MMR</th></tr>
+    <tr><th>在做什麼</th><td>用交叉編碼器精排相關性</td><td>刪掉片段裡無關的句子</td><td>決定片段放在提示的哪個位置</td><td>重用相似問題的答案</td><td>挑選時扣掉彼此重複的片段</td></tr>
+    <tr><th>看什麼</th><td>問題與每段的相關度</td><td>問題與每個句子</td><td>已選片段的順序</td><td>問題與問題</td><td>問題與段落，加上段落與段落</td></tr>
+    <tr><th>解決的問題</th><td>相關度排序不準</td><td>片段太長太雜</td><td>中間內容被忽略</td><td>重複問答浪費成本</td><td>前 k 名內容重複、角度不足</td></tr>
+    <tr><th>額外成本</th><td>每段一次模型推論</td><td>一次壓縮</td><td>幾乎沒有</td><td>快取查詢</td><td>k × 候選數次向量運算，成本很低</td></tr>
+    <tr><th>主要風險</th><td>延遲較高</td><td>刪掉關鍵句</td><td>排序假設不成立</td><td>誤用舊答案</td><td>λ 太小混入不相關內容、刪掉有用佐證</td></tr>
+  </table>
+
+  <h2>⚠️ MMR 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>λ 沒調就上線</b>：太小會混進不相關的段落，太大等於沒用。要用自己的問題集與評估指標（第 021 堂）比較。</li>
+      <li><b>候選池太小</b>：fetch_k 若只比 k 大一點，能挑的角度本來就少；太大又會讓低相關的段落有機會入選。</li>
+      <li><b>把佐證當重複</b>：手冊與技術通報都指向同一個做法，是互相印證。若需要引用來源（第 025 堂），先合併重複來源並保留出處，而不是讓 MMR 隨意丟掉。</li>
+      <li><b>完全相同的文字</b>：在索引階段去重比較單純，不必靠 MMR。</li>
+      <li><b>單一事實的問題</b>：問「PT-205 是什麼代碼」這類只需要一段答案的問題，多樣性沒有價值，λ 可以拉高。</li>
+      <li><b>相似度看嵌入</b>：換個說法的內容可能被視為重複，也可能把不同機型的相似段落判成重複，機型條件仍要靠中繼資料過濾（第 011 堂）。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊與工單內容及數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的相似度是瀏覽器內的詞袋近似，不代表真實嵌入模型的結果。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Carbonell 與 Goldstein，<a href="https://dl.acm.org/doi/10.1145/290941.291025">The Use of MMR, Diversity-Based Reranking for Reordering Documents and Producing Summaries</a>（SIGIR 1998）；LangChain 向量庫文件中的 <code>max_marginal_relevance_search</code>。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>MMR 每一輪挑選片段時，分數同時考慮哪兩件事？</b></p>
+    <button class="opt">A. 片段的長度與片段的新舊</button>
+    <button class="opt">B. 片段與問題的相似度，以及片段與已選片段的相似度</button>
+    <button class="opt">C. 片段被點擊的次數與片段的來源</button>
+    <div class="why">MMR 取「λ × 與問題的相似度 − (1 − λ) × 與已選片段的最大相似度」最高者。</div>
+  </div>
+  <div class="quiz card" data-answer="0">
+    <p><b>把 λ 設為 1，MMR 的結果會變成什麼？</b></p>
+    <button class="opt">A. 只看與問題的相關性，等於一般的相關性排序</button>
+    <button class="opt">B. 只求片段彼此不重複，不管是否相關</button>
+    <button class="opt">C. 隨機挑選 k 段</button>
+    <div class="why">λ = 1 時冗餘度那一項的權重為 0，只剩相關性；λ 越小才越偏向多樣性。</div>
+  </div>
+
+  <nav class="pager" data-slug="mmr-diversity"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'前 k 名全是同一件事', text:'技師問「PT-203 旋角馬達過溫怎麼處理」，前 4 名是手冊、通報、工單與舊款手冊，<b>全在講清潔散熱</b>。負載、感測器與安全步驟都沒進來。' },
+  { title:'為什麼會這樣', text:'相關性排序<b>各段獨立打分</b>，只看像不像問題。知識庫裡同一件事有多個來源，它們彼此幾乎一樣，卻<b>一起排在前面</b>，浪費了 k 個名額。' },
+  { title:'MMR：同時看兩件事', text:'每輪選出「<b>λ × 與問題的相似度 − (1 − λ) × 與已選片段的最大相似度</b>」最高的一段。第一項是相關性，第二項是要扣掉的冗餘度。' },
+  { title:'逐步挑選', text:'先選相關性最高的手冊段落。接著技術通報雖然也很像問題，但<b>與已選太像而被扣分</b>；負載過高是新角度，分數反而勝出。已選的內容會改變候選的分數。' },
+  { title:'λ 是旋鈕', text:'<b>λ = 1</b> 只看相關性，等於原本的排序；<b>λ = 0</b> 只求不重複，可能混進不相關內容。居中的值兼顧兩邊，實際數值要用評估集調整。' },
+  { title:'放在哪一層', text:'先用向量檢索取較大的候選池（<b>fetch_k</b>），可接在重排序之後，再用 MMR 選出最後的 <b>k</b> 段給模型。它只需要向量相似度，成本很低。' },
+  { title:'風險與限制', text:'λ 太小會混入<b>不相關</b>段落；多來源互相佐證的內容可能被<b>誤當重複</b>刪掉；多樣不等於正確。要用評估集調 λ，需要佐證時先合併來源並保留出處。' },
+  { title:'結果：更多角度', text:'同樣給模型 4 段，不用 MMR 只有清潔散熱；用 MMR 涵蓋<b>散熱、負載、感測器、安全</b>。代價只是多一個 λ 要調。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  const DOCS = [
+    { t:"PT-203 旋角馬達過溫（OW-8）：檢查冷卻風扇與散熱片積塵，清潔後確認風量。", a:"清潔散熱" },
+    { t:"技術通報 TB-2026-017：PT-203 旋角馬達過溫，先檢查冷卻風扇與散熱片積塵並清潔。", a:"清潔散熱" },
+    { t:"工單 WO-2026-0412：PT-203 旋角馬達過溫，現場檢查冷卻風扇與散熱片積塵，清潔後復歸。", a:"清潔散熱" },
+    { t:"PT-203 旋角馬達過溫（OW-6）：舊款機型，檢查冷卻風扇與散熱片積塵。", a:"清潔散熱" },
+    { t:"PT-203 旋角馬達過溫（OW-8）：也可能是負載過高，檢查葉片角度調整是否過於頻繁，並看繞組溫度趨勢。", a:"負載" },
+    { t:"PT-203 旋角馬達過溫（OW-8）：溫度感測器漂移會誤報，比對繞組實測溫度與感測器讀值。", a:"感測器" },
+    { t:"PT-203 旋角馬達過溫（OW-8）作業安全：進入輪轂前先順槳、鎖定葉輪，並執行上鎖掛牌（LOTO）。", a:"安全" },
+    { t:"備品表（OW-8）：旋角系統備品料號 PT-MTR-02。", a:"備品料號" },
+    { t:"工單 WO-2026-0388：旋角馬達備品料號 PT-MTR-02，領用一顆。", a:"備品料號" },
+    { t:"技術通報 TB-2026-021：旋角馬達備品料號 PT-MTR-02，與舊款 OW-6 不通用。", a:"備品料號" },
+    { t:"旋角馬達更換（OW-8）：更換時要同時檢查編碼器線路。", a:"編碼器" },
+    { t:"旋角馬達更換（OW-8）：工具需要扭力扳手與吊掛設備。", a:"工具" },
+    { t:"PT-205 旋角馬達煞車異常（OW-8）：檢查煞車線圈電壓與煞車片間隙。", a:"其他" },
+    { t:"PT-230 旋角備援電源測試失敗（OW-8）：檢查備援電池電壓與充電迴路。", a:"其他" },
+    { t:"YW-042 偏航誤差過大（OW-8）：檢查風向計校準與偏航煞車磨耗。", a:"其他" },
+    { t:"葉片無人機巡檢報告（OW-8）：前緣有輕微沙蝕，建議排入下次定檢。", a:"其他" },
+    { t:"CMS 振動報告（OW-8）：齒輪箱高速軸振動值在正常範圍。", a:"其他" },
+    { t:"PT-211 三支葉片角度偏差過大（OW-8）：檢查各葉片角度編碼器與校零。", a:"其他" },
+    { t:"備品庫存表：旋角馬達備品料號 PT-MTR-02，庫存 2 顆。", a:"備品料號" }
+  ];
+  const PRESETS = [
+    { name:'PT-203 過溫怎麼處理', q:'PT-203 旋角馬達過溫（OW-8）要怎麼處理？', need:['清潔散熱','負載','感測器','安全'] },
+    { name:'更換旋角馬達備品', q:'旋角馬達備品料號是什麼？更換要準備什麼？', need:['備品料號','編碼器','工具'] }
+  ];
+  const index = rt.buildIndex(DOCS.map(d => ({ text:d.t })));
+  const st = { p:0, lam:0.5, k:4, fk:7 };
+
+  const sim = (i, j) => rt.cosine(index.vecs[i], index.vecs[j]);
+  function rank(q){
+    const qv = index.vec(rt.tokenize(q));
+    return DOCS.map((_, i) => ({ i, rel: rt.cosine(qv, index.vecs[i]) })).sort((a, b) => b.rel - a.rel);
+  }
+  function mmr(ranked, k, lam, fk){
+    const pool = ranked.slice(0, fk), chosen = [];
+    while(pool.length && chosen.length < k){
+      let best = -1, bs = -Infinity;
+      pool.forEach((c, n) => {
+        const red = chosen.length ? Math.max(...chosen.map(x => sim(c.i, x.i))) : 0;
+        const s = lam * c.rel - (1 - lam) * red;
+        if(s > bs){ bs = s; best = n; }
+      });
+      chosen.push(pool.splice(best, 1)[0]);
+    }
+    return chosen;
+  }
+  function stats(list, need){
+    const cov = new Set(list.map(h => DOCS[h.i].a).filter(a => need.includes(a))).size;
+    let sum = 0, n = 0;
+    for(let x = 0; x < list.length; x++) for(let y = x + 1; y < list.length; y++){ sum += sim(list[x].i, list[y].i); n++; }
+    return { cov, red: n ? sum / n : 0 };
+  }
+  function draw(el, list, need){
+    $(el).innerHTML = list.map((h, r) => {
+      const d = DOCS[h.i], good = need.includes(d.a);
+      const red = list.slice(0, r).length ? Math.max(...list.slice(0, r).map(x => sim(h.i, x.i))) : null;
+      return '<div class="hit' + (good ? ' top' : ' low') + '"><div class="meta"><span>第 ' + (r+1) + ' 段｜面向：' + esc(d.a) + '</span><span>與問題 ' + h.rel.toFixed(2) + (red === null ? '' : '｜與前面最像 ' + red.toFixed(2)) + '</span></div>' + esc(d.t) + '</div>';
+    }).join('');
+  }
+  function run(){
+    const P = PRESETS[st.p], ranked = rank(P.q);
+    $('#qin').innerHTML = '問題：<b>' + esc(P.q) + '</b>；需要的面向：' + P.need.map(esc).join('、');
+    $('#lamv').textContent = st.lam.toFixed(2); $('#kv').textContent = st.k; $('#fv').textContent = st.fk;
+    const base = ranked.slice(0, st.k), pick = mmr(ranked, st.k, st.lam, Math.max(st.fk, st.k));
+    draw('#h0', base, P.need); draw('#h1', pick, P.need);
+    [['#s0', base], ['#s1', pick]].forEach(([el, l]) => {
+      const s = stats(l, P.need);
+      $(el).innerHTML = '涵蓋面向 <b>' + s.cov + '/' + P.need.length + '</b>　｜　段落兩兩平均相似度 <b>' + s.red.toFixed(2) + '</b>（越低越不重複）';
+    });
+  }
+  $('#presets').innerHTML = PRESETS.map((p, i) => '<button type="button" data-i="' + i + '" class="' + (i === 0 ? 'on' : '') + '">' + esc(p.name) + '</button>').join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    st.p = +b.dataset.i; $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#lam').oninput = e => { st.lam = +e.target.value; run(); };
+  $('#kk').oninput = e => { st.k = +e.target.value; run(); };
+  $('#fk').oninput = e => { st.fk = +e.target.value; run(); };
+  run();
+  window.__demo = { st, run, rank, mmr, stats, PRESETS, DOCS };
+})();
+</script>
+</body>
+</html>

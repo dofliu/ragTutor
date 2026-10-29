@@ -559,6 +559,20 @@
         "測驗關卡"
       ],
       "date": "2026-10-28"
+    },
+    {
+      "no": 33,
+      "slug": "mmr-diversity",
+      "file": "lessons/033-mmr-diversity.html",
+      "title": "MMR 多樣性重排：前 k 名不要全是同一件事",
+      "en": "Maximal Marginal Relevance (MMR)",
+      "level": 2,
+      "summary": "相關性排序常讓前 k 名都是重複內容。MMR 每一步同時考慮與問題的相關度和與已選片段的相似度，用 λ 調整多樣性。本堂用互動範例比較用與不用 MMR 的涵蓋面向。",
+      "tags": [
+        "進階",
+        "重排"
+      ],
+      "date": "2026-10-29"
     }
   ]
 }
