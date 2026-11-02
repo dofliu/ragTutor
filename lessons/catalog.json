@@ -573,6 +573,20 @@
         "重排"
       ],
       "date": "2026-10-29"
+    },
+    {
+      "no": 34,
+      "slug": "ircot-multihop",
+      "file": "lessons/034-ircot-multihop.html",
+      "title": "IRCoT 多跳檢索：邊推理邊檢索，一步一步找齊證據",
+      "en": "IRCoT: Interleaving Retrieval with Chain-of-Thought",
+      "level": 3,
+      "summary": "多跳問題要先查 A 才知道要查 B。IRCoT 讓每一句推理成為下一輪檢索的查詢，逐步收集證據。本堂用互動範例比較一次檢索與兩輪交錯檢索，並示範推理出錯如何傳下去。",
+      "tags": [
+        "高階",
+        "多跳"
+      ],
+      "date": "2026-11-02"
     }
   ]
 }

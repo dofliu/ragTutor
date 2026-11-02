@@ -33,6 +33,7 @@
     { "slug": "embedding-finetuning", "title": "領域嵌入微調：用合成查詢與困難負例，教嵌入模型聽懂你的領域", "en": "Domain Embedding Fine-tuning", "level": 3, "status": "done", "file": "lessons/030-embedding-finetuning.html", "scenario": "用維修工單合成技師口吻的問題，搭配困難負例（PT-203 對 PT-205）微調嵌入模型，並用留出的真實問法驗收" },
     { "slug": "lost-in-the-middle", "title": "上下文排序：Lost in the Middle 與兩端排列", "en": "Lost in the Middle & Context Ordering", "level": 2, "status": "done", "file": "lessons/031-lost-in-the-middle.html", "scenario": "液壓站油壓偏低的查詢，關鍵的排除步驟與上鎖掛牌安全步驟落在提示詞中間被漏掉；改用兩端排列並掃描位置驗證" },
     { "slug": "conversational-rag", "title": "對話式 RAG：多輪追問先改寫成獨立問題", "en": "Conversational RAG & Question Rewriting", "level": 2, "status": "done", "file": "lessons/032-conversational-rag.html", "scenario": "技師先問 PT-203 旋角馬達過溫，再追問「那進入輪轂前要先確認什麼？」「它的備品料號？」；先用對話歷史改寫成獨立問題再檢索，並比較原句、拼接歷史與漏掉機型的改寫" },
-    { "slug": "mmr-diversity", "title": "MMR 多樣性重排：前 k 名不要全是同一件事", "en": "Maximal Marginal Relevance (MMR)", "level": 2, "status": "done", "file": "lessons/033-mmr-diversity.html", "scenario": "技師問 PT-203 旋角馬達過溫，前幾名都是手冊、通報、工單的清潔散熱；用 MMR 讓名額涵蓋負載、感測器與安全步驟" }
+    { "slug": "mmr-diversity", "title": "MMR 多樣性重排：前 k 名不要全是同一件事", "en": "Maximal Marginal Relevance (MMR)", "level": 2, "status": "done", "file": "lessons/033-mmr-diversity.html", "scenario": "技師問 PT-203 旋角馬達過溫，前幾名都是手冊、通報、工單的清潔散熱；用 MMR 讓名額涵蓋負載、感測器與安全步驟" },
+    { "slug": "ircot-multihop", "title": "IRCoT 多跳檢索：邊推理邊檢索，一步一步找齊證據", "en": "IRCoT: Interleaving Retrieval with Chain-of-Thought", "level": 3, "status": "done", "file": "lessons/034-ircot-multihop.html", "scenario": "技師問「WO-2026-0455 換下的零件，現在還剩幾個？」要先從工單讀到料號，再查庫存表；比較一次檢索與兩輪交錯檢索，並示範第 1 句推理出錯的傳遞" }
   ]
 }
