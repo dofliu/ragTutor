@@ -587,6 +587,20 @@
         "多跳"
       ],
       "date": "2026-11-02"
+    },
+    {
+      "no": 35,
+      "slug": "doc2query",
+      "file": "lessons/035-doc2query.html",
+      "title": "Doc2Query 文件擴展：建索引時先替每段預測「別人會怎麼問」",
+      "en": "Doc2Query: Document Expansion by Query Prediction",
+      "level": 2,
+      "summary": "手冊寫「煞車釋放間隙」，技師問「葉片轉不動」，字面對不上。Doc2Query 在建索引時替每段預測可能的查詢並附加進去，並用 Doc2Query-- 過濾幻覺查詢。本堂用互動範例比較有無擴展與過濾門檻。",
+      "tags": [
+        "進階",
+        "文件擴展"
+      ],
+      "date": "2026-11-03"
     }
   ]
 }

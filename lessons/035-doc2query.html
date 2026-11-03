@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Doc2Query 文件擴展：建索引時先替每段預測「別人會怎麼問」｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識 Doc2Query 文件擴展：離線為每個段落預測可能的查詢並附加到索引，補上口語問法與手冊用詞的落差，並用 Doc2Query-- 的過濾避免幻覺查詢。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 035 堂</span><span class="tag lv2">進階</span><span class="tag">約 15 分鐘</span></p>
+  <h1>Doc2Query 文件擴展：建索引時先替每段預測「別人會怎麼問」</h1>
+
+  <p class="lead">技師問「葉片轉不動」，手冊寫的是「煞車線圈電阻、釋放間隙」，字面沒有一個詞重疊，關鍵字檢索就找不到。<b>Doc2Query（Document Expansion by Query Prediction）</b>換個方向解決：不改查詢，而是在<b>建索引時</b>先用模型替每個段落預測「會有人用什麼問題來找這段」，把預測的查詢附加在段落後面再建索引。口語說法就預先接上了手冊的用詞。</p>
+
+  <h2>🎬 動畫：把「別人的說法」預先放進索引</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="Doc2Query 動畫：詞彙落差；預測查詢；流程；查詢命中；成本；幻覺風險；過濾；結果"><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="0" data-to="0">① 沒有擴展：技師的說法和手冊的用詞對不上</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="1" data-to="1">② 想法：建索引時，先替每段預測「別人會怎麼問」</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="2" data-to="2">③ 流程：段落 → 生成預測查詢 → 附在段落後 → 建索引</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="3" data-to="3">④ 查詢時：問句與預測查詢字面重疊，順利命中</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="4" data-to="4">⑤ 成本：生成只在離線做一次，代價是索引變大</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="5" data-to="5">⑥ 風險：預測查詢可能寫出段落裡沒有的內容</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="6" data-to="6">⑦ Doc2Query--：用相關性分數過濾掉可疑的預測查詢</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 結果：口語問法也找得到，而且不多找錯的</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-from="0" data-to="0"><rect x="24" y="108" width="300" height="60" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="174.0" y="142.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">技師問：「葉片轉不動」</text><path d="M324 138 L364 138" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="364" y="108" width="528" height="44" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="628.0" y="134.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">手冊 PT-205：煞車線圈電阻、釋放間隙、煞車片磨耗（正解，但字面不同）</text><rect x="364" y="158" width="528" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="628.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">手冊 PT-211：葉片角度編碼器（只因「葉片」二字被排前面）</text><text x="24" y="236" font-size="12" font-weight="700" style="fill:var(--bad)">BM25 靠詞面比對：問句裡的「轉不動」，手冊裡一個字都沒有。</text><text x="24" y="264" font-size="12" font-weight="700" style="fill:var(--bad)">手冊用「煞車異常」「釋放間隙」，技師用「轉不動」，同一件事兩種說法。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構；關鍵字檢索（第 004 堂）最怕這種詞彙落差。</text></g><g data-from="1" data-to="1"><rect x="24" y="112" width="420" height="96" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="234.0" y="138.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">離線：替每段預測查詢</text><text x="234.0" y="155.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">PT-205 段 →</text><text x="234.0" y="172.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">「葉片轉不動 煞車卡住」</text><text x="234.0" y="189.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">「旋角煞車放不開」</text><path d="M444 160 L484 160" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="484" y="112" width="408" height="96" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="688.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">索引裡存的是</text><text x="688.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">原段落 ＋ 預測查詢</text><text x="688.0" y="181.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">（查詢時照舊用 BM25）</text><text x="24" y="256" font-size="12" font-weight="700" style="fill:var(--query)">Doc2Query：Nogueira 等人 2019（arXiv 1904.08375），用序列到序列模型預測文件可能回答的查詢。</text><text x="24" y="284" font-size="12" font-weight="700" style="fill:var(--query)">做法是把預測出的查詢附加在文件後面再建索引，讓文件多出「別人的說法」。</text><text x="24" y="392" font-size="11.5" class="t-muted">這和 HyDE（第 007 堂）方向相反：HyDE 在查詢端改寫，Doc2Query 在文件端擴展。</text></g><g data-from="2" data-to="2"><rect x="24" y="116" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="124.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">① 段落</text><text x="124.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">手冊 PT-205</text><rect x="272" y="116" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="372.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">② 生成模型</text><text x="372.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">預測 3～5 個查詢</text><rect x="520" y="116" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="620.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">③ 段落＋查詢</text><text x="620.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">合併成一份</text><rect x="768" y="116" width="124" height="56" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="830.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">④ BM25</text><text x="830.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">索引</text><path d="M224 144 L272 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M472 144 L520 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M720 144 L768 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="236" font-size="12" font-weight="700" style="fill:var(--llm)">生成通常用 T5 類模型或 LLM；提示要求「寫出會用這段回答的問題」。</text><text x="24" y="264" font-size="12" font-weight="700" style="fill:var(--llm)">查詢階段完全不變：問句照舊進 BM25，不必多呼叫模型。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構；本堂互動範例的預測查詢是預先寫好的腳本，模擬生成結果。</text></g><g data-from="3" data-to="3"><rect x="24" y="108" width="260" height="44" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="154.0" y="134.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">問句：「葉片轉不動」</text><path d="M284 130 L324 130" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="324" y="108" width="568" height="44" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="608.0" y="134.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">PT-205 段＋預測查詢「葉片轉不動 煞車卡住」→ 排第一</text><rect x="324" y="158" width="568" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="608.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">PT-203 段＋預測查詢「葉片轉不動 馬達發熱」→ 排第二</text><text x="24" y="236" font-size="12" font-weight="700" style="fill:var(--vec)">「葉片」「轉不動」現在真的出現在索引裡，BM25 可以直接比對。</text><text x="24" y="264" font-size="12" font-weight="700" style="fill:var(--vec)">兩個可能原因（煞車、過溫）都進來了，後面交給重排序或模型判斷。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="4" data-to="4"><rect x="24" y="112" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="234.0" y="142.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">成本在離線</text><text x="234.0" y="159.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">每段生成一次，查詢延遲不變</text><rect x="472" y="112" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="682.0" y="142.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">索引變大</text><text x="682.0" y="159.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">每段多出數十個詞，倒排索引較長</text><rect x="24" y="198" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="234.0" y="228.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">文件更新要重做</text><text x="234.0" y="245.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">段落改了，預測查詢要重新生成</text><rect x="472" y="198" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="682.0" y="228.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">可搭配其他技術</text><text x="682.0" y="245.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">與 BM25、向量檢索、SPLADE 都能並用</text><text x="24" y="306" font-size="12" font-weight="700" style="fill:var(--doc)">適合文件數量固定、查詢量大的場景：離線多花一次，查詢端長期受益。</text><text x="24" y="392" font-size="11.5" class="t-muted">不要用沒查證的倍數說明速度或大小；用自己的資料量測。</text></g><g data-from="5" data-to="5"><rect x="24" y="112" width="420" height="60" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="234.0" y="146.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">PT-205 煞車段（正確內容：煞車線圈、釋放間隙）</text><rect x="472" y="112" width="420" height="60" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="682.0" y="137.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">預測查詢：「PT-203 過溫要換馬達嗎」</text><text x="682.0" y="154.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">段落裡根本沒有這件事（幻覺）</text><path d="M444 142 L472 142" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="198" width="868" height="60" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="458.0" y="232.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">使用者查「PT-203 過溫要換馬達嗎」時，PT-205 煞車段因為這句預測查詢被排到前面</text><text x="24" y="296" font-size="12" font-weight="700" style="fill:var(--warn)">生成模型會編出文件裡沒有的細節；一旦進索引，就會把不相關的段落拉進結果。</text><text x="24" y="392" font-size="11.5" class="t-muted">這是 Doc2Query-- 論文要解決的問題（幻覺查詢）。</text></g><g data-from="6" data-to="6"><rect x="24" y="112" width="276" height="70" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="162.0" y="151.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">① 生成預測查詢</text><rect x="322" y="112" width="276" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="460.0" y="142.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">② 相關性模型打分</text><text x="460.0" y="159.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">查詢與段落相符程度</text><rect x="620" y="112" width="272" height="70" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="756.0" y="142.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">③ 只留分數高的</text><text x="756.0" y="159.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">低於門檻的丟掉</text><path d="M300 147 L322 147" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M598 147 L620 147" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="226" font-size="12" font-weight="700" style="fill:var(--accent)">Doc2Query--（Gospodinov 等人，ECIR 2023，arXiv 2301.03266）：先打分再過濾，只保留比例最高的預測查詢。</text><text x="24" y="254" font-size="12" font-weight="700" style="fill:var(--accent)">論文報告過濾後檢索效果可提升，索引也比未過濾的 Doc2Query 小；門檻要用自己的資料調。</text><text x="24" y="392" font-size="11.5" class="t-muted">互動範例的「過濾門檻」滑桿可以看到幻覺查詢何時被濾掉。</text></g><g data-from="7"><rect x="24" y="112" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="234.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">沒有擴展</text><text x="234.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">口語問法找不到</text><text x="234.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">手冊用詞不同</text><rect x="472" y="112" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="682.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">擴展＋過濾</text><text x="682.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">「葉片轉不動」找到煞車與過溫段</text><text x="682.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">幻覺查詢已被濾掉</text><rect x="24" y="224" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="234.0" y="254.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">代價</text><text x="234.0" y="271.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">離線生成、索引變大、文件更新要重做</text><rect x="472" y="224" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="682.0" y="254.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">搭配</text><text x="682.0" y="271.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">重排序、SPLADE、查詢改寫</text><text x="24" y="336" font-size="12.5" font-weight="700" style="fill:var(--good)">詞彙落差大、查詢量大、文件相對穩定時，用文件擴展把口語問法預先接起來。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>文件端擴展</b>查詢改寫、HyDE 是在查詢端補字；Doc2Query 是在文件端補字：離線為每段預測可能的查詢，附加後再建 BM25 或其他索引。</div>
+    <div class="card"><b>查詢階段不變</b>生成只在建索引時做一次，查詢時照舊檢索，不多一次模型呼叫。代價是索引變大，且段落更新時要重新生成。</div>
+    <div class="card"><b>幻覺查詢</b>生成模型會寫出段落裡沒有的內容，這些查詢進了索引就會把不相關的段落拉進結果。Doc2Query-- 用相關性模型替預測查詢打分，只保留高分的。</div>
+    <div class="card"><b>適用情境</b>詞彙落差大（口語對手冊用詞）、文件相對穩定、查詢量大的場景。與重排序、SPLADE、混合檢索可以並用。</div>
+  </div>
+
+  <h2>🧪 互動範例：有無文件擴展，以及過濾門檻</h2>
+  <div class="prose"><p>知識庫是 10 段虛構的《OW-8 運維手冊》段落。每段有幾句<b>預先寫好的預測查詢</b>（模擬生成模型的輸出，並附一個模擬的相關性分數；真實系統由模型生成與打分），其中 PT-205 煞車段帶有一句<b>幻覺查詢</b>。檢索是瀏覽器內真的在算（BM25，中文用二字詞）。請比較「只用原段落」與「附加預測查詢」，並拉動<b>過濾門檻</b>，看分數低的預測查詢被濾掉後結果的變化。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="muted" id="qin" style="font-size:13px"></div>
+    <div class="row"><b style="font-size:13px">過濾門檻（預測查詢分數低於此值就丟掉）：</b><input type="range" id="th" min="0" max="0.9" step="0.1" value="0" style="width:160px"><b id="tv" style="font-size:13px;font-family:var(--mono)"></b></div>
+    <div><b style="font-size:13px">A. 只用原段落建索引</b></div>
+    <div class="hits" id="h0"></div>
+    <div class="muted" id="s0" style="font-size:13px"></div>
+    <div><b style="font-size:13px">B. 原段落＋預測查詢（過濾後）建索引</b></div>
+    <div class="hits" id="h1"></div>
+    <div class="muted" id="s1" style="font-size:13px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>下面是文件擴展的最小實作：用 <code>claude-sonnet-5</code> 為每段生成預測查詢，附加後用 <code>rank_bm25</code> 建索引。重點在離線的「生成 → 附加 → 建索引」。範例以空白斷詞，中文實務上請換成適合的斷詞器；Doc2Query-- 的過濾需要另一個相關性模型（例如 cross-encoder），這裡只示意介面。</p></div>
+<pre class="code"><code><span class="k">import</span> anthropic
+<span class="k">from</span> rank_bm25 <span class="k">import</span> BM25Okapi
+
+client = anthropic.<span class="f">Anthropic</span>()
+
+DOCS = [
+    <span class="s">"PT-205 旋角馬達煞車異常：量測煞車線圈電阻，檢查釋放間隙與煞車片磨耗。"</span>,
+    <span class="s">"PT-203 旋角馬達過溫：檢查冷卻風扇與散熱片積塵，確認負載電流。"</span>,
+    <span class="s">"進入輪轂前須先順槳、鎖定葉輪並執行上鎖掛牌（LOTO）。"</span>,
+]
+
+<span class="k">def</span> <span class="f">predict_queries</span>(doc, n=<span class="s">3</span>):
+    prompt = (<span class="s">f"請寫出 {n} 個現場技師會用來查這段手冊的口語問題，每行一個，"</span>
+              <span class="s">f"只能根據段落內容，不要加入段落沒有的資訊。\n\n段落：{doc}"</span>)
+    msg = client.messages.<span class="f">create</span>(model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">200</span>,
+                                 messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> [q.<span class="f">strip</span>() <span class="k">for</span> q <span class="k">in</span> msg.content[<span class="s">0</span>].text.<span class="f">splitlines</span>() <span class="k">if</span> q.<span class="f">strip</span>()]
+
+<span class="k">def</span> <span class="f">keep_relevant</span>(doc, queries, scorer, threshold=<span class="s">0.5</span>):
+    <span class="c"># Doc2Query--：scorer(query, doc) 回傳相關性分數，低分的預測查詢丟掉</span>
+    <span class="k">return</span> [q <span class="k">for</span> q <span class="k">in</span> queries <span class="k">if</span> <span class="f">scorer</span>(q, doc) >= threshold]
+
+<span class="c"># 離線：生成、過濾、附加、建索引（score 為你的相關性模型）</span>
+expanded = []
+<span class="k">for</span> d <span class="k">in</span> DOCS:
+    qs = <span class="f">predict_queries</span>(d)
+    <span class="c"># qs = keep_relevant(d, qs, scorer=score)</span>
+    expanded.<span class="f">append</span>(d + <span class="s">" "</span> + <span class="s">" "</span>.<span class="f">join</span>(qs))
+bm25 = <span class="f">BM25Okapi</span>([e.<span class="f">split</span>() <span class="k">for</span> e <span class="k">in</span> expanded])
+
+<span class="c"># 線上：查詢照舊，不多一次模型呼叫</span>
+scores = bm25.<span class="f">get_scores</span>(<span class="s">"葉片轉不動"</span>.<span class="f">split</span>())
+<span class="f">print</span>(DOCS[<span class="f">int</span>(scores.<span class="f">argmax</span>())])</code></pre>
+  <div class="prose"><p>實務上要記得：回傳給使用者與模型的仍是<b>原段落</b>，預測查詢只用來建索引；另外要記錄每段的生成版本，段落更新時一併重生。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>查詢改寫（第 006 堂）</th><th>HyDE（第 007 堂）</th><th>SPLADE（第 029 堂）</th><th>嵌入微調（第 030 堂）</th><th>Doc2Query</th></tr>
+    <tr><th>補詞的位置</th><td>查詢端</td><td>查詢端（假設答案）</td><td>文件與查詢兩端（模型學到的擴展）</td><td>改嵌入模型本身</td><td>文件端（預測查詢）</td></tr>
+    <tr><th>何時付出成本</th><td>每次查詢</td><td>每次查詢</td><td>建索引與查詢編碼</td><td>訓練時</td><td>建索引時（離線）</td></tr>
+    <tr><th>解決的問題</th><td>問法太口語或籠統</td><td>問題與答案語氣差異</td><td>詞彙落差</td><td>領域用語落差</td><td>詞彙落差</td></tr>
+    <tr><th>檢索端要改嗎</th><td>不用</td><td>不用</td><td>要用學習式稀疏索引</td><td>要換向量與重建索引</td><td>不用，沿用 BM25</td></tr>
+    <tr><th>主要風險</th><td>改寫漏掉條件</td><td>假設答案出錯</td><td>擴展詞過多</td><td>過度擬合</td><td>幻覺查詢、更新要重生</td></tr>
+  </table>
+
+  <h2>⚠️ Doc2Query 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>幻覺查詢</b>：模型寫出段落沒有的內容（如 PT-205 段被預測「PT-203 過溫」），會把不相關段落拉進結果。提示要限制「只能根據段落」，並用相關性模型過濾（Doc2Query--）。</li>
+      <li><b>告警代碼被稀釋</b>：預測查詢太多，會讓精確比對的代碼、料號與其他詞混在一起。數量不要多，並檢查代碼類查詢有沒有變差。</li>
+      <li><b>文件常更新</b>：每次修改段落都要重新生成預測查詢，生成成本與版本管理要算進去。</li>
+      <li><b>索引變大</b>：每段多出的詞會增加索引大小，數字要用自己的資料量測，不要照搬別人的倍數。</li>
+      <li><b>回傳錯東西</b>：預測查詢只用來建索引，不要把它們混進給模型的上下文，否則答案可能引用到不存在的內容。</li>
+      <li><b>語意檢索已夠好時</b>：若向量檢索已能處理口語問法，增益可能有限；先用評估集（第 021 堂）比較再決定。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容、告警代碼與預測查詢皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的預測查詢與分數是預寫腳本，不是真實的模型輸出。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Nogueira、Yang、Lin 與 Cho，<a href="https://arxiv.org/abs/1904.08375">Document Expansion by Query Prediction</a>（2019）；Gospodinov、MacAvaney 與 Macdonald，<a href="https://arxiv.org/abs/2301.03266">Doc2Query--: When Less is More</a>（ECIR 2023）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="0">
+    <p><b>Doc2Query 在哪個階段呼叫生成模型？</b></p>
+    <button class="opt">A. 建索引時，為每個段落預測查詢並附加</button>
+    <button class="opt">B. 每次使用者查詢時，即時改寫問句</button>
+    <button class="opt">C. 回答時，為答案加上引用</button>
+    <div class="why">Doc2Query 是離線的文件端擴展，查詢階段不需要多呼叫模型，代價是索引變大與更新要重新生成。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>Doc2Query-- 為什麼要用相關性模型替預測查詢打分？</b></p>
+    <button class="opt">A. 讓預測查詢越多越好</button>
+    <button class="opt">B. 把預測查詢直接當答案回傳給使用者</button>
+    <button class="opt">C. 過濾掉與段落不符的幻覺查詢，只保留高分的</button>
+    <div class="why">生成模型會寫出段落沒有的內容；這些查詢進索引會把不相關的段落拉進結果，所以先打分再過濾。</div>
+  </div>
+
+  <nav class="pager" data-slug="doc2query"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'詞彙落差', text:'技師問「<b>葉片轉不動</b>」，手冊 PT-205 段寫的是<b>煞車線圈、釋放間隙</b>。BM25 靠字面比對，問句與手冊一個詞也不重疊，正解排不上來。' },
+  { title:'想法：預測別人的問法', text:'<b>建索引時</b>先用模型替每段預測「會有人怎麼問」，例如「葉片轉不動 煞車卡住」，附在段落後面再建索引。這是<b>文件端</b>的擴展，與查詢端的 HyDE 方向相反。' },
+  { title:'流程', text:'<b>段落 → 生成預測查詢 → 段落＋查詢 → 建 BM25 索引</b>。查詢階段完全不變，問句照舊進索引，不用多一次模型呼叫。' },
+  { title:'查詢時命中', text:'「葉片」「轉不動」現在真的出現在 PT-205 與 PT-203 兩段的索引裡，<b>兩個可能原因都被找到</b>，後面可以交給重排序或模型判斷。' },
+  { title:'成本', text:'生成在<b>離線</b>做一次，查詢延遲不變；代價是<b>索引變大</b>，段落一改就要<b>重新生成</b>。大小與速度的變化要用自己的資料量測。' },
+  { title:'風險：幻覺查詢', text:'模型可能替 PT-205 煞車段寫出「<b>PT-203 過溫要換馬達嗎</b>」這種段落裡沒有的查詢。進了索引，查 PT-203 時就會把煞車段排到前面。' },
+  { title:'Doc2Query--：過濾', text:'用<b>相關性模型</b>替每個預測查詢與段落打分，<b>只保留高分</b>的，丟掉可疑的。論文報告過濾能改善檢索並縮小索引；門檻要用自己的資料調。' },
+  { title:'結果', text:'擴展後，口語問法也能找到煞車與過溫段；過濾後幻覺查詢不再誤導結果。<b>詞彙落差大、文件穩定、查詢量大</b>時，值得把「別人的說法」預先接進索引。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  /* 每段：text 為原段落；qs 為預先寫好的預測查詢 [文字, 模擬相關性分數]（模擬生成與打分） */
+  const DOCS = [
+    { text:"PT-203 旋角馬達過溫：檢查冷卻風扇與散熱片積塵，確認負載電流與繞組溫度感測器，必要時更換旋角馬達。",
+      qs:[["旋角馬達太燙怎麼辦",.9],["葉片轉不動 馬達發熱",.7],["PT-203 是什麼告警",.8]] },
+    { text:"PT-205 旋角馬達煞車異常：量測煞車線圈電阻，檢查煞車片磨耗與釋放間隙，確認煞車釋放電壓。",
+      qs:[["葉片轉不動 煞車卡住",.9],["旋角煞車放不開",.8],["PT-205 怎麼排除",.8],["PT-203 過溫要換馬達嗎",.2]] },
+    { text:"PT-211 三支葉片角度偏差過大：檢查各葉片角度編碼器、接線與校零，比對三支葉片的實際角度。",
+      qs:[["葉片角度不一致",.9],["三片葉片角度差太多怎麼查",.8]] },
+    { text:"PT-230 旋角備援電源測試失敗：量測備援電池電壓與充電迴路，依規定更換電池組。",
+      qs:[["風機停電時葉片能不能順槳",.6],["備援電池壞了",.9],["PT-230 測試失敗",.8]] },
+    { text:"YW-042 偏航誤差過大：檢查風向計讀值與偏航驅動減速機，確認機艙方位校正。",
+      qs:[["風機沒有對準風向",.9],["偏航對不準",.8],["風向計壞掉",.6]] },
+    { text:"GB-117 齒輪箱高速軸軸承溫度過高：檢查潤滑油位與油溫，查看 CMS 振動頻譜，必要時降載運轉。",
+      qs:[["齒輪箱太熱",.9],["變速箱油溫高",.7],["風機降載運轉",.6]] },
+    { text:"CV-310 變流器功率模組過溫：清潔散熱風道與濾網，檢查冷卻液流量與環境溫度。",
+      qs:[["變流器過熱",.9],["電力模組太燙",.7],["散熱濾網髒了",.7]] },
+    { text:"進入輪轂前須先順槳、鎖定葉輪並執行上鎖掛牌（LOTO），確認零能量後方可作業。",
+      qs:[["進輪轂前要先做什麼",.9],["葉片維修的安全步驟",.7],["什麼時候要上鎖掛牌",.8]] },
+    { text:"液壓站油壓偏低：檢查油位、濾芯壓差與蓄壓器預充壓力，確認有無外漏。",
+      qs:[["煞車壓力不夠",.5],["液壓油漏油",.8],["油壓掉了",.9]] },
+    { text:"旋角系統每年定期保養：潤滑旋角軸承、檢查滑環與電纜固定、記錄馬達絕緣電阻。",
+      qs:[["旋角系統多久保養一次",.9],["旋角軸承要加油嗎",.8],["年度保養項目",.7]] }
+  ];
+  const PRESETS = [
+    { name:'葉片轉不動', q:'葉片轉不動', rel:[0,1] },
+    { name:'風機沒對準風向', q:'風機一直沒對準風向', rel:[4] },
+    { name:'進輪轂前要先做什麼', q:'進輪轂前要先做什麼', rel:[7] },
+    { name:'PT-203 過溫要換馬達嗎', q:'PT-203 過溫要換馬達嗎', rel:[0] }
+  ];
+  const st = { p:0, th:0 };
+  const idx0 = rt.buildIndex(DOCS.map(d => ({ text:d.text })));
+  const kept = th => DOCS.map(d => d.qs.filter(x => x[1] >= th).map(x => x[0]));
+  const idxFor = th => rt.buildIndex(DOCS.map((d, i) => ({ text:d.text + ' ' + kept(th)[i].join(' ') })));
+  const size = ix => ix.toks.reduce((a, t) => a + t.length, 0);
+  function show(el, list, rel, ix, th){
+    const K = kept(th);
+    $(el).innerHTML = list.map((h, r) => {
+      const ok = rel.includes(h.i);
+      const extra = ix === idx0 ? '' : '<div class="muted" style="font-size:12px">預測查詢：' + (K[h.i].length ? esc(K[h.i].join('、')) : '（無）') + '</div>';
+      return '<div class="hit' + (ok ? ' top' : ' low') + '"><div class="meta"><span>第 ' + (r+1) + ' 名｜BM25 ' + h.score.toFixed(2) + (ok ? '｜正確段落' : '｜不相關') + '</span></div>' + esc(DOCS[h.i].text) + extra + '</div>';
+    }).join('') || '<div class="muted">（沒有任何段落與問句有字面重疊）</div>';
+  }
+  const hitCount = (list, rel) => list.filter(h => h.score > 0 && rel.includes(h.i)).length;
+  function run(){
+    const P = PRESETS[st.p], th = st.th;
+    $('#qin').innerHTML = '問題：<b>' + esc(P.q) + '</b>（正確段落：' + P.rel.map(i => '第 ' + (i+1) + ' 段').join('、') + '）';
+    $('#tv').textContent = th.toFixed(1);
+    const ix1 = idxFor(th);
+    const a = rt.searchBM25(idx0, P.q, 3).filter(h => h.score > 0);
+    const b = rt.searchBM25(ix1, P.q, 3).filter(h => h.score > 0);
+    show('#h0', a, P.rel, idx0, th); show('#h1', b, P.rel, ix1, th);
+    const wrongTop = b.length && !P.rel.includes(b[0].i);
+    $('#s0').innerHTML = '前 3 名找到正確段落 <b>' + hitCount(a, P.rel) + '/' + P.rel.length + '</b>｜索引 ' + size(idx0) + ' 個詞';
+    $('#s1').innerHTML = '前 3 名找到正確段落 <b>' + hitCount(b, P.rel) + '/' + P.rel.length + '</b>｜索引 ' + size(ix1) + ' 個詞' + (wrongTop ? '｜<b>第 1 名是不相關段落（幻覺查詢造成？試著提高過濾門檻）</b>' : '');
+    window.__demo.last = { a, b, wrongTop, ca: hitCount(a, P.rel), cb: hitCount(b, P.rel) };
+  }
+  $('#presets').innerHTML = PRESETS.map((p, i) => '<button type="button" data-i="' + i + '" class="' + (i === 0 ? 'on' : '') + '">' + esc(p.name) + '</button>').join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    st.p = +b.dataset.i; $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#th').oninput = e => { st.th = +e.target.value; run(); };
+  window.__demo = { st, run, DOCS, PRESETS };
+  run();
+})();
+</script>
+</body>
+</html>

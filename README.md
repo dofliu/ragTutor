@@ -48,6 +48,7 @@
 | 🎯 關卡 8 | [測驗關卡 8：SPLADE、嵌入微調、上下文排序與對話式 RAG（第 029–032 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-8-splade-finetune-order-conversation.html) |
 | 033 | [MMR 多樣性重排：前 k 名不要全是同一件事](https://dofliu.github.io/ragTutor/lessons/033-mmr-diversity.html) |
 | 034 | [IRCoT 多跳檢索：邊推理邊檢索，一步一步找齊證據](https://dofliu.github.io/ragTutor/lessons/034-ircot-multihop.html) |
+| 035 | [Doc2Query 文件擴展：建索引時先替每段預測「別人會怎麼問」](https://dofliu.github.io/ragTutor/lessons/035-doc2query.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 
