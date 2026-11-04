@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>測驗關卡 9：MMR、IRCoT、Doc2Query 與 Step-Back｜RAG 動畫教室</title>
+<meta name="description" content="第 033–036 堂複習測驗：MMR、IRCoT、Doc2Query、Step-Back，8 題，答錯會連回該堂複習。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">關卡 9</span><span class="tag">複習第 033–036 堂</span><span class="tag">約 8 分鐘</span></p>
+  <h1>MMR、IRCoT、Doc2Query 與 Step-Back</h1>
+  <p class="lead">MMR 讓前 k 名不重複，IRCoT 邊推理邊檢索多跳證據，Doc2Query 在建索引時預測別人的問法，Step-Back 先退一步問一般原則。共 8 題，每堂各 2 題。</p>
+  <div class="callout">涵蓋課程：<a href="033-mmr-diversity.html">MMR</a>、<a href="034-ircot-multihop.html">IRCoT</a>、<a href="035-doc2query.html">Doc2Query</a>、<a href="036-step-back.html">Step-Back</a>。選項順序每次都會重新排列；最佳成績只存在你的瀏覽器裡。</div>
+
+  <h2>🧩 開考前，先快速回顧</h2>
+  <div class="keypoints"><div class="card"><b>MMR</b>每步同時看相關度與和已選片段的相似度；λ 是旋鈕。 <a href="033-mmr-diversity.html">回到這一堂 →</a></div><div class="card"><b>IRCoT</b>推理句當下一輪查詢，逐步收集證據；小心一步錯、步步錯。 <a href="034-ircot-multihop.html">回到這一堂 →</a></div><div class="card"><b>Doc2Query</b>建索引時預測查詢並附加；用過濾擋掉幻覺查詢；更新要重生。 <a href="035-doc2query.html">回到這一堂 →</a></div><div class="card"><b>Step-Back</b>先抽象成上位問題，與原問題兩路合併；別退太遠。 <a href="036-step-back.html">回到這一堂 →</a></div></div>
+  <h2>📝 測驗（8 題）</h2>
+  <div id="quiz"></div>
+
+  <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。</div>
+
+  <nav class="pager" data-slug="quiz-9-mmr-ircot-doc2query-stepback"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.quizSet({ el:'#quiz', id:'quiz-9-mmr-ircot-doc2query-stepback', pass:6,
+  names:{"033-mmr-diversity": "第 033 堂 MMR", "034-ircot-multihop": "第 034 堂 IRCoT", "035-doc2query": "第 035 堂 Doc2Query", "036-step-back": "第 036 堂 Step-Back"},
+  questions:[
+ {
+  "from": "033-mmr-diversity",
+  "q": "MMR 每選一段，分數會懲罰哪一種候選？",
+  "opts": [
+   "與已選片段太相似的候選",
+   "與問題完全無關的候選",
+   "字數太少的候選"
+  ],
+  "a": 0,
+  "why": "MMR 的分數同時看與問題的相似度，並扣掉與已選片段的最大相似度，所以重複內容會被壓下去。"
+ },
+ {
+  "from": "033-mmr-diversity",
+  "q": "使用 MMR 時，λ 設得太小最可能發生什麼事？",
+  "opts": [
+   "結果與原本的相關性排序完全相同",
+   "混進不相關的段落，因為只求不重複",
+   "檢索一定變得更快"
+  ],
+  "a": 1,
+  "why": "λ 越小越重視多樣性；太小會把相關性放在次要，讓不相關的段落進入前 k 名。"
+ },
+ {
+  "from": "034-ircot-multihop",
+  "q": "IRCoT 為什麼要「邊推理邊檢索」？",
+  "opts": [
+   "因為第二份該查什麼，要讀完第一份才知道",
+   "因為單次檢索不能使用 BM25",
+   "因為這樣可以不用呼叫 LLM"
+  ],
+  "a": 0,
+  "why": "多跳問題的後續查詢依賴前面推理出的資訊，所以把每句推理當成下一輪查詢。"
+ },
+ {
+  "from": "034-ircot-multihop",
+  "q": "IRCoT 的主要風險之一是什麼？",
+  "opts": [
+   "推理句一旦出錯，後面可能一路查錯",
+   "一定只能查一輪",
+   "不能搭配任何重排序"
+  ],
+  "a": 0,
+  "why": "推理句決定下一輪查詢，早期的錯誤會往後傳遞；而且每輪都多一次檢索與模型呼叫。"
+ },
+ {
+  "from": "035-doc2query",
+  "q": "Doc2Query 擴展後，回傳給使用者與模型的應該是什麼？",
+  "opts": [
+   "原段落，預測查詢只用來建索引",
+   "預測查詢本身",
+   "原段落加預測查詢的合併文字"
+  ],
+  "a": 0,
+  "why": "預測查詢是為了讓索引多出別人的說法，若混進上下文，模型可能引用到段落裡沒有的內容。"
+ },
+ {
+  "from": "035-doc2query",
+  "q": "段落內容常常更新時，使用 Doc2Query 要特別注意什麼？",
+  "opts": [
+   "更新後要重新生成該段的預測查詢",
+   "預測查詢會自動跟著更新",
+   "不需要任何處理"
+  ],
+  "a": 0,
+  "why": "預測查詢是離線生成的，段落一改就可能失效，需要重生並管理版本。"
+ },
+ {
+  "from": "036-step-back",
+  "q": "Step-Back 產生的後退問題應該怎麼寫？",
+  "opts": [
+   "拿掉機號、數值與次數，但保留子系統與故障類型",
+   "盡量寫得越籠統越好",
+   "直接寫成答案"
+  ],
+  "a": 0,
+  "why": "後退是抽象到同一主題的一般原則；退太遠會變空泛，撈到不相關的概論。"
+ },
+ {
+  "from": "036-step-back",
+  "q": "為什麼 Step-Back 通常要保留原問題那一路再合併？",
+  "opts": [
+   "原問題含有機號、告警代碼等精確資訊，只用後退問題會漏掉",
+   "因為後退問題不能用來檢索",
+   "因為合併可以省下模型呼叫"
+  ],
+  "a": 0,
+  "why": "兩路互補：原問題找精確規則與紀錄，後退問題找一般原則，再用 RRF 融合。"
+ }
+]
+});
+</script>
+</body>
+</html>

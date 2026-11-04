@@ -601,6 +601,34 @@
         "文件擴展"
       ],
       "date": "2026-11-03"
+    },
+    {
+      "no": 36,
+      "slug": "step-back",
+      "file": "lessons/036-step-back.html",
+      "title": "Step-Back 後退一步提問：先問上位問題，再找證據",
+      "en": "Step-Back Prompting for Retrieval",
+      "level": 2,
+      "summary": "問題夾帶機號、溫度、次數時，檢索容易只撈到現場紀錄。Step-Back 先把問題抽象成上位問題，與原問題兩路檢索再融合。本堂用互動範例比較只用原問題、只用後退問題與兩路合併，並示範退太遠的後果。",
+      "tags": [
+        "進階",
+        "查詢"
+      ],
+      "date": "2026-11-04"
+    },
+    {
+      "type": "quiz",
+      "quiz": 9,
+      "slug": "quiz-9-mmr-ircot-doc2query-stepback",
+      "file": "lessons/quiz-9-mmr-ircot-doc2query-stepback.html",
+      "title": "測驗關卡 9：MMR、IRCoT、Doc2Query 與 Step-Back",
+      "en": "Checkpoint 9 · Lessons 033–036",
+      "level": 0,
+      "summary": "第 033–036 堂複習：MMR 多樣性重排、IRCoT 多跳檢索、Doc2Query 文件擴展、Step-Back 後退提問。8 題，答完立即看解析，答錯會指向該回頭複習的課程。",
+      "tags": [
+        "測驗關卡"
+      ],
+      "date": "2026-11-04"
     }
   ]
 }

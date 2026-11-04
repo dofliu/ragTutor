@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Step-Back 後退一步提問：先問上位問題，再找證據｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識 Step-Back 後退一步提問：把過於具體的問題抽象成上位問題，與原問題兩路檢索再融合，補上一般原則，並避免退得太遠。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 036 堂</span><span class="tag lv2">進階</span><span class="tag">約 15 分鐘</span></p>
+  <h1>Step-Back 後退一步提問：先問上位問題，再找證據</h1>
+
+  <p class="lead">技師問「WTG-17 在 38°C 下 PT-203 連續復歸 3 次，可以繼續運轉嗎？」問句塞滿機號、溫度與次數，檢索被這些細節拉去撈現場日誌，反而漏掉「旋角馬達過溫的一般原因與處置原則」。<b>Step-Back（後退一步）</b>先請模型把具體問題抽象成上位問題，用它找出一般原則，再和原問題那一路的結果合併，讓模型能依原則推理具體情況。</p>
+
+  <h2>🎬 動畫：先退一步，再往前走</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="Step-Back 動畫：問題太具體；後退一步；兩路流程；兩路證據；論文出處；退太遠的風險；適用時機；結果"><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="0" data-to="0">① 沒有後退：問題太具體，撈到的是現場紀錄</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="1" data-to="1">② 想法：先退一步，問「這類問題的一般原則是什麼」</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="2" data-to="2">③ 流程：原問題＋後退問題，兩路檢索再合併</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="3" data-to="3">④ 兩路各找到不同的證據：具體紀錄與一般原則</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="4" data-to="4">⑤ 出處：Step-Back Prompting（Zheng 等人，ICLR 2024）</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="5" data-to="5">⑥ 風險：退得太遠，問題變成空泛的大話</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="6" data-to="6">⑦ 何時用：問題細節多、答案要靠原則推理</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 結果：原則與具體證據都找齊，答案更完整</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-from="0" data-to="0"><rect x="24" y="108" width="330" height="76" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="189.0" y="133.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">技師問：</text><text x="189.0" y="150.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">「WTG-17 在 38°C 下 PT-203 連續復歸 3 次，</text><text x="189.0" y="167.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">可以繼續運轉嗎？」</text><path d="M354 146 L394 146" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="394" y="108" width="498" height="44" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="643.0" y="134.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">WTG-17 運轉日誌、WTG-17 工單（字面重疊多，但只是紀錄）</text><rect x="394" y="158" width="498" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="643.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">沒有排到：旋角馬達過溫的一般原因與處置原則</text><text x="24" y="236" font-size="12" font-weight="700" style="fill:var(--bad)">問句塞滿機號、溫度、次數，BM25 與向量都被這些細節拉走。</text><text x="24" y="264" font-size="12" font-weight="700" style="fill:var(--bad)">真正需要的「過溫通常為什麼發生、怎麼處置」寫在一般原則裡，字面對不上。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構；問題越具體，越容易只撈到紀錄而漏掉原則。</text></g><g data-from="1" data-to="1"><rect x="24" y="112" width="420" height="96" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="234.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">原問題（具體）</text><text x="234.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">WTG-17 在 38°C 下 PT-203</text><text x="234.0" y="181.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">連續復歸 3 次，可以繼續運轉嗎？</text><path d="M444 160 L484 160" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="484" y="112" width="408" height="96" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="688.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">後退問題（抽象）</text><text x="688.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">旋角馬達過溫的一般原因</text><text x="688.0" y="181.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">與處置原則是什麼？</text><text x="24" y="256" font-size="12" font-weight="700" style="fill:var(--query)">Step-Back：先讓模型把具體問題抽象成上位概念與原則，再用它找資料、推理。</text><text x="24" y="284" font-size="12" font-weight="700" style="fill:var(--query)">抽象後的問題沒有機號、溫度、次數這些雜訊，檢索更容易命中原則。</text><text x="24" y="392" font-size="11.5" class="t-muted">抽象與推理兩階段是論文的核心；本堂把「抽象」用在檢索查詢上。</text></g><g data-from="2" data-to="2"><rect x="24" y="116" width="170" height="56" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="109.0" y="148.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">① 原問題</text><rect x="236" y="116" width="170" height="56" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="321.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">② 模型後退</text><text x="321.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">產生上位問題</text><rect x="448" y="116" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="548.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">③ 兩路檢索</text><text x="548.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">原問題＋後退問題</text><rect x="690" y="116" width="202" height="56" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="791.0" y="139.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">④ 合併（RRF）</text><text x="791.0" y="156.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">去重、融合排名</text><path d="M194 144 L236 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M406 144 L448 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M648 144 L690 144" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="690" y="204" width="202" height="56" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="791.0" y="227.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">⑤ 模型生成</text><text x="791.0" y="244.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">原則＋具體證據</text><path d="M791 172 L791 204" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="236" font-size="12" font-weight="700" style="fill:var(--llm)">後退問題通常只多一次小型模型呼叫；兩路結果用 RRF（第 010 堂）融合。</text><text x="24" y="264" font-size="12" font-weight="700" style="fill:var(--llm)">保留原問題那一路，避免後退之後丟掉機號、告警代碼等精確資訊。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構；後退問題在互動範例中是預先寫好的腳本。</text></g><g data-from="3" data-to="3"><rect x="24" y="108" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="234.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">原問題這一路</text><text x="234.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">WTG-17 運轉日誌</text><text x="234.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">告警復歸規則（連續 3 次須停機）</text><rect x="472" y="108" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="682.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">後退問題這一路</text><text x="682.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">旋角馬達過溫的一般原因與處置原則</text><text x="682.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">旋角馬達溫升原理</text><rect x="24" y="206" width="868" height="60" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="458.0" y="240.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">合併後：復歸規則＋處置原則＋現場紀錄都進入上下文，才能回答「可不可以繼續運轉」</text><text x="24" y="306" font-size="12" font-weight="700" style="fill:var(--vec)">兩路互補：一路給精確的規則與紀錄，一路給可推理的一般原則。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="4" data-to="4"><rect x="24" y="112" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="234.0" y="142.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">Take a Step Back</text><text x="234.0" y="159.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">Evoking Reasoning via Abstraction in LLMs</text><rect x="472" y="112" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="682.0" y="134.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">兩步驟</text><text x="682.0" y="151.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">① 抽象：問出上位概念與原則</text><text x="682.0" y="168.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">② 推理：依原則回答原問題</text><text x="24" y="226" font-size="12" font-weight="700" style="fill:var(--doc)">作者：Zheng、Mishra、Chen、Cheng、Chi、Le、Zhou（Google DeepMind），ICLR 2024，arXiv 2310.06117。</text><text x="24" y="254" font-size="12" font-weight="700" style="fill:var(--doc)">論文在 STEM、知識問答與多跳推理任務上測試；本堂不引用具體數字，請自行量測。</text><text x="24" y="392" font-size="11.5" class="t-muted">把後退問題用在檢索、再合併原問題，是 RAG 社群常見的實作方式。</text></g><g data-from="5" data-to="5"><rect x="24" y="112" width="420" height="60" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="234.0" y="137.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">原問題</text><text x="234.0" y="154.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">PT-203 連續復歸 3 次可以繼續運轉嗎？</text><rect x="472" y="112" width="420" height="60" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="682.0" y="137.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">後退過頭</text><text x="682.0" y="154.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">「風機故障要怎麼處理？」</text><path d="M444 142 L472 142" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="198" width="868" height="60" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="458.0" y="232.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">太空泛的後退問題會撈到各子系統的概論，把真正相關的段落擠出前幾名</text><text x="24" y="296" font-size="12" font-weight="700" style="fill:var(--warn)">後退問題要保留領域與主題（旋角馬達過溫），只拿掉機號、數值、次數等細節。</text><text x="24" y="392" font-size="11.5" class="t-muted">提示要明確要求「只抽象到同一個子系統與故障類型」。</text></g><g data-from="6" data-to="6"><rect x="24" y="112" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="234.0" y="134.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">適合</text><text x="234.0" y="151.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">問題夾帶很多細節</text><text x="234.0" y="168.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">答案要靠原則推理、跨段落綜合</text><rect x="472" y="112" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="682.0" y="134.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">不必要</text><text x="682.0" y="151.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">單純查告警代碼或料號</text><text x="682.0" y="168.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">（PT-205 怎麼排除）直接檢索即可</text><rect x="24" y="206" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="234.0" y="228.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">成本</text><text x="234.0" y="245.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">多一次模型呼叫、多一路檢索</text><text x="234.0" y="262.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">延遲與費用都增加</text><rect x="472" y="206" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="682.0" y="236.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">搭配</text><text x="682.0" y="253.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">與 Multi-Query、RAG-Fusion、重排序並用</text><text x="24" y="316" font-size="12" font-weight="700" style="fill:var(--accent)">先用評估集（第 021 堂）比較「原問題」與「原問題＋後退」，再決定要不要上線。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="7" data-to="7"><rect x="24" y="112" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="234.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">只用原問題</text><text x="234.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">撈到 WTG-17 的紀錄</text><text x="234.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">漏掉一般原則</text><rect x="472" y="112" width="420" height="92" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="682.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">原問題＋後退問題</text><text x="682.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">規則、原則、紀錄都找到</text><text x="682.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">模型能依原則推理</text><rect x="24" y="224" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="234.0" y="254.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">代價</text><text x="234.0" y="271.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)"> 多一次模型呼叫、多一路檢索</text><rect x="472" y="224" width="420" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="682.0" y="254.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">注意</text><text x="682.0" y="271.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">後退不能過頭，原問題那一路要保留</text><text x="24" y="336" font-size="12" font-weight="700" style="fill:var(--good)">具體問題需要原則來推理時，先退一步再檢索，通常比硬撈細節更穩。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>先抽象再檢索</b>Step-Back Prompting 的核心是兩步：先抽象出上位概念與原則，再依原則推理。用在 RAG，就是多產生一句後退問題去檢索。</div>
+    <div class="card"><b>兩路合併，不取代原問題</b>後退問題找一般原則，原問題找精確的規則與紀錄。兩路用 RRF 融合，才不會丟掉機號、告警代碼這類精確資訊。</div>
+    <div class="card"><b>退多遠要拿捏</b>只拿掉機號、數值、次數等細節，保留子系統與故障類型。退得太遠會變成空泛的大話，擠掉真正相關的段落。</div>
+    <div class="card"><b>不是每題都需要</b>單純查告警代碼或料號，直接檢索即可；問題夾帶多個細節、答案要靠原則推理時才有價值。多一次模型呼叫與一路檢索，要先評估再上線。</div>
+  </div>
+
+  <h2>🧪 互動範例：只用原問題 vs 原問題＋後退問題</h2>
+  <div class="prose"><p>知識庫是 12 段虛構的《OW-8 運維手冊》與輔助文件。每個預設問題都附一句<b>預先寫好的後退問題</b>（模擬模型的輸出，真實系統由模型生成）。檢索是瀏覽器內真的在算（BM25，中文用二字詞）。請比較三種做法：只用原問題、只用後退問題、兩路用 RRF 合併；第三個預設問題是不需要後退的簡單題。也可以切換成「退太遠」的後退問題，看看會發生什麼事。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="muted" id="qin" style="font-size:13px"></div>
+    <div class="seg" id="mode"><button type="button" data-m="good" class="on">合適的後退問題</button><button type="button" data-m="far">退太遠的後退問題</button></div>
+    <div><b style="font-size:13px">A. 只用原問題</b></div>
+    <div class="hits" id="h0"></div>
+    <div class="muted" id="s0" style="font-size:13px"></div>
+    <div><b style="font-size:13px">B. 只用後退問題</b></div>
+    <div class="hits" id="h1"></div>
+    <div class="muted" id="s1" style="font-size:13px"></div>
+    <div><b style="font-size:13px">C. 兩路合併（RRF）</b></div>
+    <div class="hits" id="h2"></div>
+    <div class="muted" id="s2" style="font-size:13px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>下面是最小實作：用 <code>claude-sonnet-5</code> 產生後退問題，原問題與後退問題各檢索一次，再用 RRF 合併。範例以空白斷詞，中文實務上請換成適合的斷詞器。</p></div>
+<pre class="code"><code><span class="k">import</span> anthropic
+<span class="k">from</span> rank_bm25 <span class="k">import</span> BM25Okapi
+
+client = anthropic.<span class="f">Anthropic</span>()
+
+DOCS = [
+    <span class="s">"旋角馬達過溫的一般原因：冷卻風扇故障、散熱片積塵、負載電流偏高、環境溫度偏高。"</span>,
+    <span class="s">"告警復歸規則：同一告警短時間連續復歸 3 次，須停機檢查，不得繼續運轉。"</span>,
+    <span class="s">"WTG-17 運轉日誌：環境溫度 38°C，PT-203 告警連續 3 次復歸後繼續運轉。"</span>,
+]
+bm25 = <span class="f">BM25Okapi</span>([d.<span class="f">split</span>() <span class="k">for</span> d <span class="k">in</span> DOCS])
+
+<span class="k">def</span> <span class="f">step_back</span>(question):
+    prompt = (<span class="s">"請把下列問題改寫成較抽象的上位問題：拿掉機號、數值與次數，"</span>
+              <span class="s">"但保留子系統與故障類型。只輸出一句問題。\n\n問題："</span> + question)
+    msg = client.messages.<span class="f">create</span>(model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">100</span>,
+                                 messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text.<span class="f">strip</span>()
+
+<span class="k">def</span> <span class="f">rank</span>(query):
+    scores = bm25.<span class="f">get_scores</span>(query.<span class="f">split</span>())
+    <span class="k">return</span> <span class="f">sorted</span>(<span class="f">range</span>(<span class="f">len</span>(DOCS)), key=<span class="k">lambda</span> i: -scores[i])
+
+<span class="k">def</span> <span class="f">rrf</span>(rankings, k=<span class="s">60</span>):
+    score = {}
+    <span class="k">for</span> r <span class="k">in</span> rankings:
+        <span class="k">for</span> pos, i <span class="k">in</span> <span class="f">enumerate</span>(r):
+            score[i] = score.<span class="f">get</span>(i, <span class="s">0</span>) + <span class="s">1</span> / (k + pos + <span class="s">1</span>)
+    <span class="k">return</span> <span class="f">sorted</span>(score, key=score.get, reverse=<span class="k">True</span>)
+
+q = <span class="s">"WTG-17 在 38°C 下 PT-203 連續復歸 3 次，可以繼續運轉嗎？"</span>
+sb = <span class="f">step_back</span>(q)                       <span class="c"># 例如：旋角馬達過溫的一般原因與處置原則</span>
+top = <span class="f">rrf</span>([<span class="f">rank</span>(q), <span class="f">rank</span>(sb)])[:<span class="s">3</span>]    <span class="c"># 兩路合併，保留原問題那一路</span>
+<span class="k">for</span> i <span class="k">in</span> top:
+    <span class="f">print</span>(DOCS[i])</code></pre>
+  <div class="prose"><p>實務上，後退問題的提示要限定「同一子系統與故障類型」；上線前用評估集比較「只用原問題」與「原問題＋後退」的召回，再決定是否值得多一次呼叫。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>查詢改寫（第 006 堂）</th><th>HyDE（第 007 堂）</th><th>RAG-Fusion（第 010 堂）</th><th>對話式改寫（第 032 堂）</th><th>Step-Back</th></tr>
+    <tr><th>改寫方向</th><td>讓問法更清楚</td><td>寫出假設答案</td><td>產生多個同層級的問法</td><td>補全省略與代名詞</td><td>往上抽象成一般原則</td></tr>
+    <tr><th>主要解決</th><td>問法口語、籠統</td><td>問題與答案語氣差異</td><td>單一問法漏召回</td><td>追問缺脈絡</td><td>問題太具體、漏掉原則</td></tr>
+    <tr><th>是否保留原問題</th><td>通常取代</td><td>常與原問題並用</td><td>並用</td><td>取代</td><td>並用（兩路合併）</td></tr>
+    <tr><th>額外成本</th><td>一次模型呼叫</td><td>一次生成</td><td>多次檢索</td><td>一次模型呼叫</td><td>一次呼叫＋一路檢索</td></tr>
+    <tr><th>主要風險</th><td>漏掉條件</td><td>假設答案出錯</td><td>融合雜訊</td><td>帶入舊脈絡</td><td>退太遠變空泛</td></tr>
+  </table>
+
+  <h2>⚠️ Step-Back 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>退得太遠</b>：「風機故障怎麼處理」會撈到各子系統的概論。提示要限定保留子系統與故障類型，只拿掉機號、數值與次數。</li>
+      <li><b>丟掉原問題</b>：告警代碼、機號、工單號是精確資訊，只用後退問題會漏掉。務必保留原問題那一路再融合。</li>
+      <li><b>簡單題也後退</b>：單純查「PT-205 怎麼排除」，後退只會多花一次呼叫並引入雜訊。可先做簡單的路由判斷（第 015 堂 Adaptive RAG）。</li>
+      <li><b>後退問題本身出錯</b>：模型可能抽象錯方向（把過溫抽象成煞車）。上線前抽樣檢查，並記錄每次的後退問題以便除錯。</li>
+      <li><b>成本與延遲</b>：多一次模型呼叫與一路檢索。要用自己的評估集量測效益，不要照搬別人的數字。</li>
+      <li><b>原則不等於答案</b>：後退找到的是一般原則，具體能不能繼續運轉仍要依現場規定與工程師判斷。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容、告警代碼與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的後退問題是預寫腳本，不是真實的模型輸出。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Zheng 等人，<a href="https://arxiv.org/abs/2310.06117">Take a Step Back: Evoking Reasoning via Abstraction in Large Language Models</a>（ICLR 2024）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>在 RAG 中使用 Step-Back，後退問題通常和原問題怎麼搭配？</b></p>
+    <button class="opt">A. 完全取代原問題，只檢索後退問題</button>
+    <button class="opt">B. 兩者各檢索一次，再合併結果</button>
+    <button class="opt">C. 把後退問題當成答案直接回傳</button>
+    <div class="why">原問題保留機號、代碼等精確資訊，後退問題補上一般原則，兩路合併才互補。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>下列哪一種後退問題「退得太遠」？</b></p>
+    <button class="opt">A. 旋角馬達過溫的一般原因與處置原則是什麼？</button>
+    <button class="opt">B. 旋角馬達溫度偏高通常怎麼處理？</button>
+    <button class="opt">C. 風機故障要怎麼處理？</button>
+    <div class="why">後退要保留子系統與故障類型；「風機故障」太空泛，會撈到各子系統的概論。</div>
+  </div>
+
+  <nav class="pager" data-slug="step-back"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'問題太具體', text:'技師問「<b>WTG-17 在 38°C 下 PT-203 連續復歸 3 次，可以繼續運轉嗎</b>」。機號、溫度、次數把檢索拉去撈現場日誌，漏掉<b>過溫的一般原則</b>。' },
+  { title:'想法：先退一步', text:'讓模型先把問題<b>抽象成上位問題</b>：「旋角馬達過溫的一般原因與處置原則是什麼？」拿掉機號、數值、次數，檢索更容易命中原則。' },
+  { title:'流程', text:'<b>原問題 → 模型後退 → 兩路檢索 → RRF 合併 → 生成</b>。保留原問題那一路，避免後退之後丟掉機號與告警代碼等精確資訊。' },
+  { title:'兩路互補', text:'原問題找到<b>復歸規則與現場紀錄</b>；後退問題找到<b>處置原則與溫升原理</b>。合併後，模型才有足夠依據回答「可不可以繼續運轉」。' },
+  { title:'出處', text:'Step-Back Prompting 由 Zheng 等人提出（<b>ICLR 2024</b>）：先<b>抽象</b>出上位概念與原則，再依原則<b>推理</b>。本堂把抽象用在檢索查詢；具體效益請用自己的資料量測。' },
+  { title:'風險：退太遠', text:'若後退成「<b>風機故障要怎麼處理</b>」就太空泛，會撈到各子系統概論。要<b>保留子系統與故障類型</b>，只拿掉機號、數值與次數。' },
+  { title:'何時使用', text:'問題<b>細節多、答案要靠原則推理</b>時適合；單純查告警代碼或料號就不必。代價是多一次模型呼叫與一路檢索，先用評估集比較。' },
+  { title:'結果', text:'<b>原問題＋後退問題</b>，規則、原則與紀錄都找到，模型能依原則推理具體情況。具體問題需要原則時，先退一步再檢索。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  const DOCS = [
+    "旋角馬達過溫的一般原因與處置原則：常見原因包含冷卻風扇故障、散熱片積塵、負載電流偏高與環境溫度偏高。先確認風扇與散熱，再檢視負載電流與繞組溫度感測器，必要時降載運轉。",
+    "旋角馬達溫升原理：馬達損耗會轉成熱，溫度由負載電流、環境溫度與散熱條件共同決定，繞組溫度感測器持續監測，超過門檻即發出過溫告警。",
+    "WTG-17 運轉日誌：夏季午後環境溫度 38°C，機艙溫度偏高，PT-203 告警連續 3 次復歸後風機繼續運轉。",
+    "WTG-17 工單 WO-2026-0388：更換偏航減速機油封，完工後連續運轉 3 日，環境溫度 38°C 無異常。",
+    "告警復歸規則：同一告警短時間內連續復歸 3 次，須停機檢查，不得繼續運轉，並通報值班工程師。",
+    "YW-042 偏航誤差過大：檢查風向計讀值與偏航驅動減速機，確認機艙方位校正。",
+    "齒輪箱軸承溫度過高的一般原因與處置原則：常見原因包含潤滑油位不足、油溫偏高與軸承磨損。先確認油位與油溫，檢視 CMS 振動頻譜，必要時降載運轉。",
+    "WTG-09 運轉日誌：高速軸軸承溫度 84°C，CMS 振動數值正常，油位正常。",
+    "GB-117 停機判斷：高速軸軸承溫度持續超過告警門檻且 CMS 振動上升時，應停機檢查，不可繼續運轉。",
+    "CV-310 變流器功率模組過溫：清潔散熱風道與濾網，檢查冷卻液流量與環境溫度。",
+    "進入輪轂前須先順槳、鎖定葉輪並執行上鎖掛牌（LOTO），確認零能量後方可作業。",
+    "PT-205 旋角馬達煞車異常：量測煞車線圈電阻，檢查煞車片磨耗與釋放間隙，確認煞車釋放電壓。"
+  ];
+  /* sb 為預先寫好的後退問題（模擬模型輸出）；far 為退太遠的版本 */
+  const PRESETS = [
+    { name:'連續復歸可以繼續運轉嗎', q:'WTG-17 在 38°C 下 PT-203 連續復歸 3 次，可以繼續運轉嗎？', sb:'旋角馬達過溫的一般原因與處置原則是什麼？', far:'風機故障要怎麼處理？', rel:[0,4] },
+    { name:'軸承 84°C 要停機嗎', q:'WTG-09 高速軸軸承 84°C，要不要停機？', sb:'齒輪箱軸承溫度過高的一般原因與處置原則是什麼？', far:'風機故障要怎麼處理？', rel:[6,8] },
+    { name:'PT-205 怎麼排除（簡單題）', q:'PT-205 怎麼排除', sb:'旋角馬達煞車異常的一般原因與處置原則是什麼？', far:'風機故障要怎麼處理？', rel:[11] }
+  ];
+  const st = { p:0, m:'good' };
+  const idx = rt.buildIndex(DOCS.map(t => ({ text:t })));
+  const top = (q, k) => rt.searchBM25(idx, q, k).filter(h => h.score > 0);
+  function show(el, list, rel){
+    $(el).innerHTML = list.map((h, r) => {
+      const ok = rel.includes(h.i);
+      return '<div class="hit' + (ok ? ' top' : ' low') + '"><div class="meta"><span>第 ' + (r+1) + ' 名｜分數 ' + h.score.toFixed(3) + (ok ? '｜需要的證據' : '｜不是需要的') + '</span></div>' + esc(DOCS[h.i]) + '</div>';
+    }).join('') || '<div class="muted">（沒有任何段落與問句有字面重疊）</div>';
+  }
+  const found = (list, rel) => rel.filter(i => list.slice(0, 3).some(h => h.i === i)).length;
+  function run(){
+    const P = PRESETS[st.p], sb = st.m === 'far' ? P.far : P.sb;
+    $('#qin').innerHTML = '原問題：<b>' + esc(P.q) + '</b><br>後退問題：<b>' + esc(sb) + '</b>（需要的段落：' + P.rel.map(i => '第 ' + (i+1) + ' 段').join('、') + '）';
+    const a = top(P.q, 3), b = top(sb, 3);
+    const c = rt.rrf([top(P.q, 5), top(sb, 5)]).slice(0, 3);
+    show('#h0', a, P.rel); show('#h1', b, P.rel); show('#h2', c, P.rel);
+    const n = P.rel.length;
+    $('#s0').innerHTML = '前 3 名找到需要的證據 <b>' + found(a, P.rel) + '/' + n + '</b>';
+    $('#s1').innerHTML = '前 3 名找到需要的證據 <b>' + found(b, P.rel) + '/' + n + '</b>';
+    $('#s2').innerHTML = '前 3 名找到需要的證據 <b>' + found(c, P.rel) + '/' + n + '</b>';
+    window.__demo.last = { a, b, c, ca:found(a, P.rel), cb:found(b, P.rel), cc:found(c, P.rel) };
+  }
+  $('#presets').innerHTML = PRESETS.map((p, i) => '<button type="button" data-i="' + i + '" class="' + (i === 0 ? 'on' : '') + '">' + esc(p.name) + '</button>').join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    st.p = +b.dataset.i; $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  $('#mode').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    st.m = b.dataset.m; $('#mode').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  window.__demo = { st, run, DOCS, PRESETS };
+  run();
+})();
+</script>
+</body>
+</html>
