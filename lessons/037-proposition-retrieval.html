@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>命題檢索：把段落拆成一條一條獨立的事實｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識命題檢索（Dense X Retrieval）：建索引時把段落改寫成自成一句的原子事實，縮小檢索單元，讓上下文更短、證據更精準。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 037 堂</span><span class="tag lv2">進階</span><span class="tag">約 15 分鐘</span></p>
+  <h1>命題檢索：把段落拆成一條一條獨立的事實</h1>
+
+  <p class="lead">手冊的一個段落常常混了五、六個要點。技師只想知道「PT-203 出現時先檢查什麼」，段落級檢索卻把整段帶進上下文，其餘句子都是雜訊。<b>命題檢索（Proposition Retrieval）</b>在建索引時，先請模型把段落改寫成<b>自成一句的原子事實</b>，再以這些命題為檢索單元，檢索單元變小、變精準，上下文也更省。</p>
+
+  <h2>🎬 動畫：從整段，到一條一條事實</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="命題檢索動畫：整段太長；拆成命題；三個條件；還原指代；流程；論文出處；風險；結果"><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="0" data-to="0">① 沒有命題：整段塞進去，只為了其中一句</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="1" data-to="1">② 想法：把段落拆成一條一條獨立的事實</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="2" data-to="2">③ 命題的三個條件：獨立、不可再拆、自成一句</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="3" data-to="3">④ 關鍵：把「它」還原成「PT-203」</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="4" data-to="4">⑤ 流程：建索引時拆，檢索時比對命題</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="5" data-to="5">⑥ 出處：Dense X Retrieval（Chen 等人，2023）</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="6" data-to="6">⑦ 代價與風險：拆錯、索引變大、脈絡流失</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 結果：上下文更短，證據更精準</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-from="0" data-to="0"><rect x="24" y="108" width="430" height="190" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="36" y="138" font-size="11.5" font-weight="700" style="fill:var(--bad)">旋角系統負責調整葉片角度，進行功率控制與順槳。</text><text x="36" y="172" font-size="11.5" font-weight="700" style="fill:var(--bad)">PT-203 表示旋角馬達過溫，繞組溫度超過門檻時發出。</text><text x="36" y="206" font-size="11.5" font-weight="700" style="fill:var(--bad)">它首次出現時，系統會自動降載。</text><text x="36" y="240" font-size="11.5" font-weight="700" style="fill:var(--good)">此時應先檢查冷卻風扇與散熱片。</text><text x="36" y="274" font-size="11.5" font-weight="700" style="fill:var(--bad)">PT-205 則是煞車異常，須量測煞車線圈電阻。</text><path d="M454 200 L500 200" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="500" y="150" width="392" height="100" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="696.0" y="187.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">整段 5 句全部進入上下文</text><text x="696.0" y="204.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">技師只問：「PT-203 出現時先檢查什麼？」</text><text x="696.0" y="221.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">需要的只有第 4 句</text><text x="24" y="336" font-size="12" font-weight="700" style="fill:var(--bad)">整段檢索：命中一句、帶進五句；其他句子是雜訊，也佔掉上下文額度。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構；段落粒度檢索回傳的是整段。</text></g><g data-from="1" data-to="1"><rect x="24" y="108" width="300" height="70" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="174.0" y="138.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">原始段落</text><text x="174.0" y="155.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">5 句混在一起</text><path d="M324 143 L380 143" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="380" y="108" width="140" height="70" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="450.0" y="138.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">命題化</text><text x="450.0" y="155.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">模型改寫</text><path d="M520 143 L570 143" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="570" y="100" width="322" height="40" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="731.0" y="124.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">PT-203 旋角馬達過溫時，應先檢查冷卻風扇與散熱片。</text><rect x="570" y="150" width="322" height="40" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="731.0" y="174.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">PT-203 首次出現時，系統會自動降載。</text><rect x="570" y="200" width="322" height="40" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="731.0" y="224.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">PT-205 煞車異常時，須量測煞車線圈電阻。</text><text x="24" y="276" font-size="12" font-weight="700" style="fill:var(--query)">Dense X Retrieval 的想法：檢索單元不一定要是段落，可以改成「命題」。</text><text x="24" y="304" font-size="12" font-weight="700" style="fill:var(--query)">每條命題只講一件事，單獨拿出來讀也看得懂。</text><text x="24" y="392" font-size="11.5" class="t-muted">命題通常由大型語言模型從段落中抽出；本堂互動範例的命題是預先寫好的。</text></g><g data-from="2" data-to="2"><rect x="24" y="108" width="280" height="90" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="164.0" y="140.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">獨立</text><text x="164.0" y="157.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">每條只表達一個</text><text x="164.0" y="174.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">獨立的事實</text><rect x="320" y="108" width="280" height="90" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="460.0" y="140.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">不可再拆</text><text x="460.0" y="157.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">再拆下去</text><text x="460.0" y="174.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">就失去完整意思</text><rect x="616" y="108" width="276" height="90" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="754.0" y="140.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">自成一句</text><text x="754.0" y="157.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">補回指代與主詞</text><text x="754.0" y="174.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">不靠上下文也看得懂</text><text x="24" y="246" font-size="12" font-weight="700" style="fill:var(--vec)">這三點整理自論文對命題的定義：每條命題包含一個獨立事實、簡潔、且自成一句。</text><text x="24" y="274" font-size="12" font-weight="700" style="fill:var(--vec)">「自成一句」指要把代名詞、省略的主詞補回來，這步又叫去脈絡化（decontextualization）。</text><text x="24" y="392" font-size="11.5" class="t-muted">命題不一定等於一個原句；一個長句可能拆成兩條命題。</text></g><g data-from="3" data-to="3"><rect x="24" y="108" width="400" height="60" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="224.0" y="133.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">原句（切成句子後）</text><text x="224.0" y="150.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">「它首次出現時，系統會自動降載。」</text><path d="M424 138 L468 138" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="468" y="108" width="424" height="60" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="680.0" y="133.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">命題（補回主詞）</text><text x="680.0" y="150.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">「PT-203 首次出現時，系統會自動降載。」</text><rect x="24" y="200" width="868" height="64" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="458.0" y="227.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">技師查「PT-203 首次出現會怎樣」</text><text x="458.0" y="244.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">原句裡沒有 PT-203，關鍵字比對與嵌入都少了最重要的線索；命題有。</text><text x="24" y="306" font-size="12" font-weight="700" style="fill:var(--vec)">只做「切成句子」會遇到代名詞問題；命題化多做了一步指代還原。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="4" data-to="4"><rect x="24" y="112" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="124.0" y="144.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">① 手冊段落</text><rect x="262" y="112" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="362.0" y="144.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">② 模型命題化</text><rect x="500" y="112" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="600.0" y="144.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">③ 嵌入並建索引</text><path d="M224 140 L262 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M462 140 L500 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="214" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="124.0" y="246.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">④ 技師提問</text><rect x="262" y="214" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="362.0" y="246.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">⑤ 比對命題</text><rect x="500" y="214" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="600.0" y="246.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">⑥ 回傳前 k 條</text><rect x="738" y="214" width="154" height="56" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="815.0" y="246.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">⑦ 模型生成</text><path d="M224 242 L262 242" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M462 242 L500 242" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M700 242 L738 242" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="310" font-size="12" font-weight="700" style="fill:var(--accent)">上排在建索引時做一次；下排在每次查詢時執行。命題可連回出處段落，需要時可改回傳父段落（第 008 堂）。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="5" data-to="5"><rect x="24" y="112" width="430" height="70" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="239.0" y="142.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">Dense X Retrieval</text><text x="239.0" y="159.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">What Retrieval Granularity Should We Use?</text><rect x="482" y="112" width="410" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="687.0" y="142.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">比較檢索單元</text><text x="687.0" y="159.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">文件、段落、句子與命題</text><text x="24" y="226" font-size="12" font-weight="700" style="fill:var(--doc)">作者：Tong Chen、Hongwei Wang、Sihao Chen、Wenhao Yu、Kaixin Ma、Xinran Zhao、Hongming Zhang、Dong Yu。</text><text x="24" y="254" font-size="12" font-weight="700" style="fill:var(--doc)">結論（摘要）：以命題為索引單元，檢索表現優於段落；在固定的提示長度預算下，問答也有改善。</text><text x="24" y="282" font-size="12" font-weight="700" style="fill:var(--doc)">本堂不引用具體數字；效果會隨資料與檢索器而異，請用自己的評估集量測。</text><text x="24" y="392" font-size="11.5" class="t-muted">arXiv 2312.06648。</text></g><g data-from="6" data-to="6"><rect x="24" y="108" width="430" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="239.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">命題化拆錯</text><text x="239.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">抽出錯誤或遺漏的事實</text><text x="239.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">門檻值、條件被改寫</text><rect x="482" y="108" width="410" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="687.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">索引變大</text><text x="687.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">同一段變成多條命題</text><text x="687.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">嵌入與儲存成本上升</text><rect x="24" y="206" width="430" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="239.0" y="228.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">脈絡流失</text><text x="239.0" y="245.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">「為什麼要先檢查風扇」</text><text x="239.0" y="262.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">的前因後果被切掉</text><rect x="482" y="206" width="410" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="687.0" y="228.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">建索引要呼叫模型</text><text x="687.0" y="245.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">段落多、手冊常改版時</text><text x="687.0" y="262.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">要排程重跑</text><text x="24" y="316" font-size="12" font-weight="700" style="fill:var(--warn)">緩解：命題旁保留出處段落編號；檢索到命題後，視需要補回父段落。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="7"><rect x="24" y="112" width="430" height="92" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="239.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">整段檢索</text><text x="239.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">5 句進入上下文</text><text x="239.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">只有 1 句是需要的</text><rect x="462" y="112" width="430" height="92" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="677.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">命題檢索</text><text x="677.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">只帶入最相關的幾條</text><text x="677.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">每條都自成一句</text><text x="24" y="250" font-size="12" font-weight="700" style="fill:var(--good)">用在事實密集、一段混多個要點的文件，檢索單元縮小，上下文更省、更準。</text><text x="24" y="278" font-size="12" font-weight="700" style="fill:var(--good)">但要把命題化的品質與成本，一起放進評估。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>檢索單元可以調整</b>文件、段落、句子之外，還可以用「命題」。Dense X Retrieval 這篇論文系統性比較了不同檢索粒度對檢索與問答的影響。</div>
+    <div class="card"><b>命題要自成一句</b>每條只講一個獨立事實，並把代名詞、省略的主詞補回來。只切成句子，「它」仍然不知道指誰。</div>
+    <div class="card"><b>建索引時做，查詢時不加成本</b>命題化是離線步驟，要呼叫模型；查詢流程與一般向量檢索相同。手冊改版時要重跑受影響的段落。</div>
+    <div class="card"><b>拆細也有代價</b>命題可能抽錯、遺漏條件，並切掉前因後果。保留出處段落編號，需要時補回父段落（第 008 堂）。</div>
+  </div>
+
+  <h2>🧪 互動範例：段落、句子、命題三種粒度</h2>
+  <div class="prose"><p>知識庫是 4 個虛構的《OW-8 運維手冊》段落（共 18 句）。三種做法檢索同一批內容：<b>A 段落</b>、<b>B 原句</b>（只切句，保留「它」）、<b>C 命題</b>（句子已補回主詞，是預先寫好的，真實系統由模型生成）。檢索是瀏覽器內真的在算（BM25，中文用二字詞），各取前 3 名。請看需要的證據排第幾、帶進上下文的字數有多少。</p></div>
+  <div class="card demo" id="demo">
+    <div class="chips" id="presets"></div>
+    <div class="muted" id="qin" style="font-size:13px"></div>
+    <div><b style="font-size:13px">A. 段落粒度</b></div>
+    <div class="hits" id="h0"></div>
+    <div class="muted" id="s0" style="font-size:13px"></div>
+    <div><b style="font-size:13px">B. 原句粒度（只切句）</b></div>
+    <div class="hits" id="h1"></div>
+    <div class="muted" id="s1" style="font-size:13px"></div>
+    <div><b style="font-size:13px">C. 命題粒度（補回主詞）</b></div>
+    <div class="hits" id="h2"></div>
+    <div class="muted" id="s2" style="font-size:13px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>下面是最小實作：用 <code>claude-sonnet-5</code> 把段落改寫成命題（離線，建索引時做一次），再以命題為單元做 BM25 檢索，並保留出處段落編號。範例以空白斷詞，中文實務上請換成適合的斷詞器。</p></div>
+<pre class="code"><code><span class="k">import</span> json
+<span class="k">import</span> anthropic
+<span class="k">from</span> rank_bm25 <span class="k">import</span> BM25Okapi
+
+client = anthropic.<span class="f">Anthropic</span>()
+
+PASSAGES = [
+    <span class="s">"PT-203 表示旋角馬達過溫。它首次出現時，系統會自動降載。此時應先檢查冷卻風扇與散熱片。"</span>,
+    <span class="s">"GB-117 為高速軸軸承溫度過高。它出現時須先確認油位與油溫。若振動同時上升，應停機檢查。"</span>,
+]
+
+<span class="k">def</span> <span class="f">propositionize</span>(passage):
+    prompt = (<span class="s">"請把下列段落拆成命題，每條命題：只含一個獨立事實、不可再拆、"</span>
+              <span class="s">"並把代名詞與省略的主詞補回，使其單獨閱讀也看得懂。"</span>
+              <span class="s">"只輸出 JSON 字串陣列。\n\n段落："</span> + passage)
+    msg = client.messages.<span class="f">create</span>(model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">800</span>,
+                                 messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> json.<span class="f">loads</span>(msg.content[<span class="s">0</span>].text)
+
+<span class="c"># 建索引（離線）：每條命題記下出處段落編號</span>
+props = []
+<span class="k">for</span> pid, p <span class="k">in</span> <span class="f">enumerate</span>(PASSAGES):
+    <span class="k">for</span> t <span class="k">in</span> <span class="f">propositionize</span>(p):
+        props.<span class="f">append</span>({<span class="s">"text"</span>: t, <span class="s">"passage"</span>: pid})
+bm25 = <span class="f">BM25Okapi</span>([x[<span class="s">"text"</span>].<span class="f">split</span>() <span class="k">for</span> x <span class="k">in</span> props])
+
+<span class="c"># 查詢（線上）：與一般檢索相同，只是單元變成命題</span>
+q = <span class="s">"PT-203 首次出現會怎樣"</span>
+scores = bm25.<span class="f">get_scores</span>(q.<span class="f">split</span>())
+best = <span class="f">sorted</span>(<span class="f">range</span>(<span class="f">len</span>(props)), key=<span class="k">lambda</span> i: -scores[i])[:<span class="s">3</span>]
+<span class="k">for</span> i <span class="k">in</span> best:
+    <span class="f">print</span>(props[i][<span class="s">"text"</span>], <span class="s">"← 出處段落"</span>, props[i][<span class="s">"passage"</span>])</code></pre>
+  <div class="prose"><p>實務上，命題化的結果要抽樣檢查（有沒有抽錯或漏掉條件），並用評估集（第 021 堂）比較「段落」與「命題」兩種索引的召回與答案品質。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>固定切塊（第 002 堂）</th><th>父子文件（第 008 堂）</th><th>情境化檢索（第 009 堂）</th><th>Doc2Query（第 035 堂）</th><th>命題檢索</th></tr>
+    <tr><th>改動的地方</th><td>怎麼切段</td><td>小塊檢索、大塊回傳</td><td>替片段補文件脈絡</td><td>替段落加預測問題</td><td>把段落改寫成原子事實</td></tr>
+    <tr><th>檢索單元</th><td>固定長度片段</td><td>子塊</td><td>片段＋脈絡</td><td>段落＋問題</td><td>單一命題</td></tr>
+    <tr><th>主要解決</th><td>塊太大或太小</td><td>精準與完整難兼顧</td><td>片段失去脈絡</td><td>問法與寫法落差</td><td>一段混多個要點</td></tr>
+    <tr><th>額外成本</th><td>幾乎沒有</td><td>多存一份</td><td>每段一次模型呼叫</td><td>每段一次生成</td><td>每段一次改寫，索引變大</td></tr>
+    <tr><th>主要風險</th><td>切斷語意</td><td>回傳過長</td><td>脈絡寫錯</td><td>預測問題偏題</td><td>抽錯事實、切掉前因後果</td></tr>
+  </table>
+
+  <h2>⚠️ 命題檢索常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>命題抽錯</b>：模型可能改寫掉門檻值、條件或單位。對安全相關的內容要抽樣審核，數值不要靠改寫。</li>
+      <li><b>只切句、沒補主詞</b>：「它」「該告警」留在句子裡，檢索就少了關鍵字。命題化必須包含指代還原。</li>
+      <li><b>切掉前因後果</b>：「先檢查風扇」的原因在前一句。可保留出處段落，檢索後視需要補回父段落。</li>
+      <li><b>表格與步驟清單</b>：順序與欄位關係拆開就失真。這類內容改用版面感知的切法（第 020 堂），不必硬拆成命題。</li>
+      <li><b>索引成本</b>：命題數遠多於段落數，嵌入、儲存與更新都增加。手冊常改版時要有重跑機制。</li>
+      <li><b>不是一定更好</b>：效果隨資料與檢索器而異。上線前用自己的評估集比較，不要照搬論文結論。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容、告警代碼與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的命題是預先寫好的，不是真實的模型輸出。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Chen 等人，<a href="https://arxiv.org/abs/2312.06648">Dense X Retrieval: What Retrieval Granularity Should We Use?</a>（arXiv 2312.06648）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="2">
+    <p><b>下列哪一個最符合「命題」的要求？</b></p>
+    <button class="opt">A. 「它首次出現時，系統會自動降載。」</button>
+    <button class="opt">B. 「旋角系統負責調整葉片角度，PT-203 表示過溫，PT-205 表示煞車異常。」</button>
+    <button class="opt">C. 「PT-203 首次出現時，系統會自動降載。」</button>
+    <div class="why">命題要只含一個獨立事實，並自成一句；A 的「它」要靠上下文，B 一句塞了多個事實。</div>
+  </div>
+  <div class="quiz card" data-answer="0">
+    <p><b>命題化主要在哪個階段執行？</b></p>
+    <button class="opt">A. 建索引時，離線做一次</button>
+    <button class="opt">B. 每次查詢時即時做</button>
+    <button class="opt">C. 模型生成答案之後</button>
+    <div class="why">命題化是離線的索引步驟；查詢流程與一般向量檢索相同，但手冊改版時要重跑。</div>
+  </div>
+
+  <nav class="pager" data-slug="proposition-retrieval"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'整段塞進去', text:'技師問「<b>PT-203 出現時先檢查什麼</b>」。段落級檢索把含 5 句的整段帶進上下文，需要的只有<b>其中 1 句</b>，其餘是雜訊。' },
+  { title:'想法：拆成命題', text:'建索引時請模型把段落改寫成<b>一條一條事實</b>，每條只講一件事，單獨讀也看得懂。檢索單元從段落縮小到<b>命題</b>。' },
+  { title:'三個條件', text:'命題要<b>獨立</b>（一個事實）、<b>不可再拆</b>、<b>自成一句</b>（補回代名詞與主詞）。最後一點又叫去脈絡化。' },
+  { title:'還原指代', text:'原句「<b>它</b>首次出現時…」缺少 PT-203 這條關鍵線索；命題寫成「<b>PT-203</b> 首次出現時…」，關鍵字與嵌入都能對上。' },
+  { title:'流程', text:'<b>手冊段落 → 模型命題化 → 嵌入建索引</b>（離線）；查詢時<b>比對命題 → 取前 k 條 → 生成</b>。命題連回出處段落，必要時可補回。' },
+  { title:'出處', text:'<b>Dense X Retrieval</b>（Chen 等人，2023）比較文件、段落、句子與命題等檢索單元，提出以命題為索引單元。具體效益請用自己的資料量測。' },
+  { title:'代價與風險', text:'命題可能<b>抽錯或漏條件</b>，索引變大、建索引要呼叫模型，也可能切掉前因後果。保留出處編號，安全相關內容抽樣審核。' },
+  { title:'結果', text:'檢索單元縮小後，<b>上下文更短、證據更精準</b>。適合一段混多個要點的文件；表格與步驟清單則不宜硬拆。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  /* 每個事實：p 段落編號、s 原句、t 命題（補回主詞） */
+  const F = [
+    {p:0,s:"旋角系統負責調整葉片角度，進行功率控制與順槳。",t:"旋角系統負責調整葉片角度，進行功率控制與順槳。"},
+    {p:0,s:"PT-203 表示旋角馬達過溫，繞組溫度超過門檻時發出。",t:"PT-203 表示旋角馬達過溫，繞組溫度超過門檻時發出。"},
+    {p:0,s:"它首次出現時，系統會自動降載。",t:"PT-203 旋角馬達過溫告警首次出現時，系統會自動降載。"},
+    {p:0,s:"此時應先檢查冷卻風扇與散熱片。",t:"PT-203 旋角馬達過溫時，應先檢查冷卻風扇與散熱片。"},
+    {p:0,s:"PT-205 則是煞車異常，須量測煞車線圈電阻。",t:"PT-205 旋角馬達煞車異常時，須量測煞車線圈電阻。"},
+    {p:1,s:"偏航系統讓機艙對準風向。",t:"偏航系統讓機艙對準風向。"},
+    {p:1,s:"YW-042 表示偏航誤差過大，應先校正風向計。",t:"YW-042 表示偏航誤差過大，應先校正風向計。"},
+    {p:1,s:"若它連續出現，要檢查偏航減速機。",t:"YW-042 偏航誤差過大連續出現時，要檢查偏航減速機。"},
+    {p:1,s:"該系統的煞車片磨耗超過限值須更換。",t:"偏航系統的煞車片磨耗超過限值須更換。"},
+    {p:2,s:"齒輪箱以油冷降低軸承溫度。",t:"齒輪箱以油冷降低軸承溫度。"},
+    {p:2,s:"GB-117 為高速軸軸承溫度過高。",t:"GB-117 為高速軸軸承溫度過高。"},
+    {p:2,s:"它出現時須先確認油位與油溫。",t:"GB-117 高速軸軸承溫度過高出現時，須先確認油位與油溫。"},
+    {p:2,s:"接著檢視 CMS 振動頻譜。",t:"GB-117 出現後，接著檢視齒輪箱的 CMS 振動頻譜。"},
+    {p:2,s:"若振動同時上升，應停機檢查。",t:"GB-117 高速軸軸承溫度過高且 CMS 振動同時上升時，應停機檢查。"},
+    {p:3,s:"進入輪轂前須先順槳並鎖定葉輪。",t:"進入輪轂前須先順槳並鎖定葉輪。"},
+    {p:3,s:"作業人員要執行上鎖掛牌（LOTO）。",t:"作業人員進入輪轂作業要執行上鎖掛牌（LOTO）。"},
+    {p:3,s:"其目的是確認零能量後才作業。",t:"上鎖掛牌（LOTO）的目的是確認零能量後才作業。"},
+    {p:3,s:"高處作業須使用雙掛鉤。",t:"高處作業須使用雙掛鉤。"}
+  ];
+  const PASS = [0,1,2,3].map(p => F.filter(f => f.p === p).map(f => f.s).join(''));
+  const UNITS = {
+    a: PASS.map((t, i) => ({ text:t, cover:F.map((f, j) => f.p === i ? j : -1).filter(j => j >= 0) })),
+    b: F.map((f, j) => ({ text:f.s, cover:[j] })),
+    c: F.map((f, j) => ({ text:f.t, cover:[j] }))
+  };
+  const IDX = {}; for(const k in UNITS) IDX[k] = rt.buildIndex(UNITS[k].map(u => ({ text:u.text })));
+  const PRESETS = [
+    { name:'PT-203 要降載嗎', q:'PT-203 要降載嗎', rel:[2] },
+    { name:'GB-117 要先確認什麼', q:'GB-117 要先確認什麼', rel:[11] },
+    { name:'YW-042 連續出現要檢查什麼', q:'YW-042 連續出現要檢查什麼', rel:[7] },
+    { name:'LOTO 的目的是什麼', q:'LOTO 的目的是什麼', rel:[16] }
+  ];
+  const st = { p:0 };
+  function run(){
+    const P = PRESETS[st.p], out = {};
+    $('#qin').innerHTML = '問題：<b>' + esc(P.q) + '</b>（需要的證據：「' + esc(F[P.rel[0]].t) + '」）';
+    ['a','b','c'].forEach((k, n) => {
+      const hits = rt.searchBM25(IDX[k], P.q, 3).filter(h => h.score > 0);
+      const rank = hits.findIndex(h => UNITS[k][h.i].cover.includes(P.rel[0]));
+      const chars = hits.reduce((s, h) => s + UNITS[k][h.i].text.length, 0);
+      $('#h' + n).innerHTML = hits.map((h, r) => {
+        const ok = UNITS[k][h.i].cover.includes(P.rel[0]);
+        return '<div class="hit' + (ok ? ' top' : ' low') + '"><div class="meta"><span>第 ' + (r+1) + ' 名｜分數 ' + h.score.toFixed(3) + (ok ? '｜含需要的證據' : '') + '</span></div>' + esc(UNITS[k][h.i].text) + '</div>';
+      }).join('') || '<div class="muted">（沒有任何單元與問句有字面重疊）</div>';
+      $('#s' + n).innerHTML = '需要的證據：<b>' + (rank < 0 ? '沒進前 3 名' : '第 ' + (rank+1) + ' 名') + '</b>｜前 3 名帶進上下文共 <b>' + chars + '</b> 字';
+      out[k] = { rank, chars };
+    });
+    window.__demo.last = out;
+  }
+  $('#presets').innerHTML = PRESETS.map((p, i) => '<button type="button" data-i="' + i + '" class="' + (i === 0 ? 'on' : '') + '">' + esc(p.name) + '</button>').join('');
+  $('#presets').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    st.p = +b.dataset.i; $('#presets').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); run(); };
+  window.__demo = { st, run, F, PRESETS };
+  run();
+})();
+</script>
+</body>
+</html>

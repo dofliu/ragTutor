@@ -629,6 +629,20 @@
         "測驗關卡"
       ],
       "date": "2026-11-04"
+    },
+    {
+      "no": 37,
+      "slug": "proposition-retrieval",
+      "file": "lessons/037-proposition-retrieval.html",
+      "title": "命題檢索：把段落拆成一條一條獨立的事實",
+      "en": "Proposition Retrieval (Dense X)",
+      "level": 2,
+      "summary": "手冊段落常混了多個要點，段落級檢索會整段帶進上下文。命題檢索在建索引時把段落改寫成自成一句的原子事實。本堂用互動範例比較段落、原句與命題三種粒度，並示範還原指代的重要。",
+      "tags": [
+        "進階",
+        "索引"
+      ],
+      "date": "2026-11-05"
     }
   ]
 }

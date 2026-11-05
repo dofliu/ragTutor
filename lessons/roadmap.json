@@ -36,6 +36,7 @@
     { "slug": "mmr-diversity", "title": "MMR 多樣性重排：前 k 名不要全是同一件事", "en": "Maximal Marginal Relevance (MMR)", "level": 2, "status": "done", "file": "lessons/033-mmr-diversity.html", "scenario": "技師問 PT-203 旋角馬達過溫，前幾名都是手冊、通報、工單的清潔散熱；用 MMR 讓名額涵蓋負載、感測器與安全步驟" },
     { "slug": "ircot-multihop", "title": "IRCoT 多跳檢索：邊推理邊檢索，一步一步找齊證據", "en": "IRCoT: Interleaving Retrieval with Chain-of-Thought", "level": 3, "status": "done", "file": "lessons/034-ircot-multihop.html", "scenario": "技師問「WO-2026-0455 換下的零件，現在還剩幾個？」要先從工單讀到料號，再查庫存表；比較一次檢索與兩輪交錯檢索，並示範第 1 句推理出錯的傳遞" },
     { "slug": "doc2query", "title": "Doc2Query 文件擴展：建索引時先替每段預測「別人會怎麼問」", "en": "Doc2Query: Document Expansion by Query Prediction", "level": 2, "status": "done", "file": "lessons/035-doc2query.html", "scenario": "技師口語問「葉片轉不動」，手冊寫的是煞車線圈與釋放間隙；建索引時先為每段預測查詢，並用相關性分數過濾幻覺查詢（PT-205 段被預測成 PT-203 過溫）" },
-    { "slug": "step-back", "title": "Step-Back 後退一步提問：先問上位問題，再找證據", "en": "Step-Back Prompting for Retrieval", "level": 2, "status": "done", "file": "lessons/036-step-back.html", "scenario": "技師問「WTG-17 在 38°C 下 PT-203 連續復歸 3 次可以繼續運轉嗎」，具體細節拉去撈日誌；先後退成「旋角馬達過溫的一般原則」，與原問題兩路合併" }
+    { "slug": "step-back", "title": "Step-Back 後退一步提問：先問上位問題，再找證據", "en": "Step-Back Prompting for Retrieval", "level": 2, "status": "done", "file": "lessons/036-step-back.html", "scenario": "技師問「WTG-17 在 38°C 下 PT-203 連續復歸 3 次可以繼續運轉嗎」，具體細節拉去撈日誌；先後退成「旋角馬達過溫的一般原則」，與原問題兩路合併" },
+    { "slug": "proposition-retrieval", "title": "命題檢索：把段落拆成一條一條獨立的事實", "en": "Proposition Retrieval (Dense X)", "level": 2, "status": "done", "file": "lessons/037-proposition-retrieval.html", "scenario": "手冊「旋角系統」段落混了五句，技師問 PT-203 先檢查什麼；改寫成補回主詞的命題，比較段落、原句、命題三種粒度" }
 ]
 }
