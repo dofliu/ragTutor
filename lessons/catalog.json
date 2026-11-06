@@ -643,6 +643,20 @@
         "索引"
       ],
       "date": "2026-11-05"
+    },
+    {
+      "no": 38,
+      "slug": "flare",
+      "file": "lessons/038-flare.html",
+      "title": "FLARE 主動式檢索：沒把握的時候才去查",
+      "en": "FLARE: Forward-Looking Active Retrieval",
+      "level": 3,
+      "summary": "長答案後段的細節常常開頭沒查到，只能猜。FLARE 先暫寫下一句，只要有詞的機率低於門檻，才用該句（遮掉低信心詞）檢索並重寫。本堂用互動範例拖動門檻，比較不檢索、每句檢索與 FLARE。",
+      "tags": [
+        "高階",
+        "主動檢索"
+      ],
+      "date": "2026-11-06"
     }
   ]
 }

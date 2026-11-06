@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FLARE 主動式檢索：沒把握的時候才去查｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識 FLARE：生成長答案時先暫寫下一句，若有詞的機率低於門檻，就用該句（遮掉低信心詞）去檢索再重寫。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 038 堂</span><span class="tag lv3">高階</span><span class="tag">約 15 分鐘</span></p>
+  <h1>FLARE 主動式檢索：沒把握的時候才去查</h1>
+
+  <p class="lead">請模型寫一份 PT-203 的處置報告，開頭用題目檢索一次，寫到後面的細節（門檻、動作、次數）開頭根本沒查到，只能猜。每一句都檢索又太貴。<b>FLARE（Forward-Looking Active REtrieval）</b>的做法是：先暫寫下一句，看每個詞的生成機率；<b>只要有詞低於門檻，才用這句去檢索並重寫</b>。模型沒把握時才查。</p>
+
+  <h2>🎬 動畫：先暫寫，沒把握再檢索</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="FLARE 動畫：一次性檢索會猜錯；邊寫邊查；暫寫下一句；門檻；組查詢；流程；出處與限制；結果"><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="0" data-to="0">① 沒有 FLARE：只在開頭檢索一次，後面細節靠猜</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="1" data-to="1">② 想法：邊寫邊判斷，需要時才去查</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="2" data-to="2">③ 前瞻：先暫寫下一句，看每個詞的信心</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="3" data-to="3">④ 門檻：有詞低於 θ 才觸發檢索</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="4" data-to="4">⑤ 組查詢：用暫寫句，把低信心詞遮掉</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="5" data-to="5">⑥ 流程：暫寫 → 判斷 → 檢索 → 重寫</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="6" data-to="6">⑦ 出處與限制：要拿得到詞機率</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 結果：只在沒把握處查，錯誤被修正</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-from="0" data-to="0"><rect x="24" y="108" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="124.0" y="131.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">① 技師：寫 PT-203</text><text x="124.0" y="148.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">處置報告</text><path d="M224 136 L262 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="262" y="108" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="362.0" y="131.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">② 開頭檢索一次</text><text x="362.0" y="148.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">只取前幾段</text><path d="M462 136 L500 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="500" y="108" width="392" height="56" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="696.0" y="140.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">③ 模型一路寫完整份報告</text><rect x="24" y="196" width="868" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="458.0" y="217.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">第 1 句：PT-203 表示旋角馬達過溫。（有手冊依據）</text><rect x="24" y="238" width="868" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="458.0" y="259.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">第 2 句：繞組溫度超過 70°C 時發出。（開頭沒查到，猜的）</text><rect x="24" y="280" width="868" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="458.0" y="301.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">第 5 句：連續復歸 5 次須通報。（猜的）</text><text x="24" y="344" font-size="12" font-weight="700" style="fill:var(--bad)">一次性檢索：長答案寫到後面，用到的細節開頭根本不知道，只能猜。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構；數值為示意。</text></g><g data-from="1" data-to="1"><rect x="24" y="108" width="260" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="154.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">一次性檢索</text><text x="154.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">先查再寫</text><text x="154.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">後面的需求看不到</text><rect x="316" y="108" width="260" height="70" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="446.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">主動式檢索</text><text x="446.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">寫到哪、查到哪</text><text x="446.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">需要時才檢索</text><rect x="608" y="108" width="284" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="750.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">FLARE</text><text x="750.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">Forward-Looking</text><text x="750.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">Active REtrieval</text><text x="24" y="226" font-size="12" font-weight="700" style="fill:var(--query)">論文的觀察：長文生成時，要用到的資訊會隨著內容展開才浮現，</text><text x="24" y="254" font-size="12" font-weight="700" style="fill:var(--query)">只靠使用者輸入在開頭檢索一次，常常不夠。</text><text x="24" y="290" font-size="12" font-weight="700" style="fill:var(--accent)">FLARE 的做法：看模型「接下來要寫的內容」有沒有把握，沒把握才檢索。</text><text x="24" y="392" font-size="11.5" class="t-muted">FLARE 出自 Jiang 等人（2023）。</text></g><g data-from="2" data-to="2"><rect x="24" y="108" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="124.0" y="131.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">已寫好的內容</text><text x="124.0" y="148.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">第 1 句…</text><path d="M224 136 L262 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="262" y="108" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="362.0" y="131.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">暫寫下一句</text><text x="362.0" y="148.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">（先不採用）</text><path d="M462 136 L500 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="500" y="100" width="392" height="72" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="512" y="126" font-size="11.5" font-weight="700" style="fill:var(--vec)">此告警在繞組溫度超過 <tspan style="fill:var(--bad)">70°C</tspan> 時發出。</text><text x="750" y="126" font-size="11.5" font-weight="700" style="fill:var(--good)">各詞機率 0.9 以上</text><text x="750" y="152" font-size="11.5" font-weight="700" style="fill:var(--bad)">「70°C」只有 0.28</text><text x="24" y="222" font-size="12" font-weight="700" style="fill:var(--llm)">前瞻（look-ahead）：先讓模型暫時寫出下一句，並讀出每個詞的生成機率。</text><text x="24" y="250" font-size="12" font-weight="700" style="fill:var(--llm)">機率低，代表模型自己沒把握；這句裡的事實很可能是猜的。</text><text x="24" y="392" font-size="11.5" class="t-muted">機率數字為虛構示意。</text></g><g data-from="3" data-to="3"><rect x="24" y="108" width="420" height="64" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="234.0" y="127.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">每個詞機率都 ≥ θ</text><text x="234.0" y="144.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">直接採用暫寫句</text><text x="234.0" y="161.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">不檢索，省一次呼叫</text><rect x="472" y="108" width="420" height="64" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="682.0" y="127.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">有任何詞機率 &lt; θ</text><text x="682.0" y="144.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">丟掉暫寫句</text><text x="682.0" y="161.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">改成先檢索再重寫</text><rect x="24" y="204" width="868" height="48" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="40" y="233" font-size="12" font-weight="700" style="fill:var(--vec)">θ = 0.4：</text><text x="120" y="233" font-size="12" font-weight="700" style="fill:var(--vec)">第 2 句 0.28 → 檢索；第 4 句 0.62 → 直接採用。</text><text x="24" y="290" font-size="12" font-weight="700" style="fill:var(--vec)">θ 調高：檢索變多、較保守；θ 調低：省呼叫，但猜錯的句子可能漏網。</text><text x="24" y="392" font-size="11.5" class="t-muted">θ 是要用資料調的超參數，數字為虛構示意。</text></g><g data-from="4" data-to="4"><rect x="24" y="108" width="868" height="40" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="458.0" y="132.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">暫寫句：此告警在繞組溫度超過 70°C 時發出。</text><path d="M458 148 L458 176" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="176" width="868" height="40" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="458.0" y="200.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">遮蔽低信心詞：此告警在繞組溫度超過 ＿＿ 時發出。</text><path d="M458 216 L458 244" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="244" width="868" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="458.0" y="268.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">檢索到：PT-203 在旋角馬達繞組溫度超過 95°C 時發出。</text><text x="24" y="318" font-size="12" font-weight="700" style="fill:var(--accent)">暫寫句當查詢，比只用一開始的使用者問題更貼近「這一句」要寫的內容；</text><text x="24" y="344" font-size="12" font-weight="700" style="fill:var(--accent)">把低信心詞遮掉，避免錯誤的詞（70°C）把檢索帶偏。論文另有「生成明確問句」的作法。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="5" data-to="5"><rect x="24" y="112" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="124.0" y="144.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">① 暫寫下一句</text><rect x="262" y="112" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="362.0" y="144.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">② 有詞機率 &lt; θ ？</text><rect x="500" y="112" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="600.0" y="144.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">③ 是：遮詞檢索</text><rect x="738" y="112" width="154" height="56" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="815.0" y="144.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">④ 用文件重寫</text><path d="M224 140 L262 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M462 140 L500 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M700 140 L738 140" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="262" y="214" width="200" height="56" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="362.0" y="246.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">否：直接採用</text><path d="M362 168 L362 214" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M815 168 L815 296 L124 296 L124 168" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="330" font-size="12" font-weight="700" style="fill:var(--accent)">採用的句子接到答案後面，回到 ①，繼續暫寫再下一句，直到寫完。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="6" data-to="6"><rect x="24" y="108" width="430" height="70" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="239.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">Active Retrieval Augmented Generation</text><text x="239.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">Jiang 等人，EMNLP 2023</text><text x="239.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">arXiv 2305.06983</text><rect x="482" y="108" width="410" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="687.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">需要詞機率</text><text x="687.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">許多模型 API 不提供</text><text x="687.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">要自己的模型或改用替代訊號</text><rect x="24" y="206" width="430" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="239.0" y="228.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">延遲與成本</text><text x="239.0" y="245.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">邊寫邊查，要暫寫再重寫</text><text x="239.0" y="262.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">比一次檢索慢</text><rect x="482" y="206" width="410" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="687.0" y="228.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">機率不等於正確</text><text x="687.0" y="245.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">模型可能「很有把握地寫錯」</text><text x="687.0" y="262.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">低機率也可能只是措辭多樣</text><text x="24" y="316" font-size="12" font-weight="700" style="fill:var(--warn)">本堂不引用論文的實驗數字；是否有效，請用自己的評估集（第 021 堂）驗證。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="7"><rect x="24" y="112" width="430" height="92" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="239.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">一次性檢索</text><text x="239.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">猜錯的細節留在答案裡</text><text x="239.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">（70°C、停機、5 次）</text><rect x="462" y="112" width="430" height="92" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="677.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">FLARE</text><text x="677.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">只在沒把握的句子檢索</text><text x="677.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">三處猜測被文件修正</text><text x="24" y="250" font-size="12" font-weight="700" style="fill:var(--good)">每句都檢索太貴；只查一次又不夠。FLARE 用模型自己的信心決定何時查。</text><text x="24" y="278" font-size="12" font-weight="700" style="fill:var(--good)">前提是拿得到可靠的信心訊號，並用評估集調 θ。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>長文生成需要「邊寫邊查」</b>要用到的資訊會隨內容展開才浮現。只在開頭檢索一次，後面的細節常常沒有依據。</div>
+    <div class="card"><b>用信心決定何時檢索</b>先暫寫下一句；任何詞的機率低於門檻 θ，就檢索並重寫，否則直接採用。省下不必要的檢索。</div>
+    <div class="card"><b>查詢來自暫寫句</b>用暫寫句當查詢，並把低信心詞遮掉，避免錯誤的詞把檢索帶偏。論文另有先生成明確問句的作法。</div>
+    <div class="card"><b>需要可靠的詞機率</b>許多模型 API 不提供，信心也不等於正確。θ 要用評估集調，並留意延遲與成本。</div>
+  </div>
+
+  <h2>🧪 互動範例：不檢索、每句都檢索、FLARE</h2>
+  <div class="prose"><p>下面是一份虛構的 PT-203 處置報告，共 6 句。每句的暫寫版本與各詞機率是<b>預先寫好的示意</b>（真實系統來自模型的詞機率）。檢索是瀏覽器內真的在算（BM25，中文用二字詞），知識庫是 6 條虛構的《OW-8 運維手冊》句子。拖動門檻 θ，看 FLARE 在哪幾句觸發檢索、花了幾次檢索、還剩幾句錯誤。</p></div>
+  <div class="card demo" id="demo">
+    <label style="font-size:13px">門檻 θ：<b id="thv"></b>
+      <input type="range" id="th" min="0.1" max="0.9" step="0.05" value="0.4" style="width:100%"></label>
+    <div id="rows" style="display:grid;gap:8px"></div>
+    <div class="hits" id="sum"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>下面是 FLARE 迴圈的最小實作。<code>draft_with_probs</code> 代表「能回傳每個詞機率的模型」（例如自架的開源模型），這是 FLARE 的前提；檢索到文件後，用 <code>claude-sonnet-5</code> 重寫該句。範例以空白斷詞，中文實務上請換成適合的斷詞器。</p></div>
+<pre class="code"><code><span class="k">import</span> anthropic
+<span class="k">from</span> rank_bm25 <span class="k">import</span> BM25Okapi
+
+client = anthropic.<span class="f">Anthropic</span>()
+DOCS = [
+    <span class="s">"PT-203 在旋角馬達繞組溫度超過 95°C 時發出。"</span>,
+    <span class="s">"PT-203 首次出現時，系統自動降載。"</span>,
+    <span class="s">"PT-203 連續復歸 3 次須通報遠端監控中心並派員。"</span>,
+]
+bm25 = <span class="f">BM25Okapi</span>([d.<span class="f">split</span>() <span class="k">for</span> d <span class="k">in</span> DOCS])
+THETA = <span class="s">0.4</span>
+
+<span class="k">def</span> <span class="f">draft_with_probs</span>(question, written):
+    <span class="s">"""回傳 [(詞, 機率), ...]：用能取得詞機率的模型暫寫下一句（此處省略實作）。"""</span>
+    <span class="k">raise</span> <span class="f">NotImplementedError</span>
+
+<span class="k">def</span> <span class="f">retrieve</span>(query, k=<span class="s">2</span>):
+    scores = bm25.<span class="f">get_scores</span>(query.<span class="f">split</span>())
+    best = <span class="f">sorted</span>(<span class="f">range</span>(<span class="f">len</span>(DOCS)), key=<span class="k">lambda</span> i: -scores[i])[:k]
+    <span class="k">return</span> [DOCS[i] <span class="k">for</span> i <span class="k">in</span> best]
+
+<span class="k">def</span> <span class="f">flare</span>(question, max_sentences=<span class="s">6</span>):
+    written = <span class="s">""</span>
+    <span class="k">for</span> _ <span class="k">in</span> <span class="f">range</span>(max_sentences):
+        tokens = <span class="f">draft_with_probs</span>(question, written)       <span class="c"># 前瞻：暫寫下一句</span>
+        sentence = <span class="s">""</span>.<span class="f">join</span>(w <span class="k">for</span> w, _ <span class="k">in</span> tokens)
+        <span class="k">if</span> <span class="f">min</span>(p <span class="k">for</span> _, p <span class="k">in</span> tokens) &lt; THETA:           <span class="c"># 有詞沒把握</span>
+            masked = <span class="s">" "</span>.<span class="f">join</span>(w <span class="k">for</span> w, p <span class="k">in</span> tokens <span class="k">if</span> p &gt;= THETA)  <span class="c"># 遮掉低信心詞</span>
+            docs = <span class="f">retrieve</span>(masked)
+            msg = client.messages.<span class="f">create</span>(model=<span class="s">"claude-sonnet-5"</span>, max_tokens=<span class="s">300</span>,
+                messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+                    <span class="s">"依據下列資料，重寫這一句，不得加入資料沒有的事實。\n資料：\n"</span> + <span class="s">"\n"</span>.<span class="f">join</span>(docs)
+                    + <span class="s">"\n暫寫句："</span> + sentence}])
+            sentence = msg.content[<span class="s">0</span>].text
+        written += sentence                                     <span class="c"># 採用並接到答案後面</span>
+    <span class="k">return</span> written</code></pre>
+  <div class="prose"><p>實務上要記錄每次是否觸發檢索，並用評估集（第 021 堂）比較「一次性檢索」與 FLARE 的答案正確性、檢索次數與延遲，再決定 θ。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>基礎 RAG（第 001 堂）</th><th>Self-RAG（第 013 堂）</th><th>自適應 RAG（第 015 堂）</th><th>IRCoT（第 034 堂）</th><th>FLARE</th></tr>
+    <tr><th>何時檢索</th><td>每題一次</td><td>模型輸出反思標記決定</td><td>依問題複雜度分流</td><td>每個推理步驟後</td><td>暫寫句有詞機率低於 θ</td></tr>
+    <tr><th>判斷依據</th><td>無</td><td>訓練過的標記</td><td>分類器或規則</td><td>推理進度</td><td>詞的生成機率</td></tr>
+    <tr><th>主要解決</th><td>補外部知識</td><td>要不要查、查得好不好</td><td>簡單題別浪費</td><td>多跳問題</td><td>長文後段的細節無依據</td></tr>
+    <tr><th>額外成本</th><td>一次檢索</td><td>需特別訓練模型</td><td>多一層判斷</td><td>多輪檢索與生成</td><td>暫寫再重寫，需詞機率</td></tr>
+    <tr><th>主要風險</th><td>後段細節靠猜</td><td>標記判斷錯誤</td><td>分流錯誤</td><td>推理走偏</td><td>信心不準、θ 難調</td></tr>
+  </table>
+
+  <h2>⚠️ FLARE 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>拿不到詞機率</b>：許多託管模型 API 不回傳詞機率，FLARE 就無從判斷。此時改用其他訊號（如自我反思，第 013 堂），或在自架模型上實作。</li>
+      <li><b>信心不等於正確</b>：模型可能很有把握地寫錯，這種句子不會觸發檢索；低機率也可能只是措辭多樣。</li>
+      <li><b>θ 要調</b>：太高等於每句都檢索，太低會漏掉猜錯的句子。用評估集掃過一輪，不要照搬任何數字。</li>
+      <li><b>延遲與成本</b>：觸發時要暫寫、檢索、再重寫，比一次性檢索慢；短答案或單一事實問題不值得。</li>
+      <li><b>查詢品質</b>：暫寫句若整句都是猜的，遮掉後可能剩不下幾個詞，查詢過短，檢索會失準。</li>
+      <li><b>安全相關數值</b>：門檻值、次數這類內容，建議重寫後仍要求引用出處（第 025 堂），並由人覆核。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容、告警代碼與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的詞機率是預先寫好的示意，不是真實的模型輸出。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Jiang 等人，<a href="https://arxiv.org/abs/2305.06983">Active Retrieval Augmented Generation</a>（arXiv 2305.06983，EMNLP 2023）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>FLARE 在什麼情況下才會觸發檢索？</b></p>
+    <button class="opt">A. 每寫完一句就檢索</button>
+    <button class="opt">B. 暫寫的下一句裡，有詞的生成機率低於門檻</button>
+    <button class="opt">C. 使用者明確要求時</button>
+    <div class="why">FLARE 用模型對暫寫句的信心決定：有詞低於門檻才檢索並重寫，否則直接採用。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>下列哪一種情況最不適合用 FLARE？</b></p>
+    <button class="opt">A. 自架模型，可以取得詞機率</button>
+    <button class="opt">B. 要寫一份細節很多的長篇處置報告</button>
+    <button class="opt">C. 模型 API 不提供詞機率，又只問單一事實</button>
+    <div class="why">FLARE 依賴詞機率，且為長文生成設計；拿不到機率、問題又很短時，用一般檢索即可。</div>
+  </div>
+
+  <nav class="pager" data-slug="flare"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'只查一次，後面靠猜', text:'技師要一份 <b>PT-203 處置報告</b>。只在開頭檢索一次，寫到<b>門檻、動作、次數</b>這些細節時，手上沒有依據，模型只好猜，答案裡留下錯誤。' },
+  { title:'想法：邊寫邊查', text:'長文生成要用的資訊會<b>隨內容展開</b>才浮現。FLARE 讓模型<b>寫到哪、查到哪</b>，而且只在需要時才檢索，不是每句都查。' },
+  { title:'前瞻：暫寫下一句', text:'先讓模型<b>暫時寫出下一句</b>，並讀出每個詞的生成機率。若某個詞（例如「70°C」）機率很低，代表模型自己沒把握。' },
+  { title:'門檻 θ', text:'暫寫句<b>所有詞都 ≥ θ</b> 就直接採用；<b>任何詞 &lt; θ</b> 就丟掉暫寫句，改成先檢索再重寫。θ 越高檢索越多、越保守。' },
+  { title:'組查詢', text:'用<b>暫寫句</b>當查詢，並把<b>低信心詞遮掉</b>，避免錯誤的詞把檢索帶偏；論文另有先生成明確問句的作法。檢索到手冊的 95°C。' },
+  { title:'流程', text:'<b>暫寫 → 判斷 → （檢索 → 重寫）→ 採用</b>，接在答案後面，再回頭暫寫下一句，直到寫完。有把握的句子不花檢索。' },
+  { title:'出處與限制', text:'出自 <b>Jiang 等人，2023</b>（EMNLP）。需要<b>詞機率</b>，許多 API 不提供；信心不等於正確，θ 要調，邊寫邊查也比較慢。請用評估集驗證。' },
+  { title:'結果', text:'只在<b>沒把握的句子</b>檢索，猜錯的細節被手冊修正，沒把握以外的句子照常採用。前提是信心訊號可靠，並調好 θ。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  const DOCS = [
+    'PT-203 在旋角馬達繞組溫度超過 95°C 時發出。',
+    'PT-203 首次出現時，系統自動降載。',
+    'PT-203 連續復歸 3 次須通報遠端監控中心並派員檢查。',
+    'PT-205 旋角馬達煞車異常時，須量測煞車線圈電阻。',
+    'GB-117 高速軸軸承溫度過高時，須先確認油位與油溫。',
+    '進入輪轂前須先順槳並鎖定葉輪，並執行上鎖掛牌（LOTO）。'
+  ];
+  const IDX = rt.buildIndex(DOCS.map(t => ({ text:t })));
+  /* 每句：seg 是 [詞, 機率]；bad 是猜錯的詞；gold 是正確依據；fix 是重寫後的句子 */
+  const S = [
+    { seg:[['PT-203',.97],[' 表示旋角馬達過溫',.93],['。',.99]], gold:-1 },
+    { seg:[['此告警在繞組溫度超過',.91],[' 70°C',.28],[' 時發出',.9],['。',.99]], bad:true, gold:0, fix:'此告警在繞組溫度超過 95°C 時發出。' },
+    { seg:[['首次出現時，系統會自動',.9],[' 停機',.35],['。',.99]], bad:true, gold:1, fix:'首次出現時，系統會自動降載。' },
+    { seg:[['接著應先檢查',.94],[' 冷卻風扇',.62],['與散熱片',.9],['。',.99]], gold:-1 },
+    { seg:[['若連續復歸',.92],[' 5 次',.18],['，須通報遠端監控中心並派員',.88],['。',.99]], bad:true, gold:2, fix:'若連續復歸 3 次，須通報遠端監控中心並派員。' },
+    { seg:[['進入輪轂前須執行上鎖掛牌（LOTO）',.89],['。',.99]], gold:-1 }
+  ];
+  const full = s => s.seg.map(x => x[0]).join('');
+  const minp = s => Math.min(...s.seg.map(x => x[1]));
+  function fetchTop(q, gold){
+    const h = rt.searchBM25(IDX, q, 1).filter(x => x.score > 0)[0];
+    return { text: h ? DOCS[h.i] : null, ok: !!h && h.i === gold };
+  }
+  function run(){
+    const th = +$('#th').value; $('#thv').textContent = th.toFixed(2);
+    let flare = 0, flareLeft = 0, allLeft = 0, noneLeft = 0, wasted = 0;
+    $('#rows').innerHTML = S.map((s, i) => {
+      const trig = minp(s) < th;
+      const segs = s.seg.map(([w, p]) => '<span style="' + (p < th ? 'color:var(--bad);font-weight:700;text-decoration:underline' : '') + '" title="機率 ' + p + '">' + esc(w) + '</span>').join('');
+      let info = '', status;
+      if(s.bad) noneLeft++;
+      if(s.gold >= 0){
+        /* 每句都檢索：用整句暫寫句當查詢 */
+        if(s.bad && !fetchTop(full(s), s.gold).ok) allLeft++;
+      }
+      if(trig){
+        flare++;
+        const q = s.seg.filter(x => x[1] >= th).map(x => x[0]).join('').replace(/[，。]/g, ' ');
+        const r = s.gold >= 0 ? fetchTop(q, s.gold) : { text:null, ok:false };
+        if(!s.bad) wasted++;
+        if(s.bad && !r.ok) flareLeft++;
+        info = '<div class="muted" style="font-size:12.5px">觸發檢索（最低機率 ' + minp(s).toFixed(2) + ' &lt; θ）｜查詢：' + esc(q.trim()) + '<br>第 1 名：' + (r.text ? esc(r.text) : '（無）') + (s.bad ? (r.ok ? '｜<b style="color:var(--good)">已修正</b>' : '｜<b style="color:var(--bad)">沒查到，錯誤仍在</b>') : '｜這句原本就對，這次檢索是多花的') + '</div>';
+        status = s.bad && r.ok ? 'top' : (s.bad ? 'low' : '');
+      } else {
+        if(s.bad) flareLeft++;
+        info = '<div class="muted" style="font-size:12.5px">不檢索（最低機率 ' + minp(s).toFixed(2) + ' ≥ θ）' + (s.bad ? '｜<b style="color:var(--bad)">這句是猜錯的，但模型沒察覺</b>' : '') + '</div>';
+        status = s.bad ? 'low' : 'top';
+      }
+      return '<div class="hit ' + status + '"><div class="meta"><span>第 ' + (i+1) + ' 句</span></div>' + segs + info + '</div>';
+    }).join('');
+    const row = (name, calls, left, note) => '<div class="hit"><div class="meta"><span>' + name + '</span></div>檢索 <b>' + calls + '</b> 次｜剩下 <b>' + left + '</b> 句錯誤' + (note ? '｜' + note : '') + '</div>';
+    $('#sum').innerHTML =
+      row('A. 完全不檢索', 0, noneLeft, '三句猜錯的細節原封不動') +
+      row('B. 每句都檢索（用暫寫整句當查詢）', S.length, allLeft, '成本最高，錯詞仍可能干擾查詢') +
+      row('C. FLARE（θ = ' + th.toFixed(2) + '）', flare, flareLeft, wasted ? ('其中 ' + wasted + ' 次是多花的') : '');
+    window.__demo.last = { flare, flareLeft, allLeft, noneLeft, wasted };
+  }
+  window.__demo = { run, S };
+  $('#th').addEventListener('input', run);
+  run();
+})();
+</script>
+</body>
+</html>
