@@ -53,6 +53,7 @@
 | 🎯 關卡 9 | [測驗關卡 9：MMR、IRCoT、Doc2Query 與 Step-Back（第 033–036 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-9-mmr-ircot-doc2query-stepback.html) |
 | 037 | [命題檢索：把段落拆成一條一條獨立的事實](https://dofliu.github.io/ragTutor/lessons/037-proposition-retrieval.html) |
 | 038 | [FLARE 主動式檢索：沒把握的時候才去查](https://dofliu.github.io/ragTutor/lessons/038-flare.html) |
+| 039 | [問題分解：一句話問了好幾件事，就先拆開再查](https://dofliu.github.io/ragTutor/lessons/039-query-decomposition.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 

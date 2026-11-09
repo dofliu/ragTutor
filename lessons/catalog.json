@@ -657,6 +657,20 @@
         "主動檢索"
       ],
       "date": "2026-11-06"
+    },
+    {
+      "no": 39,
+      "slug": "query-decomposition",
+      "file": "lessons/039-query-decomposition.html",
+      "title": "問題分解：一句話問了好幾件事，就先拆開再查",
+      "en": "Query Decomposition (Self-Ask / Sub-questions)",
+      "level": 2,
+      "summary": "一句話含多個獨立需求時，整句檢索會讓需求互搶名額。問題分解先拆成一次只問一件事的子問題，各自檢索再合併。本堂用互動範例比較整句與分解，並示範漏拆與丟失關鍵詞的後果。",
+      "tags": [
+        "進階",
+        "查詢轉換"
+      ],
+      "date": "2026-11-09"
     }
   ]
 }

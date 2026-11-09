@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>問題分解：一句話問了好幾件事，就先拆開再查｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識問題分解（Query Decomposition）：把複合問題拆成獨立的子問題，各自檢索後合併，讓每個資訊需求都有自己的名額。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 039 堂</span><span class="tag lv2">進階</span><span class="tag">約 14 分鐘</span></p>
+  <h1>問題分解：一句話問了好幾件事，就先拆開再查</h1>
+
+  <p class="lead">技師一句話問：「PT-203 與 PT-205 同時出現，各先檢查什麼？煞車線圈備品還有嗎？」整句變成<b>一個查詢</b>，名額被某個需求佔滿，另一個需求常被擠掉。<b>問題分解（Query Decomposition）</b>先請模型把複合問題拆成<b>一次只問一件事的子問題</b>，各自檢索，再合併證據回答。</p>
+
+  <h2>🎬 動畫：先拆開，再各查各的</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="問題分解動畫：複合問題擠在一次檢索；拆成獨立需求；分解；各自檢索；合併；相依子問題要依序；出處與限制；結果"><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="0" data-to="0">① 沒有分解：一句話裡三個需求，擠在同一次檢索</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="1" data-to="1">② 想法：複合問題 = 好幾個獨立的資訊需求</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="2" data-to="2">③ 分解：請模型把問題拆成子問題</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="3" data-to="3">④ 各查各的：每個子問題獨立檢索</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="4" data-to="4">⑤ 合併：去重後交給模型回答</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="5" data-to="5">⑥ 子問題有相依時：要依序，前一題的答案帶入下一題</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="6" data-to="6">⑦ 出處與限制：拆錯、漏拆都會傳到最後</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 結果：每個需求都有自己的名額</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-from="0" data-to="0"><rect x="24" y="108" width="868" height="40" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="458.0" y="132.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">技師：WTG-17 出現 PT-203 過溫，同時 PT-205 煞車異常：各先檢查什麼？煞車線圈備品還有嗎？</text><path d="M458 148 L458 170" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="170" width="868" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="458.0" y="191.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">一次檢索，上下文只放得下 top-2</text><rect x="24" y="218" width="868" height="32" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="458.0" y="238.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">① PT-205 旋角馬達煞車異常時，先量測煞車線圈電阻與釋放間隙。</text><rect x="24" y="258" width="868" height="32" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="458.0" y="278.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">② PT-203 旋角馬達過溫時，先檢查冷卻風扇與散熱片是否積塵。</text><rect x="24" y="298" width="868" height="32" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="458" y="318" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">（落選）煞車線圈備品料號 PT-BRK-01，基地二號庫目前庫存 2 組。</text><text x="24" y="358" font-size="12" font-weight="700" style="fill:var(--bad)">一句話混了三個需求，名額被前兩個佔滿，「備品還有嗎」那一條被擠掉。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構；排名為示意。</text></g><g data-from="1" data-to="1"><rect x="24" y="108" width="260" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="154.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">一次檢索</text><text x="154.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">整句變成一個向量</text><text x="154.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">只能偏向其中一個需求</text><rect x="316" y="108" width="260" height="70" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="446.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">複合問題</text><text x="446.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">包含多個獨立需求</text><text x="446.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">（PT-203、PT-205、備品）</text><rect x="608" y="108" width="284" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="750.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">問題分解</text><text x="750.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">Query Decomposition</text><text x="750.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">拆成子問題，各查各的</text><text x="24" y="226" font-size="12" font-weight="700" style="fill:var(--query)">有些問題一句話就問了好幾件事：「A 怎麼處置、B 怎麼處置、備品夠不夠」。</text><text x="24" y="254" font-size="12" font-weight="700" style="fill:var(--query)">這些需求彼此獨立，合在一起檢索，每個需求只分到一小部分的相似度。</text><text x="24" y="290" font-size="12" font-weight="700" style="fill:var(--accent)">做法：先拆成幾個一次只問一件事的子問題，每個子問題單獨檢索。</text><text x="24" y="392" font-size="11.5" class="t-muted">概念見 Self-Ask（Press 等人，2022）與 Least-to-Most（Zhou 等人，2022）。</text></g><g data-from="2" data-to="2"><rect x="24" y="104" width="868" height="36" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="458.0" y="126.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">WTG-17 的 PT-203 過溫、PT-205 煞車異常：各先檢查什麼？煞車線圈備品還有嗎？</text><rect x="380" y="158" width="160" height="34" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="460.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM：分解</text><path d="M458 140 L458 158" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="236" width="280" height="76" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="164.0" y="261.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">子問題 1</text><text x="164.0" y="278.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">PT-203 旋角馬達過溫，</text><text x="164.0" y="295.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">先檢查什麼？</text><rect x="316" y="236" width="280" height="76" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="456.0" y="261.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">子問題 2</text><text x="456.0" y="278.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">PT-205 旋角馬達煞車異常，</text><text x="456.0" y="295.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">先檢查什麼？</text><rect x="608" y="236" width="284" height="76" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="750.0" y="261.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">子問題 3</text><text x="750.0" y="278.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">煞車線圈備品料號</text><text x="750.0" y="295.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">與庫存還有嗎？</text><path d="M420 192 L164 236" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M458 192 L458 236" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M496 192 L750 236" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="352" font-size="12" font-weight="700" style="fill:var(--llm)">要求每個子問題「一次只問一件事」，且保留告警代碼等關鍵識別詞。</text><text x="24" y="392" font-size="11.5" class="t-muted">子問題為虛構示範；實際由模型產生，需要檢查。</text></g><g data-from="3" data-to="3"><rect x="24" y="106" width="280" height="40" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="164.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">子問題 1：PT-203 先檢查什麼？</text><path d="M164.0 146 L164.0 184" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="184" width="280" height="64" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="164.0" y="203.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">各自檢索 top-1</text><text x="164.0" y="220.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">PT-203 過溫時，</text><text x="164.0" y="237.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">先檢查風扇與散熱片</text><rect x="316" y="106" width="280" height="40" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="456.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">子問題 2：PT-205 先檢查什麼？</text><path d="M456.0 146 L456.0 184" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="316" y="184" width="280" height="64" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="456.0" y="203.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">各自檢索 top-1</text><text x="456.0" y="220.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">PT-205 煞車異常時，</text><text x="456.0" y="237.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">先量測線圈電阻</text><rect x="608" y="106" width="284" height="40" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="750.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">子問題 3：備品還有嗎？</text><path d="M750.0 146 L750.0 184" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="608" y="184" width="284" height="64" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="750.0" y="203.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">各自檢索 top-1</text><text x="750.0" y="220.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">PT-BRK-01，</text><text x="750.0" y="237.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">基地二號庫存 2 組</text><text x="24" y="296" font-size="12" font-weight="700" style="fill:var(--vec)">三路互不干擾，可以同時送出；每個需求都拿到自己的第 1 名。</text><text x="24" y="324" font-size="12" font-weight="700" style="fill:var(--vec)">每路可以各自選擇檢索方式與篩選條件（例如備品查料號表，而不是手冊）。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="4" data-to="4"><rect x="24" y="106" width="280" height="44" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="164.0" y="132.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">PT-203：風扇與散熱片</text><rect x="316" y="106" width="280" height="44" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="456.0" y="132.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">PT-205：線圈電阻</text><rect x="608" y="106" width="284" height="44" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="750.0" y="132.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">PT-BRK-01：庫存 2 組</text><path d="M164 150 L400 196" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M456 150 L456 196" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M750 150 L520 196" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="330" y="196" width="260" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="460.0" y="220.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">合併並去重：3 段</text><path d="M460 236 L460 262" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="262" width="868" height="40" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="458.0" y="286.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM 依據 3 段內容回答：兩個告警各自的第一步，加上備品庫存</text><text x="24" y="338" font-size="12" font-weight="700" style="fill:var(--doc)">若不同子問題撈到同一段，要去重，避免上下文被重複內容佔掉。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="5" data-to="5"><rect x="24" y="108" width="400" height="56" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="224.0" y="131.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">子問題 1</text><text x="224.0" y="148.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">WO-2026-0455 換下的是哪個料號？</text><rect x="492" y="108" width="400" height="56" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="692.0" y="140.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">答：PT-MTR-02</text><path d="M424 136 L492 136" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="200" width="400" height="56" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="224.0" y="223.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">子問題 2（相依）</text><text x="224.0" y="240.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">PT-MTR-02 目前還有幾台庫存？</text><rect x="492" y="200" width="400" height="56" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="692.0" y="232.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">答：基地一號庫 1 台</text><path d="M424 228 L492 228" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><path d="M692 164 L692 182 L224 182 L224 200" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="296" font-size="12" font-weight="700" style="fill:var(--warn)">子問題 2 要用到子問題 1 的答案，無法同時送出，必須依序執行。</text><text x="24" y="324" font-size="12" font-weight="700" style="fill:var(--warn)">這類相依的多跳問題，和第 034 堂的 IRCoT 邊推理邊檢索是同一類。</text><text x="24" y="392" font-size="11.5" class="t-muted">工單、料號為虛構。</text></g><g data-from="6" data-to="6"><rect x="24" y="108" width="430" height="70" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="239.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">Measuring and Narrowing the</text><text x="239.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">Compositionality Gap in Language Models</text><text x="239.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">Press 等人，2022，arXiv 2210.03350</text><rect x="482" y="108" width="410" height="70" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="687.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">Least-to-Most Prompting</text><text x="687.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">Zhou 等人，2022</text><text x="687.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">arXiv 2205.10625</text><rect x="24" y="206" width="430" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="239.0" y="228.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">拆錯或漏拆</text><text x="239.0" y="245.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">少了備品那題，備品就沒人查</text><text x="239.0" y="262.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">子問題寫成「它」會失去關鍵詞</text><rect x="482" y="206" width="410" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="687.0" y="228.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">延遲與成本</text><text x="687.0" y="245.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">多一次分解呼叫，多路檢索</text><text x="687.0" y="262.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">簡單問題不值得</text><text x="24" y="316" font-size="12" font-weight="700" style="fill:var(--warn)">本堂不引用論文的實驗數字；是否有效，請用自己的評估集（第 021 堂）驗證。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g><g data-from="7"><rect x="24" y="112" width="430" height="92" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="239.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">一次檢索</text><text x="239.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">名額被某個需求佔滿</text><text x="239.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">備品那條被擠掉</text><rect x="462" y="112" width="430" height="92" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="677.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">問題分解</text><text x="677.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">三個需求各拿到自己的證據</text><text x="677.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">備品、兩個告警都有依據</text><text x="24" y="250" font-size="12" font-weight="700" style="fill:var(--good)">一句話裡有多個獨立需求時，先拆開再各查各的，比整句硬檢索更完整。</text><text x="24" y="278" font-size="12" font-weight="700" style="fill:var(--good)">前提是拆得對：用評估集檢查分解品質，簡單的單一問題就不要拆。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>複合問題 = 多個需求</b>一句話含好幾件事時，整句只會變成一個向量，每個需求只分到一部分相似度，名額容易被其中一個佔滿。</div>
+    <div class="card"><b>拆成獨立子問題</b>請模型拆成一次只問一件事的子問題，並保留告警代碼等關鍵識別詞；每個子問題單獨檢索，可同時送出。</div>
+    <div class="card"><b>合併前要去重</b>各路結果合併成上下文，重複的段落只留一份，再讓模型依據證據回答。每路也可用不同的資料源。</div>
+    <div class="card"><b>相依就要依序</b>後一題用到前一題答案時，不能同時送出，要一題一題來（見第 034 堂 IRCoT）。拆錯、漏拆會一路傳到答案。</div>
+  </div>
+
+  <h2>🧪 互動範例：整句檢索 vs 問題分解</h2>
+  <div class="prose"><p>知識庫是 8 條虛構的《OW-8 運維手冊》與備品表句子，檢索是瀏覽器內真的在算（BM25，中文用二字詞）。問題要三件事：<b>PT-203 先檢查什麼、PT-205 先檢查什麼、煞車線圈備品</b>。三個子問題是<b>預先寫好的示意</b>（真實系統由模型產生）；你可以切換「分解的好壞」，並調整名額，比較兩種做法找到幾項必要事實、帶進幾段無關內容。</p></div>
+  <div class="card demo" id="demo">
+    <div class="muted" style="font-size:13px">問題：<b id="qtext"></b></div>
+    <label style="font-size:13px;display:block;margin-top:10px">分解方式：
+      <select id="mode" style="width:100%;margin-top:4px;padding:6px;font:inherit"></select></label>
+    <label style="font-size:13px;display:block;margin-top:10px">A. 整句檢索：取前 k = <b id="k1v"></b> 段
+      <input type="range" id="k1" min="1" max="5" step="1" value="2" style="width:100%"></label>
+    <label style="font-size:13px;display:block;margin-top:10px">B. 分解檢索：每個子問題取前 k = <b id="k2v"></b> 段
+      <input type="range" id="k2" min="1" max="3" step="1" value="1" style="width:100%"></label>
+    <div id="out" style="display:grid;gap:8px;margin-top:12px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>下面是最小實作：用 <code>claude-sonnet-5</code> 把問題拆成 JSON 陣列的子問題，子問題各自用 BM25 檢索（可平行），合併去重後再回答。範例以空白斷詞，中文實務上請換成適合的斷詞器；分解結果要檢查，且要限制子問題數量。</p></div>
+<pre class="code"><code><span class="k">import</span> json
+<span class="k">import</span> anthropic
+<span class="k">from</span> concurrent.futures <span class="k">import</span> ThreadPoolExecutor
+<span class="k">from</span> rank_bm25 <span class="k">import</span> BM25Okapi
+
+client = anthropic.<span class="f">Anthropic</span>()
+MODEL = <span class="s">"claude-sonnet-5"</span>
+DOCS = [
+    <span class="s">"PT-203 旋角馬達過溫時，先檢查冷卻風扇與散熱片是否積塵。"</span>,
+    <span class="s">"PT-205 旋角馬達煞車異常時，先量測煞車線圈電阻與釋放間隙。"</span>,
+    <span class="s">"煞車線圈備品料號 PT-BRK-01，基地二號庫目前庫存 2 組。"</span>,
+]
+bm25 = <span class="f">BM25Okapi</span>([d.<span class="f">split</span>() <span class="k">for</span> d <span class="k">in</span> DOCS])
+
+<span class="k">def</span> <span class="f">ask</span>(prompt, max_tokens=<span class="s">500</span>):
+    msg = client.messages.<span class="f">create</span>(model=MODEL, max_tokens=max_tokens,
+                                 messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text
+
+<span class="k">def</span> <span class="f">decompose</span>(question, max_sub=<span class="s">4</span>):
+    out = <span class="f">ask</span>(<span class="s">"把問題拆成互相獨立的子問題，每題只問一件事，保留告警代碼等關鍵詞，"</span>
+              <span class="s">f"最多 {max_sub} 題，只輸出 JSON 字串陣列。\n問題："</span> + question)
+    subs = json.<span class="f">loads</span>(out)
+    <span class="k">return</span> subs[:max_sub] <span class="k">or</span> [question]      <span class="c"># 拆不出來就退回整句</span>
+
+<span class="k">def</span> <span class="f">retrieve</span>(q, k=<span class="s">1</span>):
+    scores = bm25.<span class="f">get_scores</span>(q.<span class="f">split</span>())
+    best = <span class="f">sorted</span>(<span class="f">range</span>(<span class="f">len</span>(DOCS)), key=<span class="k">lambda</span> i: -scores[i])[:k]
+    <span class="k">return</span> best
+
+<span class="k">def</span> <span class="f">answer</span>(question):
+    subs = <span class="f">decompose</span>(question)
+    <span class="k">with</span> <span class="f">ThreadPoolExecutor</span>() <span class="k">as</span> pool:                <span class="c"># 子問題互相獨立，可同時檢索</span>
+        results = <span class="f">list</span>(pool.<span class="f">map</span>(retrieve, subs))
+    ids = <span class="f">sorted</span>({i <span class="k">for</span> r <span class="k">in</span> results <span class="k">for</span> i <span class="k">in</span> r})     <span class="c"># 合併並去重</span>
+    context = <span class="s">"\n"</span>.<span class="f">join</span>(DOCS[i] <span class="k">for</span> i <span class="k">in</span> ids)
+    <span class="k">return</span> <span class="f">ask</span>(<span class="s">"只依據下列資料回答，資料沒有就說沒有。\n資料：\n"</span> + context + <span class="s">"\n問題："</span> + question)
+
+<span class="f">print</span>(<span class="f">answer</span>(<span class="s">"WTG-17 的 PT-203 過溫、PT-205 煞車異常：各先檢查什麼？煞車線圈備品還有嗎？"</span>))</code></pre>
+  <div class="prose"><p>實務上要把「子問題清單」與每路命中的段落一起記錄下來，才看得出是分解拆得不好，還是檢索沒撈到；並用評估集（第 021 堂）比較整句檢索與分解後的召回與延遲。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>多重查詢（第 006 堂）</th><th>Step-Back（第 036 堂）</th><th>IRCoT（第 034 堂）</th><th>問題分解</th></tr>
+    <tr><th>要解決</th><td>同一個需求有多種說法</td><td>問題太具體，缺上位原則</td><td>後一步要用前一步的結果</td><td>一句話含多個獨立需求</td></tr>
+    <tr><th>做法</th><td>改寫成多個同義查詢</td><td>多問一個較抽象的問題</td><td>推理與檢索交錯</td><td>拆成子問題各自檢索</td></tr>
+    <tr><th>檢索次數</th><td>多路，同一需求</td><td>兩路</td><td>多輪，依序</td><td>每個子問題一路，可平行</td></tr>
+    <tr><th>額外成本</th><td>一次改寫</td><td>一次後退</td><td>多輪生成</td><td>一次分解，多路檢索</td></tr>
+    <tr><th>主要風險</th><td>改寫偏離原意</td><td>上位問題太籠統</td><td>推理走偏</td><td>拆錯、漏拆、丟失關鍵詞</td></tr>
+  </table>
+
+  <h2>⚠️ 問題分解常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>漏拆</b>：模型少拆一個需求，那個需求就沒人查。可請模型在最後檢查「原問題的每個部分是否都有對應子問題」。</li>
+      <li><b>丟失關鍵詞</b>：子問題寫成「它先檢查什麼？」，告警代碼不見了，檢索會撈到錯的段落（互動範例可以試）。要求每個子問題都自成一句、保留識別詞。</li>
+      <li><b>過度拆解</b>：單一事實問題拆成好幾題，只是徒增延遲與雜訊。設定子問題數量上限，簡單問題直接檢索。</li>
+      <li><b>相依的子問題</b>：後一題要用前一題答案時，同時送出會失敗，要依序執行，或改用 IRCoT（第 034 堂）。</li>
+      <li><b>合併時重複</b>：不同子問題撈到同一段，要去重；也要控制合併後的總長度（第 031 堂的排序問題仍然存在）。</li>
+      <li><b>安全相關步驟</b>：拆解與回答仍要附出處（第 025 堂），涉及門檻值與作業安全的結論由人覆核。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容、告警代碼、工單、料號與庫存數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的子問題是預先寫好的示意，不是真實的模型輸出。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Press 等人，<a href="https://arxiv.org/abs/2210.03350">Measuring and Narrowing the Compositionality Gap in Language Models</a>（Self-Ask，arXiv 2210.03350）；Zhou 等人，<a href="https://arxiv.org/abs/2205.10625">Least-to-Most Prompting Enables Complex Reasoning in Large Language Models</a>（arXiv 2205.10625）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>問題分解最適合處理哪一種問題？</b></p>
+    <button class="opt">A. 只問單一事實的短問題</button>
+    <button class="opt">B. 一句話裡含有好幾個彼此獨立的資訊需求</button>
+    <button class="opt">C. 完全沒有關鍵字的模糊問題</button>
+    <div class="why">複合問題整句檢索時需求會互搶名額；拆成子問題各自檢索，每個需求都有自己的證據。</div>
+  </div>
+  <div class="quiz card" data-answer="2">
+    <p><b>子問題 2 要用到子問題 1 的答案才能提問，應該怎麼做？</b></p>
+    <button class="opt">A. 照樣同時送出，最後再合併</button>
+    <button class="opt">B. 把兩題合併回一句再檢索</button>
+    <button class="opt">C. 依序執行，把前一題的答案帶入下一題</button>
+    <div class="why">相依的子問題無法平行；要依序執行，這就是第 034 堂 IRCoT 處理的多跳情境。</div>
+  </div>
+
+  <nav class="pager" data-slug="query-decomposition"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'一句話三個需求', text:'技師一次問了 <b>PT-203</b>、<b>PT-205</b> 與<b>備品</b>三件事。整句檢索、上下文只放得下 2 段時，名額被前兩個需求佔滿，<b>備品那條被擠掉</b>。' },
+  { title:'想法：複合問題', text:'一句話裡常含<b>好幾個彼此獨立的資訊需求</b>。整句只變成一個向量，每個需求都只分到一部分相似度，很難兼顧。' },
+  { title:'分解：拆成子問題', text:'請模型拆成<b>一次只問一件事</b>的子問題，並保留<b>告警代碼</b>等關鍵識別詞。這裡得到 3 個子問題，各自能被手冊或備品表回答。' },
+  { title:'各查各的', text:'每個子問題<b>單獨檢索</b>，彼此不干擾，可以<b>同時送出</b>。每個需求都拿到自己的第 1 名；每路也可以用不同的資料源。' },
+  { title:'合併並回答', text:'把各路結果<b>合併並去重</b>，交給模型依據這 3 段回答：兩個告警各自的第一步，加上備品庫存。' },
+  { title:'相依時要依序', text:'若子問題 2 要<b>用到子問題 1 的答案</b>（如先查工單料號，再查庫存），就不能同時送出，須依序執行，這是第 034 堂 <b>IRCoT</b> 的領域。' },
+  { title:'出處與限制', text:'概念見 <b>Self-Ask</b>（Press 等人，2022）與 <b>Least-to-Most</b>（Zhou 等人，2022）。拆錯、漏拆、丟失關鍵詞都會傳到答案，也多了延遲，請用評估集驗證。' },
+  { title:'結果', text:'複合問題先拆開，<b>每個需求各有名額</b>，備品與兩個告警都有依據。前提是拆得對；單一事實的簡單問題就不必拆。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  const DOCS = [
+    'PT-203 旋角馬達過溫時，先檢查冷卻風扇與散熱片是否積塵。',
+    'PT-203 連續復歸 3 次須通報遠端監控中心並派員檢查。',
+    'PT-203 告警發出時，系統自動降載並記錄旋角馬達繞組溫度。',
+    'PT-205 旋角馬達煞車異常時，先量測煞車線圈電阻與釋放間隙。',
+    '煞車線圈備品料號 PT-BRK-01，基地二號庫目前庫存 2 組。',
+    '旋角馬達備品料號 PT-MTR-02，基地一號庫目前庫存 1 台。',
+    '進入輪轂前須先順槳並鎖定葉輪，並執行上鎖掛牌（LOTO）。',
+    'GB-117 高速軸軸承溫度過高時，須先確認油位與油溫。'
+  ];
+  const IDX = rt.buildIndex(DOCS.map(t => ({ text:t })));
+  const Q = 'WTG-17 的旋角馬達出現 PT-203 過溫告警，同時 PT-205 煞車異常：各先檢查什麼？煞車線圈備品還有嗎？';
+  const NEED = [
+    { name:'PT-203 先檢查什麼', gold:[0] },
+    { name:'PT-205 先檢查什麼', gold:[3] },
+    { name:'煞車線圈備品', gold:[4] }
+  ];
+  const MODES = [
+    { label:'理想：3 個子問題，都保留關鍵詞', subs:['PT-203 旋角馬達過溫，先檢查什麼？','PT-205 旋角馬達煞車異常，先檢查什麼？','煞車線圈備品料號與庫存還有嗎？'] },
+    { label:'漏拆：模型沒拆出備品那一題', subs:['PT-203 旋角馬達過溫，先檢查什麼？','PT-205 旋角馬達煞車異常，先檢查什麼？'] },
+    { label:'丟失關鍵詞：第 2 題寫成「它先檢查什麼？」', subs:['PT-203 旋角馬達過溫，先檢查什麼？','它先檢查什麼？','煞車線圈備品料號與庫存還有嗎？'] }
+  ];
+  $('#qtext').textContent = Q;
+  $('#mode').innerHTML = MODES.map((m,i) => '<option value="' + i + '">' + esc(m.label) + '</option>').join('');
+  const search = (q, k) => rt.searchBM25(IDX, q, k).filter(h => h.score > 0).map(h => h.i);
+  const cover = ids => NEED.filter(n => n.gold.some(g => ids.includes(g)));
+  const isGold = i => NEED.some(n => n.gold.includes(i));
+  function chunkList(ids){
+    return ids.map(i => '<div style="font-size:12.5px;' + (isGold(i) ? '' : 'color:var(--bad)') + '">' + (isGold(i) ? '✔ ' : '✘ 無關：') + esc(DOCS[i]) + '</div>').join('');
+  }
+  function card(name, ids, extra){
+    const got = cover(ids), noise = ids.filter(i => !isGold(i)).length;
+    const miss = NEED.filter(n => !got.includes(n)).map(n => n.name);
+    return '<div class="hit ' + (got.length === NEED.length ? 'top' : 'low') + '"><div class="meta"><span>' + name + '</span></div>' +
+      (extra || '') + chunkList(ids) +
+      '<div class="muted" style="font-size:12.5px;margin-top:6px">進入上下文 <b>' + ids.length + '</b> 段｜找到必要事實 <b>' + got.length + ' / ' + NEED.length + '</b>｜無關段落 <b>' + noise + '</b> 段' +
+      (miss.length ? '｜<b style="color:var(--bad)">漏掉：' + esc(miss.join('、')) + '</b>' : '') + '</div></div>';
+  }
+  function run(){
+    const k1 = +$('#k1').value, k2 = +$('#k2').value, m = MODES[+$('#mode').value];
+    $('#k1v').textContent = k1; $('#k2v').textContent = k2;
+    const a = search(Q, k1);
+    let subHtml = '', all = [];
+    m.subs.forEach((s, i) => {
+      const r = search(s, k2);
+      r.forEach(x => { if(!all.includes(x)) all.push(x); });
+      subHtml += '<div class="muted" style="font-size:12.5px">子問題 ' + (i+1) + '：' + esc(s) + ' → 第 ' + r.map(x => x + 1).join('、') + ' 條</div>';
+    });
+    $('#out').innerHTML = card('A. 整句檢索（一個查詢）', a, '') + card('B. 問題分解（' + m.subs.length + ' 個子問題，合併去重）', all, subHtml);
+    window.__demo.last = { a: cover(a).length, b: cover(all).length, aN: a.length, bN: all.length };
+  }
+  window.__demo = { run };
+  ['#k1','#k2','#mode'].forEach(s => $(s).addEventListener('input', run));
+  run();
+})();
+</script>
+</body>
+</html>
