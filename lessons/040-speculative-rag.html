@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Speculative RAG：小模型平行打草稿，大模型只負責挑｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識 Speculative RAG：把檢索結果分群抽樣成多個子集，小模型平行寫草稿，大模型一次驗證並挑出最好的一份。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 040 堂</span><span class="tag lv3">高階</span><span class="tag">約 15 分鐘</span></p>
+  <h1>Speculative RAG：小模型平行打草稿，大模型只負責挑</h1>
+
+  <p class="lead">檢索回來 10 段，一般 RAG 把它們全部塞給大模型：輸入很長、又慢又貴，無關段落和「中段遺失」也跟著進來。<b>Speculative RAG</b> 先把檢索結果<b>分群</b>，每群抽一段組成多個小子集；<b>小模型（草稿者 drafter）</b>各讀一個子集、平行寫出「答案草稿＋理由」，<b>大模型（驗證者 verifier）</b>只替草稿打分，挑出最好的一份。</p>
+
+  <h2>🎬 動畫：分群抽樣、平行打草稿、一次驗證</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="Speculative RAG 動畫：大模型讀全部段落；草稿與驗證分工；分群；抽樣子集；小模型平行打草稿；大模型驗證；出處與限制；結果">
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="0" data-to="0">① 沒有草稿機制：大模型一次讀完 10 段，又慢又雜</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="1" data-to="1">② 想法：小模型先打草稿，大模型只負責挑</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--vec)" data-from="2" data-to="2">③ 分群：依內容把檢索結果分成 k 群</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--doc)" data-from="3" data-to="3">④ 抽樣：每群抽 1 段，組成 m 個子集</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="4" data-to="4">⑤ 打草稿：小模型平行寫答案與理由</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="5" data-to="5">⑥ 驗證：大模型替每份草稿打分，選最高分</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="6" data-to="6">⑦ 出處與限制：要訓練草稿模型，總算力不一定少</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 結果：輸入變短、觀點多元、大模型只讀草稿</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-from="0" data-to="0"><rect x="24" y="106" width="868" height="36" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="458.0" y="128.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">技師：WTG-23 出現 PT-211 三支葉片角度偏差過大，先檢查什麼？</text><path d="M458 142 L458 160" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="160" width="80" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="64.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">1. 編碼器</text><rect x="111" y="160" width="80" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="151.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">2. 編碼器</text><rect x="198" y="160" width="80" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="238.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">3. 編碼器</text><rect x="285" y="160" width="80" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="325.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">4. 減速機</text><rect x="372" y="160" width="80" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="412.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">5. 減速機</text><rect x="459" y="160" width="80" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="499.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">6. 減速機</text><rect x="546" y="160" width="80" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="586.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">7. PT-230</text><rect x="633" y="160" width="80" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="673.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">8. 電池組</text><rect x="720" y="160" width="80" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="760.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">9. LOTO</text><rect x="807" y="160" width="80" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="847.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">10. 通報</text><path d="M458 194 L458 216" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="216" width="868" height="40" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="458.0" y="240.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">大模型：一次讀完 10 段（長輸入、雜訊、中段容易被忽略）才開始寫答案</text><text x="24" y="296" font-size="12" font-weight="700" style="fill:var(--bad)">輸入越長，大模型越慢越貴；與問題無關的備援電源段落（PT-230）也一起被讀進去。</text><text x="24" y="324" font-size="12" font-weight="700" style="fill:var(--bad)">真正的第一步（比對編碼器讀值）夾在中間，可能被忽略（第 031 堂）。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構；段落為示意。</text></g><g data-from="1" data-to="1"><rect x="24" y="108" width="260" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="154.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">一般 RAG</text><text x="154.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">大模型讀全部段落</text><text x="154.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">自己寫完整答案</text><rect x="316" y="108" width="260" height="70" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="446.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">小模型（草稿者 drafter）</text><text x="446.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">讀少量段落</text><text x="446.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">快速寫多份草稿</text><rect x="608" y="108" width="284" height="70" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="750.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">大模型（驗證者 verifier）</text><text x="750.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">不讀全部段落</text><text x="750.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">只替草稿打分、挑一份</text><text x="24" y="226" font-size="12" font-weight="700" style="fill:var(--query)">靈感來自推測解碼（speculative decoding）：小模型先猜，大模型再檢查。</text><text x="24" y="254" font-size="12" font-weight="700" style="fill:var(--query)">差別是這裡猜的是整份「答案草稿」，而且每份草稿看的是不同的段落子集。</text><text x="24" y="290" font-size="12" font-weight="700" style="fill:var(--accent)">Speculative RAG = 分群抽樣 → 小模型平行打草稿 → 大模型一次驗證。</text><text x="24" y="392" font-size="11.5" class="t-muted">Wang 等人，Speculative RAG，ICLR 2025（arXiv 2407.08223）。</text></g><g data-from="2" data-to="2"><rect x="24" y="104" width="868" height="32" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="458.0" y="124.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">PT-211 三支葉片角度偏差過大，先檢查什麼？ → 檢索 top-10</text><rect x="24" y="160" width="284" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="166.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">群 A：角度編碼器</text><text x="38" y="216" font-size="11.5" font-weight="700" style="fill:var(--vec)">1. 比對三支編碼器讀值</text><text x="38" y="240" font-size="11.5" font-weight="700" style="fill:var(--vec)">2. 編碼器零點校正</text><text x="38" y="264" font-size="11.5" font-weight="700" style="fill:var(--vec)">3. 信號線接頭鬆脫</text><rect x="24" y="196" width="284" height="80" rx="4" style="fill:none;stroke:var(--vec);stroke-dasharray:3 4"/><rect x="316" y="160" width="284" height="30" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="458.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">群 B：旋角減速機</text><text x="330" y="216" font-size="11.5" font-weight="700" style="fill:var(--doc)">4. 減速機背隙</text><text x="330" y="240" font-size="11.5" font-weight="700" style="fill:var(--doc)">5. 齒面磨耗</text><text x="330" y="264" font-size="11.5" font-weight="700" style="fill:var(--doc)">6. 潤滑油不足</text><rect x="316" y="196" width="284" height="80" rx="4" style="fill:none;stroke:var(--doc);stroke-dasharray:3 4"/><rect x="608" y="160" width="284" height="30" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="750.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">群 C：其他</text><text x="622" y="216" font-size="11.5" font-weight="700" style="fill:var(--warn)">7. PT-230 備援電源</text><text x="622" y="240" font-size="11.5" font-weight="700" style="fill:var(--warn)">8. 電池組更換</text><text x="622" y="264" font-size="11.5" font-weight="700" style="fill:var(--warn)">9. LOTO　10. 技術通報</text><rect x="608" y="196" width="284" height="80" rx="4" style="fill:none;stroke:var(--warn);stroke-dasharray:3 4"/><text x="24" y="316" font-size="12" font-weight="700" style="fill:var(--vec)">用嵌入向量把 10 段分成 k 群（論文用 K-Means），同一群的段落講的是類似的觀點。</text><text x="24" y="344" font-size="12" font-weight="700" style="fill:var(--vec)">論文用「以問題為條件」的嵌入模型分群，讓群與群之間的差異跟問題有關。</text><text x="24" y="392" font-size="11.5" class="t-muted">分群結果為示意；互動範例會用 TF-IDF 向量在瀏覽器裡真的跑 K-Means。</text></g><g data-from="3" data-to="3"><rect x="24" y="108" width="284" height="30" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="166.0" y="127.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">子集 1：每群各 1 段</text><rect x="44" y="148" width="244" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="166.0" y="167.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">1. 比對編碼器讀值</text><rect x="44" y="186" width="244" height="30" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="166.0" y="205.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">5. 齒面磨耗</text><rect x="44" y="224" width="244" height="30" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="166.0" y="243.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">10. 技術通報</text><rect x="316" y="108" width="284" height="30" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="458.0" y="127.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">子集 2：每群各 1 段</text><rect x="336" y="148" width="244" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="458.0" y="167.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">2. 零點校正</text><rect x="336" y="186" width="244" height="30" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="458.0" y="205.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">4. 減速機背隙</text><rect x="336" y="224" width="244" height="30" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="458.0" y="243.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">7. PT-230 電源</text><rect x="608" y="108" width="284" height="30" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="750.0" y="127.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">子集 3：每群各 1 段</text><rect x="628" y="148" width="244" height="30" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="750.0" y="167.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--vec)">3. 信號線接頭</text><rect x="628" y="186" width="244" height="30" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="750.0" y="205.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">6. 潤滑油不足</text><rect x="628" y="224" width="244" height="30" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="750.0" y="243.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">9. LOTO</text><text x="24" y="296" font-size="12" font-weight="700" style="fill:var(--doc)">每個子集從每一群各抽 1 段，所以 k 群 → 每個子集 k 段；重複抽樣直到湊滿 m 個不同的子集。</text><text x="24" y="324" font-size="12" font-weight="700" style="fill:var(--doc)">好處：每份草稿看到的觀點都不同，輸入也只有 k 段，比全部 10 段短得多。</text><text x="24" y="392" font-size="11.5" class="t-muted">論文多數資料集預設：top-10 段、m = 5 份草稿、每份 2 段。此圖為 k = 3、m = 3 的示意。</text></g><g data-from="4" data-to="4"><rect x="24" y="106" width="284" height="34" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="166.0" y="127.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">小模型 #1（讀子集 1）</text><path d="M166 140 L166 162" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="162" width="284" height="74" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="166.0" y="186.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">草稿 1：先比對三支</text><text x="166.0" y="203.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">編碼器讀值，找出偏移葉片</text><text x="166.0" y="220.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">理由：依第 1 段</text><rect x="316" y="106" width="284" height="34" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="458.0" y="127.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">小模型 #2（讀子集 2）</text><path d="M458 140 L458 162" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="316" y="162" width="284" height="74" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="458.0" y="186.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">草稿 2：先將編碼器零點</text><text x="458.0" y="203.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">重新歸零，再量減速機背隙</text><text x="458.0" y="220.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">理由：依第 2、4 段</text><rect x="608" y="106" width="284" height="34" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="750.0" y="127.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">小模型 #3（讀子集 3）</text><path d="M750 140 L750 162" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="608" y="162" width="284" height="74" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="750.0" y="186.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">草稿 3：先檢查編碼器</text><text x="750.0" y="203.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">信號線接頭是否鬆脫</text><text x="750.0" y="220.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">理由：依第 3 段</text><text x="24" y="280" font-size="12" font-weight="700" style="fill:var(--llm)">三個小模型同時跑（平行），每份輸出「答案草稿 + 理由」，理由說明依據哪些段落。</text><text x="24" y="308" font-size="12" font-weight="700" style="fill:var(--llm)">論文的草稿模型是經過指令微調的 Mistral-7B，專門學會「讀子集、寫草稿與理由」。</text><text x="24" y="392" font-size="11.5" class="t-muted">草稿內容為虛構示意。</text></g><g data-from="5" data-to="5"><rect x="24" y="106" width="284" height="40" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="166.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">草稿 1：分數 0.62</text><path d="M166 146 L458 186" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="316" y="106" width="284" height="40" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="458.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">草稿 2：分數 0.31</text><path d="M458 146 L458 186" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="608" y="106" width="284" height="40" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="750.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">草稿 3：分數 0.18</text><path d="M750 146 L458 186" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="258" y="186" width="400" height="40" rx="4" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.6"/><text x="458.0" y="210.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">大模型：一次前向計算，替每份草稿打分</text><path d="M458 226 L458 250" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="258" y="250" width="400" height="36" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="458.0" y="272.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">選出最高分 → 草稿 1 成為最終答案</text><text x="24" y="322" font-size="12" font-weight="700" style="fill:var(--accent)">分數 ρ = ρ草稿（小模型自信） × ρ一致（草稿與理由合不合理） × ρ反思（問「理由支持答案嗎？」答是）。</text><text x="24" y="350" font-size="12" font-weight="700" style="fill:var(--accent)">大模型只讀草稿與理由，不必再讀 10 段原文，所以快；分數為示意數字。</text><text x="24" y="392" font-size="11.5" class="t-muted">評分方式依論文描述簡化；分數為虛構示意。</text></g><g data-from="6" data-to="6"><rect x="24" y="108" width="430" height="70" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="239.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">Speculative RAG: Enhancing RAG</text><text x="239.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">through Drafting</text><text x="239.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">Wang 等人，ICLR 2025，arXiv 2407.08223</text><rect x="482" y="108" width="410" height="70" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="687.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">論文報告（PubHealth 資料集）</text><text x="687.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">準確率最多提升 12.97%</text><text x="687.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">延遲最多降低 50.83%（對照一般 RAG）</text><rect x="24" y="206" width="430" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="239.0" y="228.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">要有專門的草稿模型</text><text x="239.0" y="245.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">論文以約 4 萬筆資料微調小模型</text><text x="239.0" y="262.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">換領域要重新準備訓練資料</text><rect x="482" y="206" width="410" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="687.0" y="228.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">總算力不一定少</text><text x="687.0" y="245.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">m 份草稿要多個端點平行跑</text><text x="687.0" y="262.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">驗證者看不到原文，只能信理由</text><text x="24" y="316" font-size="12" font-weight="700" style="fill:var(--warn)">數字是論文在公開問答資料集上的結果；在你的手冊上是否有效，請用評估集（第 021 堂）驗證。</text><text x="24" y="392" font-size="11.5" class="t-muted">數字摘自論文摘要；其餘為示意。</text></g><g data-from="7"><rect x="24" y="112" width="430" height="92" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="239.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">一般 RAG</text><text x="239.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">大模型讀完 10 段才寫</text><text x="239.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">慢、貴，雜訊與中段遺失</text><rect x="462" y="112" width="430" height="92" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="677.0" y="145.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">Speculative RAG</text><text x="677.0" y="162.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">小模型各讀 k 段平行打草稿</text><text x="677.0" y="179.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">大模型只挑分數最高的一份</text><text x="24" y="250" font-size="12" font-weight="700" style="fill:var(--good)">檢索結果多、觀點分散時，先分群抽樣、平行打草稿，再交給大模型驗證，可以兼顧速度與品質。</text><text x="24" y="278" font-size="12" font-weight="700" style="fill:var(--good)">前提是草稿模型夠可靠：用評估集比對準確率與延遲，簡單問題直接一般 RAG 即可。</text><text x="24" y="392" font-size="11.5" class="t-muted">範例為虛構。</text></g>
+</svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>草稿與驗證分工</b>小而專的模型讀少量段落、平行寫多份草稿；大模型不再讀全部原文，只替草稿打分並挑一份。概念類似推測解碼（speculative decoding）。</div>
+    <div class="card"><b>分群再抽樣</b>先依內容把檢索結果分成 k 群，每個子集從每群各抽 1 段。每份草稿看到不同觀點，輸入也只有 k 段，減少長輸入與位置偏差。</div>
+    <div class="card"><b>驗證分數三項相乘</b>論文的分數是草稿者的自信、驗證者眼中草稿與理由的一致性、以及「理由是否支持答案」的反思分數相乘，取最高分的草稿。</div>
+    <div class="card"><b>代價在別處</b>需要專門微調的草稿模型、多個平行端點；驗證者看不到原文，只能相信理由。論文報告的提升是公開資料集上的數字，請在自己的資料上驗證。</div>
+  </div>
+
+  <h2>🧪 互動範例：一般 RAG vs Speculative RAG</h2>
+  <div class="prose"><p>知識庫是 10 段虛構的檢索結果，問題是「<b>PT-211 三支葉片角度偏差過大，先檢查什麼？</b>」。分群（K-Means，TF-IDF 向量）、抽樣與檢索分數都是瀏覽器裡真的在算；<b>草稿者與驗證者是示意</b>：草稿 = 子集中與問題最相關的一句，驗證分數 = 草稿與問題的相似度 × 理由（子集）與問題的相似度。調整群數 k、草稿數 m，或改成「不分群、隨機抽」，觀察草稿涵蓋的觀點與輸入長度的變化。</p></div>
+  <div class="card demo" id="demo">
+    <div class="muted" style="font-size:13px">問題：<b id="qtext"></b></div>
+    <div class="row seg" id="mode" style="margin-top:10px"><button type="button" data-v="cluster" class="on">分群後每群抽 1 段</button><button type="button" data-v="random">不分群，隨機抽 k 段</button></div>
+    <label style="font-size:13px;display:block;margin-top:10px">群數 k（＝每份草稿讀幾段）= <b id="kv"></b>
+      <input type="range" id="k" min="2" max="4" step="1" value="3" style="width:100%"></label>
+    <label style="font-size:13px;display:block;margin-top:10px">草稿數 m = <b id="mv"></b>
+      <input type="range" id="m" min="1" max="6" step="1" value="4" style="width:100%"></label>
+    <div class="row" style="margin-top:10px"><button type="button" class="ghost" id="reseed">🎲 重新抽樣</button><span class="muted" style="font-size:12.5px">抽樣第 <b id="seedv"></b> 次</span></div>
+    <div id="clusters" style="display:grid;gap:6px;margin-top:12px"></div>
+    <div id="out" style="display:grid;gap:8px;margin-top:12px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>下面是最小實作：用 TF-IDF（中文以二字詞）＋ K-Means 分群，每群抽 1 段組成 m 個子集；草稿者用較小的模型平行寫「答案＋理由」，驗證者一次讀所有草稿並打分。論文的驗證者是讀取<b>詞機率</b>算分，Claude API 不提供詞機率，這裡改成請驗證者直接給分，屬於簡化做法。</p></div>
+<pre class="code"><code><span class="k">import</span> json, random
+<span class="k">import</span> anthropic
+<span class="k">from</span> concurrent.futures <span class="k">import</span> ThreadPoolExecutor
+<span class="k">from</span> sklearn.feature_extraction.text <span class="k">import</span> TfidfVectorizer
+<span class="k">from</span> sklearn.cluster <span class="k">import</span> KMeans
+
+client = anthropic.<span class="f">Anthropic</span>()
+DRAFTER = <span class="s">"claude-haiku-5-5"</span>    <span class="c"># 小而快的草稿者；論文用微調過的 7B 模型</span>
+VERIFIER = <span class="s">"claude-sonnet-5"</span>    <span class="c"># 大模型只負責驗證</span>
+DOCS = [  <span class="c"># 檢索回來的 top-n 段（虛構）</span>
+    <span class="s">"PT-211 三支葉片角度偏差過大時，先比對三支葉片的角度編碼器讀值，找出偏移的葉片。"</span>,
+    <span class="s">"角度編碼器零點偏移時，須以校正治具重新歸零，並記錄於工單。"</span>,
+    <span class="s">"若確認為單一葉片實際偏移，須檢查該軸旋角減速機的背隙與齒面。"</span>,
+    <span class="s">"旋角軸承潤滑不足會增加轉動阻力，使該葉片跟不上設定角度。"</span>,
+    <span class="s">"PT-230 旋角備援電源測試失敗時，先檢查電池組電壓。"</span>,
+    <span class="s">"進入輪轂前須先順槳並鎖定葉輪，並執行上鎖掛牌（LOTO）。"</span>,
+]
+
+<span class="k">def</span> <span class="f">ask</span>(model, prompt, max_tokens=<span class="s">400</span>):
+    msg = client.messages.<span class="f">create</span>(model=model, max_tokens=max_tokens,
+                                 messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+    <span class="k">return</span> msg.content[<span class="s">0</span>].text
+
+<span class="k">def</span> <span class="f">make_subsets</span>(docs, k=<span class="s">3</span>, m=<span class="s">4</span>, seed=<span class="s">0</span>):
+    X = <span class="f">TfidfVectorizer</span>(analyzer=<span class="s">"char"</span>, ngram_range=(<span class="s">2</span>, <span class="s">2</span>)).<span class="f">fit_transform</span>(docs)
+    labels = <span class="f">KMeans</span>(n_clusters=k, n_init=<span class="s">10</span>, random_state=seed).<span class="f">fit_predict</span>(X)
+    groups = [[i <span class="k">for</span> i, c <span class="k">in</span> <span class="f">enumerate</span>(labels) <span class="k">if</span> c == g] <span class="k">for</span> g <span class="k">in</span> <span class="f">range</span>(k)]
+    rng, subsets = random.<span class="f">Random</span>(seed), <span class="f">set</span>()
+    <span class="k">for</span> _ <span class="k">in</span> <span class="f">range</span>(<span class="s">100</span>):                          <span class="c"># 每群抽 1 段，湊滿 m 個不同子集</span>
+        subsets.<span class="f">add</span>(<span class="f">tuple</span>(<span class="f">sorted</span>(rng.<span class="f">choice</span>(g) <span class="k">for</span> g <span class="k">in</span> groups)))
+        <span class="k">if</span> <span class="f">len</span>(subsets) == m: <span class="k">break</span>
+    <span class="k">return</span> <span class="f">list</span>(subsets)
+
+<span class="k">def</span> <span class="f">draft</span>(question, subset):
+    ctx = <span class="s">"\n"</span>.<span class="f">join</span>(<span class="s">f"[{i}] {DOCS[i]}"</span> <span class="k">for</span> i <span class="k">in</span> subset)
+    <span class="k">return</span> <span class="f">ask</span>(DRAFTER, <span class="s">"只依據資料，用一句話回答，再用一句話寫理由（註明段落編號）。\n"</span>
+               <span class="s">f"資料：\n{ctx}\n問題：{question}"</span>)
+
+<span class="k">def</span> <span class="f">verify</span>(question, drafts):
+    listing = <span class="s">"\n\n"</span>.<span class="f">join</span>(<span class="s">f"草稿 {j}：\n{d}"</span> <span class="k">for</span> j, d <span class="k">in</span> <span class="f">enumerate</span>(drafts))
+    out = <span class="f">ask</span>(VERIFIER, <span class="s">"替每份草稿打 0–10 分：答案是否回答問題、理由是否支持答案。"</span>
+              <span class="s">"只輸出 JSON 整數陣列。\n"</span> + <span class="s">f"問題：{question}\n{listing}"</span>)
+    scores = json.<span class="f">loads</span>(out)
+    <span class="k">return</span> drafts[<span class="f">max</span>(<span class="f">range</span>(<span class="f">len</span>(drafts)), key=<span class="k">lambda</span> j: scores[j])]
+
+<span class="k">def</span> <span class="f">speculative_rag</span>(question):
+    subsets = <span class="f">make_subsets</span>(DOCS)
+    <span class="k">with</span> <span class="f">ThreadPoolExecutor</span>() <span class="k">as</span> pool:           <span class="c"># 草稿彼此獨立，平行產生</span>
+        drafts = <span class="f">list</span>(pool.<span class="f">map</span>(<span class="k">lambda</span> s: <span class="f">draft</span>(question, s), subsets))
+    <span class="k">return</span> <span class="f">verify</span>(question, drafts)                <span class="c"># 驗證者只讀草稿，不讀原文</span>
+
+<span class="f">print</span>(<span class="f">speculative_rag</span>(<span class="s">"WTG-23 出現 PT-211 三支葉片角度偏差過大，先檢查什麼？"</span>))</code></pre>
+  <div class="prose"><p>實務上要把每個子集、每份草稿與分數都記錄下來，才看得出是分群抽樣沒抽到關鍵段落，還是驗證者挑錯；並用評估集（第 021 堂）同時比較準確率、延遲與總花費，和直接把 top-n 交給大模型的一般 RAG 對照。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>一般 RAG（第 001 堂）</th><th>上下文壓縮（第 012 堂）</th><th>Self-RAG（第 013 堂）</th><th>Speculative RAG</th></tr>
+    <tr><th>要解決</th><td>讓模型有依據</td><td>上下文太長、雜訊多</td><td>何時檢索、內容可不可信</td><td>大模型讀太多段，又慢又雜</td></tr>
+    <tr><th>做法</th><td>top-n 全交給模型</td><td>先刪掉無關句子</td><td>模型輸出反思標記自我評估</td><td>分群抽樣 → 小模型平行草稿 → 大模型驗證</td></tr>
+    <tr><th>大模型讀什麼</th><td>全部段落</td><td>壓縮後的段落</td><td>段落（同一個模型邊寫邊評）</td><td>只讀草稿與理由</td></tr>
+    <tr><th>額外成本</th><td>無</td><td>一次壓縮</td><td>需訓練會輸出反思標記的模型</td><td>需微調草稿模型、多個平行端點</td></tr>
+    <tr><th>主要風險</th><td>長輸入、中段遺失</td><td>刪掉關鍵句</td><td>反思判斷錯誤</td><td>抽樣漏掉關鍵段、驗證者看不到原文</td></tr>
+  </table>
+
+  <h2>⚠️ Speculative RAG 常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>關鍵段落沒被抽到</b>：每群只抽 1 段，若關鍵段落所在的群很大，m 太小時可能沒有任何子集包含它（互動範例把 m 調成 1 可以看到）。要保證 m 夠大，或在抽樣時讓排名較前的段落有較高機率。</li>
+      <li><b>分群沒有意義</b>：群數 k 不合適，或嵌入沒有反映問題相關的差異，子集就只是隨機組合。論文用以問題為條件的嵌入模型分群。</li>
+      <li><b>草稿模型不夠可靠</b>：論文的草稿者是專門微調過的模型；直接拿未調整的小模型，草稿品質可能撐不起驗證。換領域要準備訓練資料。</li>
+      <li><b>驗證者看不到原文</b>：它只看草稿與理由，理由寫錯時很難發現。安全相關結論要附出處（第 025 堂），並由人覆核。</li>
+      <li><b>總花費未必降低</b>：延遲靠平行，m 份草稿就是 m 次小模型呼叫；如果只有一個端點、或問題很簡單（單一段落就能回答），一般 RAG 反而更省。</li>
+      <li><b>需要多段整合的答案</b>：每份草稿只讀 k 段，若答案必須同時引用很多段落，單一草稿可能不完整，要評估是否改用多跳（第 034 堂）或問題分解（第 039 堂）。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容、告警代碼、工單與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的草稿者與驗證者是用相似度計算的示意，不是真實模型輸出。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Wang 等人，<a href="https://arxiv.org/abs/2407.08223">Speculative RAG: Enhancing Retrieval Augmented Generation through Drafting</a>（ICLR 2025，arXiv 2407.08223）；推測解碼見 Leviathan 等人，<a href="https://arxiv.org/abs/2211.17192">Fast Inference from Transformers via Speculative Decoding</a>（arXiv 2211.17192）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="1">
+    <p><b>在 Speculative RAG 裡，大模型（驗證者）主要做什麼？</b></p>
+    <button class="opt">A. 讀完全部檢索段落，自己重寫一份答案</button>
+    <button class="opt">B. 替小模型寫的多份草稿打分，挑出分數最高的一份</button>
+    <button class="opt">C. 負責把檢索結果分群</button>
+    <div class="why">草稿由小模型平行產生；大模型只讀草稿與理由並打分，不必讀全部原文，所以能降低延遲。</div>
+  </div>
+  <div class="quiz card" data-answer="0">
+    <p><b>為什麼要先分群，再「每群抽 1 段」組成子集？</b></p>
+    <button class="opt">A. 讓每份草稿看到不同觀點，且每份輸入只有少數幾段</button>
+    <button class="opt">B. 讓每份草稿都讀到全部段落</button>
+    <button class="opt">C. 為了不必計算嵌入向量</button>
+    <div class="why">每群代表一類觀點；每群抽 1 段讓子集兼顧多元與簡短。這需要嵌入向量來分群。</div>
+  </div>
+
+  <nav class="pager" data-slug="speculative-rag"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'大模型讀完全部', text:'技師問 <b>PT-211</b> 先檢查什麼。一般 RAG 把 top-10 全交給大模型：輸入長、慢又貴，<b>PT-230 備援電源</b>等無關段落也被讀進去，關鍵的第一步夾在中間，可能被忽略。' },
+  { title:'想法：草稿與驗證分工', text:'借用<b>推測解碼</b>的精神：讓<b>小模型</b>讀少量段落、快速寫多份草稿，<b>大模型</b>不讀全部原文，只負責驗證、挑一份。' },
+  { title:'分群', text:'用嵌入向量把 10 段檢索結果分成 <b>k 群</b>（論文用 K-Means）。同一群講的是類似觀點，例如角度編碼器、旋角減速機、其他。' },
+  { title:'抽樣組成子集', text:'每個子集從<b>每群各抽 1 段</b>，重複抽到湊滿 <b>m 個不同子集</b>。每份草稿看到不同觀點，輸入只有 k 段，遠短於全部 10 段。' },
+  { title:'小模型平行打草稿', text:'m 個草稿者<b>同時</b>各讀一個子集，輸出<b>答案草稿＋理由</b>。論文的草稿者是經過微調的 7B 模型，專門學會這件事。' },
+  { title:'大模型一次驗證', text:'驗證者只讀草稿與理由，分數 = <b>草稿者自信 × 一致性 × 反思分數</b>（問「理由支持答案嗎？」）。取最高分的草稿作為答案。' },
+  { title:'出處與限制', text:'Wang 等人（<b>ICLR 2025</b>）報告在 PubHealth 上準確率最多 <b>+12.97%</b>、延遲最多 <b>−50.83%</b>。但要有微調的草稿模型、多個平行端點，且驗證者看不到原文。' },
+  { title:'結果', text:'小模型各讀 k 段平行打草稿，大模型只挑最好的一份：<b>輸入變短、觀點多元</b>。前提是草稿模型可靠；簡單問題直接一般 RAG 即可。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  const DOCS = [
+    { t:'PT-211 三支葉片角度偏差過大時，先比對三支葉片的角度編碼器讀值，找出偏移的葉片。', topic:'編碼器', gold:true },
+    { t:'角度編碼器零點偏移時，以校正治具將角度編碼器重新歸零。', topic:'編碼器' },
+    { t:'角度編碼器信號線接頭鬆脫，會使角度編碼器讀值跳動。', topic:'編碼器' },
+    { t:'旋角減速機背隙過大時，葉片實際角度會落後設定值，須量測旋角減速機背隙。', topic:'減速機' },
+    { t:'旋角減速機齒面磨耗時，須以內視鏡檢查旋角減速機齒面。', topic:'減速機' },
+    { t:'旋角減速機潤滑油不足時，依保養週期補充旋角減速機潤滑油。', topic:'減速機' },
+    { t:'PT-230 旋角備援電源測試失敗時，先檢查備援電源電池組電壓。', topic:'備援電源' },
+    { t:'備援電源電池組超過使用年限時，須更換備援電源電池組。', topic:'備援電源' },
+    { t:'進入輪轂作業前須先順槳並鎖定葉輪，執行上鎖掛牌（LOTO）。', topic:'安全' },
+    { t:'技術通報：葉片角度偏差告警門檻已於韌體更新後調整，以最新通報為準。', topic:'通報' }
+  ];
+  const Q = 'WTG-23 出現 PT-211 三支葉片角度偏差過大，先檢查什麼？';
+  const IDX = rt.buildIndex(DOCS.map(d => ({ text:d.t })));
+  const qv = IDX.vec(rt.tokenize(Q));
+  const rel = i => rt.cosine(qv, IDX.vecs[i]);
+  /* 分群用的向量：只保留至少兩段共有、且不在問題裡的詞，讓群反映「與問題相關的不同觀點」 */
+  const qset = new Set(rt.tokenize(Q));
+  const CV = IDX.vecs.map(v => new Map([...v].filter(([t]) => !qset.has(t))));
+  let seed = 1, mode = 'cluster';
+  $('#qtext').textContent = Q;
+
+  function rng(s){ return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const add = (a, b, w) => { b.forEach((v, key) => a.set(key, (a.get(key) || 0) + v * w)); return a; };
+  /* K-Means：k-means++ 初始化，固定亂數做 10 次，取群內距離總和最小的一次（分群結果不隨抽樣改變） */
+  function kmeans(k){
+    const n = DOCS.length, V = CV;
+    let bestLab = null, bestCost = Infinity;
+    for(let run=0; run<10; run++){
+      const r = rng(1000 + run * 17 + k);
+      const cents = [new Map(V[Math.floor(r() * n)])];
+      while(cents.length < k){
+        const d = V.map(v => Math.pow(1 - Math.max(...cents.map(c => rt.cosine(v, c))), 2));
+        let x = r() * d.reduce((a, b) => a + b, 0), pick = 0;
+        for(let i=0;i<n;i++){ x -= d[i]; if(x <= 0){ pick = i; break; } }
+        cents.push(new Map(V[pick]));
+      }
+      let lab = new Array(n).fill(0);
+      for(let it=0; it<15; it++){
+        lab = V.map(v => { let b = 0, bs = -1; cents.forEach((c, j) => { const s = rt.cosine(v, c); if(s > bs){ bs = s; b = j; } }); return b; });
+        for(let j=0;j<k;j++){ const mem = lab.map((l, i) => l === j ? i : -1).filter(i => i >= 0); if(mem.length) cents[j] = mem.reduce((a, i) => add(a, V[i], 1/mem.length), new Map()); }
+      }
+      const cost = V.reduce((a, v, i) => a + (1 - rt.cosine(v, cents[lab[i]])), 0);
+      if(new Set(lab).size === k && cost < bestCost){ bestCost = cost; bestLab = lab; }
+    }
+    bestLab = bestLab || new Array(n).fill(0);
+    const groups = Array.from({ length:k }, (_, j) => bestLab.map((l, i) => l === j ? i : -1).filter(i => i >= 0)).filter(g => g.length);
+    return groups.sort((a, b) => a[0] - b[0]);
+  }
+  function subsets(groups, k, m){
+    const r = rng(seed * 7919 + k * 31 + 303 + (mode === 'cluster' ? 0 : 999)), seen = new Set(), out = [];
+    for(let tries=0; tries<300 && out.length<m; tries++){
+      let s;
+      if(mode === 'cluster') s = groups.map(g => g[Math.floor(r() * g.length)]);
+      else { const all = DOCS.map((_, i) => i); for(let i=all.length-1;i>0;i--){ const j = Math.floor(r()*(i+1)); [all[i], all[j]] = [all[j], all[i]]; } s = all.slice(0, k); }
+      s.sort((a, b) => a - b);
+      const key = s.join(',');
+      if(!seen.has(key)){ seen.add(key); out.push(s); }
+    }
+    return out;
+  }
+  const len = ids => ids.reduce((a, i) => a + DOCS[i].t.length, 0);
+  function run(){
+    const k = +$('#k').value, m = +$('#m').value;
+    $('#kv').textContent = k; $('#mv').textContent = m; $('#seedv').textContent = seed;
+    const groups = kmeans(k);
+    const gOf = i => groups.findIndex(g => g.includes(i));
+    $('#clusters').innerHTML = '<div class="muted" style="font-size:12.5px">K-Means 分群結果（k = ' + k + '）' + (mode === 'random' ? '：本模式抽樣時不使用' : '') + '</div>' +
+      groups.map((g, j) => '<div style="font-size:12.5px"><b>群 ' + 'ABCD'[j] + '</b>：' + g.map(i => (i+1) + '.' + esc(DOCS[i].topic)).join('、') + '</div>').join('');
+    const subs = subsets(groups, k, m);
+    const drafts = subs.map(s => {
+      const best = s.slice().sort((a, b) => rel(b) - rel(a))[0];
+      const rr = rt.cosine(qv, s.reduce((a, i) => add(a, IDX.vecs[i], 1), new Map()));
+      return { s, best, rd: rel(best), rr, score: rel(best) * rr };
+    });
+    const win = drafts.reduce((a, d) => d.score > a.score ? d : a, drafts[0]);
+    const topics = new Set(drafts.map(d => DOCS[d.best].topic));
+    const avgView = drafts.reduce((a, d) => a + new Set(d.s.map(i => DOCS[i].topic)).size, 0) / drafts.length;
+    const allLen = len(DOCS.map((_, i) => i));
+    const maxIn = Math.max(...subs.map(len));
+    const goldIn = drafts.some(d => d.s.some(i => DOCS[i].gold));
+    const ok = DOCS[win.best].gold;
+    const A = '<div class="hit"><div class="meta"><span>A. 一般 RAG：大模型一次讀 top-10</span></div>' +
+      '<div style="font-size:12.5px">大模型輸入：<b>' + allLen + '</b> 字（全部 10 段，含 PT-230 備援電源等與問題無關的段落）。</div>' +
+      '<div style="font-size:12.5px">每次問答，大模型都要讀完這 <b>10</b> 段原文才開始寫。</div>' +
+      '<div class="muted" style="font-size:12.5px;margin-top:4px">答案品質要看大模型能否在長輸入中找出第 1 段；本範例不模擬大模型的回答。</div></div>';
+    const rows = drafts.map((d, j) => '<div style="font-size:12.5px;margin-top:6px;' + (d === win ? '' : 'opacity:.75') + '">' + (d === win ? '★ ' : '') + '草稿 ' + (j+1) +
+      '｜子集：' + d.s.map(i => (i+1) + '.' + esc(DOCS[i].topic) + (mode === 'cluster' ? '' : '(群' + 'ABCD'[gOf(i)] + ')')).join('、') +
+      '<br>　答案：' + (DOCS[d.best].gold ? '✔ ' : '') + esc(DOCS[d.best].t) +
+      '<br>　<span class="muted">分數 ' + d.score.toFixed(3) + ' = 草稿相關 ' + d.rd.toFixed(2) + ' × 理由相關 ' + d.rr.toFixed(2) + '</span></div>').join('');
+    const B = '<div class="hit ' + (ok ? 'top' : 'low') + '"><div class="meta"><span>B. Speculative RAG：' + drafts.length + ' 份草稿，大模型只驗證</span></div>' + rows +
+      '<div class="muted" style="font-size:12.5px;margin-top:8px">每份草稿只讀 <b>' + k + '</b> 段、最多 <b>' + maxIn + '</b> 字（' + drafts.length + ' 份平行）｜大模型讀原文 <b>0</b> 段，只讀 ' + drafts.length + ' 份草稿與理由' +
+      '<br>每個子集平均涵蓋 <b>' + avgView.toFixed(1) + '</b> 種觀點｜草稿答案共 <b>' + topics.size + '</b> 種｜關鍵段落（第 1 段）' + (goldIn ? '<b>有</b>被抽進子集' : '<b style="color:var(--bad)">沒有任何子集抽到</b>') +
+      '<br>最終答案：' + (ok ? '<b style="color:var(--good)">✔ 先比對三支葉片的角度編碼器讀值</b>' : '<b style="color:var(--bad)">✘ 選到了其他觀點的草稿</b>') + '</div></div>';
+    $('#out').innerHTML = A + B;
+    window.__demo.last = { ok, goldIn, n: drafts.length, groups, maxIn, allLen };
+  }
+  window.__demo = { run };
+  ['#k', '#m'].forEach(s => $(s).addEventListener('input', run));
+  $('#reseed').addEventListener('click', () => { seed++; run(); });
+  document.querySelectorAll('#mode button').forEach(b => b.addEventListener('click', () => {
+    mode = b.dataset.v; document.querySelectorAll('#mode button').forEach(x => x.classList.toggle('on', x === b)); run();
+  }));
+  run();
+})();
+</script>
+</body>
+</html>

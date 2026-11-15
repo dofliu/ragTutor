@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>測驗關卡 10：命題檢索、FLARE、問題分解與 Speculative RAG｜RAG 動畫教室</title>
+<meta name="description" content="第 037–040 堂複習測驗：命題檢索、FLARE、問題分解、Speculative RAG，8 題，答錯會連回該堂複習。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">關卡 10</span><span class="tag">複習第 037–040 堂</span><span class="tag">約 8 分鐘</span></p>
+  <h1>命題檢索、FLARE、問題分解與 Speculative RAG</h1>
+  <p class="lead">命題檢索把段落拆成自成一句的事實，FLARE 沒把握時才去查，問題分解把複合問題拆開各查各的，Speculative RAG 讓小模型平行打草稿、大模型只負責挑。共 8 題，每堂各 2 題。</p>
+  <div class="callout">涵蓋課程：<a href="037-proposition-retrieval.html">命題檢索</a>、<a href="038-flare.html">FLARE</a>、<a href="039-query-decomposition.html">問題分解</a>、<a href="040-speculative-rag.html">Speculative RAG</a>。選項順序每次都會重新排列；最佳成績只存在你的瀏覽器裡。</div>
+
+  <h2>🧩 開考前，先快速回顧</h2>
+  <div class="keypoints"><div class="card"><b>命題檢索</b>建索引時把段落改寫成自成一句的原子事實；記得還原指代、保留出處。 <a href="037-proposition-retrieval.html">回到這一堂 →</a></div><div class="card"><b>FLARE</b>暫寫下一句，有詞低於門檻才用暫寫句（遮掉低信心詞）檢索並重寫。 <a href="038-flare.html">回到這一堂 →</a></div><div class="card"><b>問題分解</b>複合問題拆成一次只問一件事的子問題；獨立就平行，相依就依序。 <a href="039-query-decomposition.html">回到這一堂 →</a></div><div class="card"><b>Speculative RAG</b>分群抽樣、小模型平行打草稿、大模型一次驗證挑最高分。 <a href="040-speculative-rag.html">回到這一堂 →</a></div></div>
+  <h2>📝 測驗（8 題）</h2>
+  <div id="quiz"></div>
+
+  <div class="callout warn">風場、機型、手冊內容與數據皆為虛構，實際作業以原廠手冊與現場規範為準。</div>
+
+  <nav class="pager" data-slug="quiz-10-proposition-flare-decompose-speculative"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+
+<script>
+RagTutor.quizSet({ el:'#quiz', id:'quiz-10-proposition-flare-decompose-speculative', pass:6,
+  names:{"037-proposition-retrieval": "第 037 堂 命題檢索", "038-flare": "第 038 堂 FLARE", "039-query-decomposition": "第 039 堂 問題分解", "040-speculative-rag": "第 040 堂 Speculative RAG"},
+  questions:[
+ {
+  "from": "037-proposition-retrieval",
+  "q": "手冊一段寫著「旋角馬達負責調整葉片角度。它過溫時會觸發 PT-203。」做命題化時，第二句應該怎麼處理？",
+  "opts": [
+   "把「它」補回「旋角馬達」，讓這句自己就看得懂",
+   "保持原句，因為已經是一個句子",
+   "把兩句合併成一條命題"
+  ],
+  "a": 0,
+  "why": "命題要自成一句；只切成句子時「它」仍然不知道指誰，必須還原指代。"
+ },
+ {
+  "from": "037-proposition-retrieval",
+  "q": "命題檢索把資料拆得很細，最需要額外注意什麼？",
+  "opts": [
+   "查詢時要多呼叫一次模型",
+   "命題可能抽錯或遺漏條件，並切掉前因後果，需保留出處段落",
+   "命題檢索不能和向量檢索一起用"
+  ],
+  "a": 1,
+  "why": "拆細有代價：要保留出處段落編號，需要時把父段落補回上下文（第 008 堂）。"
+ },
+ {
+  "from": "038-flare",
+  "q": "FLARE 觸發檢索時，用什麼來當查詢？",
+  "opts": [
+   "使用者最原始的問題，一字不改",
+   "暫寫的下一句，並遮掉其中低信心的詞",
+   "上一輪檢索到的段落全文"
+  ],
+  "a": 1,
+  "why": "FLARE 用暫寫句當查詢，並把低信心的詞遮掉，避免可能錯誤的詞把檢索帶偏。"
+ },
+ {
+  "from": "038-flare",
+  "q": "把 FLARE 的信心門檻 θ 調高（更容易判定為沒把握），通常會怎樣？",
+  "opts": [
+   "檢索次數變多，延遲與成本上升",
+   "檢索次數變少，完全不再檢索",
+   "對答案沒有任何影響"
+  ],
+  "a": 0,
+  "why": "門檻越高，越多句子被判定為低信心而觸發檢索；θ 要用評估集在品質與成本間調整。"
+ },
+ {
+  "from": "039-query-decomposition",
+  "q": "分解後的子問題寫成「它要先檢查什麼？」，最可能發生什麼問題？",
+  "opts": [
+   "檢索速度變慢",
+   "失去告警代碼等關鍵詞，檢索撈到錯的段落",
+   "子問題數量超過上限"
+  ],
+  "a": 1,
+  "why": "子問題要自成一句並保留識別詞；寫成「它」會讓檢索失去依據。"
+ },
+ {
+  "from": "039-query-decomposition",
+  "q": "哪一組子問題可以同時送出檢索？",
+  "opts": [
+   "先查工單換下的料號，再查該料號的庫存",
+   "PT-203 先檢查什麼、PT-205 先檢查什麼",
+   "先找出偏移的葉片，再查那支葉片的維修紀錄"
+  ],
+  "a": 1,
+  "why": "兩個告警的處置彼此獨立，可以平行；另外兩組後一題都要用到前一題的答案，必須依序。"
+ },
+ {
+  "from": "040-speculative-rag",
+  "q": "Speculative RAG 裡，每份草稿讀的是什麼？",
+  "opts": [
+   "全部檢索段落",
+   "從每一群各抽 1 段組成的小子集",
+   "大模型先挑過的一段"
+  ],
+  "a": 1,
+  "why": "檢索結果先分群，每個子集從每群各抽 1 段；每份草稿只讀自己的子集，輸入短、觀點不同。"
+ },
+ {
+  "from": "040-speculative-rag",
+  "q": "下列哪一項是 Speculative RAG 的限制？",
+  "opts": [
+   "驗證者只看草稿與理由，看不到原文，理由寫錯時不易發現",
+   "草稿必須一份一份依序產生，無法平行",
+   "驗證者必須讀完所有檢索段落"
+  ],
+  "a": 0,
+  "why": "草稿可以平行產生，驗證者只讀草稿與理由；也因此它看不到原文，要搭配出處與人工覆核。"
+ }
+]
+});
+</script>
+</body>
+</html>

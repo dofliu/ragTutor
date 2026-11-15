@@ -39,6 +39,7 @@
     { "slug": "step-back", "title": "Step-Back 後退一步提問：先問上位問題，再找證據", "en": "Step-Back Prompting for Retrieval", "level": 2, "status": "done", "file": "lessons/036-step-back.html", "scenario": "技師問「WTG-17 在 38°C 下 PT-203 連續復歸 3 次可以繼續運轉嗎」，具體細節拉去撈日誌；先後退成「旋角馬達過溫的一般原則」，與原問題兩路合併" },
     { "slug": "proposition-retrieval", "title": "命題檢索：把段落拆成一條一條獨立的事實", "en": "Proposition Retrieval (Dense X)", "level": 2, "status": "done", "file": "lessons/037-proposition-retrieval.html", "scenario": "手冊「旋角系統」段落混了五句，技師問 PT-203 先檢查什麼；改寫成補回主詞的命題，比較段落、原句、命題三種粒度" },
     { "slug": "flare", "title": "FLARE 主動式檢索：沒把握的時候才去查", "en": "FLARE: Forward-Looking Active Retrieval", "level": 3, "status": "done", "file": "lessons/038-flare.html", "scenario": "技師要一份 PT-203 處置報告；模型先暫寫下一句，遇到門檻值、動作、復歸次數等低信心詞才檢索手冊並重寫" },
-    { "slug": "query-decomposition", "title": "問題分解：一句話問了好幾件事，就先拆開再查", "en": "Query Decomposition (Self-Ask / Sub-questions)", "level": 2, "status": "done", "file": "lessons/039-query-decomposition.html", "scenario": "技師一句話問 PT-203 與 PT-205 各先檢查什麼、煞車線圈備品還有嗎；拆成三個子問題各自檢索，並比較漏拆與丟失關鍵詞" }
+    { "slug": "query-decomposition", "title": "問題分解：一句話問了好幾件事，就先拆開再查", "en": "Query Decomposition (Self-Ask / Sub-questions)", "level": 2, "status": "done", "file": "lessons/039-query-decomposition.html", "scenario": "技師一句話問 PT-203 與 PT-205 各先檢查什麼、煞車線圈備品還有嗎；拆成三個子問題各自檢索，並比較漏拆與丟失關鍵詞" },
+    { "slug": "speculative-rag", "title": "Speculative RAG：小模型平行打草稿，大模型只負責挑", "en": "Speculative RAG: Drafting & Verification", "level": 3, "status": "done", "file": "lessons/040-speculative-rag.html", "scenario": "技師問 PT-211 三支葉片角度偏差過大先檢查什麼；檢索到編碼器、旋角減速機、備援電源等 10 段，分群抽樣成子集，小模型平行寫草稿與理由，大模型驗證並挑出「先比對編碼器讀值」" }
 ]
 }

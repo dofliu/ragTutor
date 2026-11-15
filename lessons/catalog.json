@@ -671,6 +671,34 @@
         "查詢轉換"
       ],
       "date": "2026-11-09"
+    },
+    {
+      "no": 40,
+      "slug": "speculative-rag",
+      "file": "lessons/040-speculative-rag.html",
+      "title": "Speculative RAG：小模型平行打草稿，大模型只負責挑",
+      "en": "Speculative RAG: Drafting & Verification",
+      "level": 3,
+      "summary": "一般 RAG 讓大模型讀完全部檢索段落，又慢又雜。Speculative RAG 先分群抽樣成小子集，小模型平行寫草稿與理由，大模型只驗證並挑最高分。本堂用互動範例在瀏覽器跑 K-Means，比較分群與隨機抽樣、草稿數與漏抽關鍵段落。",
+      "tags": [
+        "高階",
+        "生成"
+      ],
+      "date": "2026-11-15"
+    },
+    {
+      "type": "quiz",
+      "quiz": 10,
+      "slug": "quiz-10-proposition-flare-decompose-speculative",
+      "file": "lessons/quiz-10-proposition-flare-decompose-speculative.html",
+      "title": "測驗關卡 10：命題檢索、FLARE、問題分解與 Speculative RAG",
+      "en": "Checkpoint 10 · Lessons 037–040",
+      "level": 0,
+      "summary": "第 037–040 堂複習：命題檢索、FLARE 主動式檢索、問題分解、Speculative RAG。8 題，答完立即看解析，答錯會指向該回頭複習的課程。",
+      "tags": [
+        "測驗關卡"
+      ],
+      "date": "2026-11-15"
     }
   ]
 }
