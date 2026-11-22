@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LLM 列表式重排：RankGPT 滑動窗口，讓模型一次比較多段｜RAG 動畫教室</title>
+<meta name="description" content="用動畫與互動範例認識 LLM 列表式重排（listwise reranking）：把多段候選一起交給 LLM 排出順序，並用由後往前的滑動窗口處理放不下的長清單。">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/lesson.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../index.html"><span>RAG <b>動畫教室</b></span></a>
+  <nav><a href="../index.html#lessons">所有課程</a><a href="../index.html#roadmap">路線圖</a><button class="theme-btn" type="button">◐ 主題</button></nav>
+</div></header>
+
+<main class="wrap">
+  <p style="margin-top:28px"><span class="tag">第 041 堂</span><span class="tag lv2">進階</span><span class="tag">約 15 分鐘</span></p>
+  <h1>LLM 列表式重排：RankGPT 滑動窗口，讓模型一次比較多段</h1>
+
+  <p class="lead">BM25 或向量檢索只看字面或語意相似，常把「關鍵字重複最多」的統計表、說明文排在最前面，真正能回答問題的排除步驟反而掉到後面。<b>LLM 列表式重排（listwise reranking）</b>把問題和多段候選一起交給大型語言模型，請它直接輸出一串排序編號，例如 <code>[3] &gt; [4] &gt; [1]</code>；候選太多放不進一次提示時，用<b>由後往前的滑動窗口（sliding window）</b>分批排序，把最相關的段落一路「帶」到最前面。</p>
+
+  <h2>🎬 動畫：一次比較多段，滑動窗口把好段落接力往前送</h2>
+  <div class="player" id="p1"><div class="stage">
+<svg viewBox="0 0 920 430" role="img" aria-label="LLM 列表式重排動畫：BM25 排序的問題；列表式排序的想法；滑動窗口設定；三次呼叫逐步把最相關段落帶到最前；出處與限制；結果">
+<text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--bad)" data-from="0" data-to="0">① 沒有重排：關鍵字最像的段落佔滿前幾名</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--query)" data-from="1" data-to="1">② 想法：把多段一起交給 LLM，請它排出順序</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--accent)" data-from="2" data-to="2">③ 段落太多放不下：滑動窗口，一次只排 w 段</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="3" data-to="3">④ 第 1 次呼叫：從最後面的窗口開始</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--llm)" data-from="4" data-to="4">⑤ 第 2 次呼叫：窗口往前移 s 段</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="5" data-to="5">⑥ 第 3 次呼叫：最相關的段落被帶到最前面</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--warn)" data-from="6" data-to="6">⑦ 出處與限制：呼叫次數、位置偏差與輸出格式</text><text x="30" y="96" font-size="12.5" font-weight="700" style="fill:var(--good)" data-from="7">⑧ 結果：前幾名換成真正能回答問題的段落</text><rect x="8" y="76" width="904" height="344" rx="14" style="fill:none;stroke:var(--line);stroke-dasharray:4 5"/><g data-from="0" data-to="0"><rect x="24" y="106" width="868" height="36" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="458.0" y="128.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">技師：WTG-17 出現 YW-042 偏航誤差過大，風向標讀值正常，要先查什麼？</text><path d="M458 142 L458 160" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="160" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="74.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">1. 統計</text><rect x="133" y="160" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="183.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">2. 讀值說明</text><rect x="242" y="160" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="292.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">3. 告警定義</text><rect x="351" y="160" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="401.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">4. 風向標異常</text><rect x="460" y="160" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="510.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">5. 通報流程</text><rect x="569" y="160" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="619.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">6. 北向校正</text><rect x="678" y="160" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="728.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">7. 煞車殘壓</text><rect x="787" y="160" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="837.0" y="181.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--vec)">8. 自動解纜</text><rect x="18" y="154" width="543" height="46" rx="4" style="fill:none;stroke:var(--accent);stroke-width:1.6;stroke-dasharray:5 4"/><text x="24" y="216" font-size="11.5" font-weight="700" style="fill:var(--accent)">↑ 只取 BM25 前 5 段交給 LLM</text><path d="M458 226 L458 244" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="24" y="244" width="868" height="40" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="458.0" y="268.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM 讀到：告警統計、讀值說明、告警定義……只能回答「這是偏航誤差告警，請通報」</text><text x="24" y="318" font-size="12" font-weight="700" style="fill:var(--bad)">BM25 只看字面：「YW-042」「偏航誤差」「風向標讀值」重複最多的統計表與說明文排在最前。</text><text x="24" y="346" font-size="12" font-weight="700" style="fill:var(--bad)">真正有用的「北向校正」「煞車殘壓」排第 6、7 名，被 top-5 截掉了。</text><text x="24" y="374" font-size="11.5" style="fill:var(--muted)">綠框 = 最相關　藍框 = 相關　黃框 = 部分相關　紅虛線 = 無助於回答</text><text x="24" y="400" font-size="11.5" class="t-muted">段落、排名為虛構示意（與互動範例同一份語料）。</text></g><g data-from="1" data-to="1"><text x="24" y="124" font-size="12" font-weight="700" style="fill:var(--doc)">逐段打分（pointwise，第 005 堂）</text><rect x="24" y="136" width="400" height="30" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="224.0" y="155.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">問題 + 段落 1 → 0.71</text><rect x="24" y="172" width="400" height="30" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="224.0" y="191.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">問題 + 段落 2 → 0.69</text><rect x="24" y="208" width="400" height="30" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="224.0" y="227.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">問題 + 段落 3 → 0.40</text><text x="24" y="262" font-size="11.5" font-weight="700" style="fill:var(--doc)">每段各自打分，分數彼此獨立，看不到其他段落</text><text x="470" y="124" font-size="12" font-weight="700" style="fill:var(--query)">整串排序（listwise，RankGPT）</text><rect x="470" y="136" width="422" height="66" rx="4" style="fill:var(--panel);stroke:var(--query);stroke-width:1.6"/><text x="681.0" y="156.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">[1] 告警統計　[2] 讀值說明</text><text x="681.0" y="173.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">[3] 北向校正　[4] 煞車殘壓</text><text x="681.0" y="190.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--query)">請依與問題的相關程度排序</text><path d="M681 202 L681 222" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="470" y="222" width="422" height="30" rx="4" style="fill:var(--panel);stroke:var(--llm);stroke-width:1.6"/><text x="681.0" y="241.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM 一次讀完這 4 段</text><path d="M681 252 L681 270" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><rect x="470" y="270" width="422" height="30" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="681.0" y="289.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">輸出：[3] > [4] > [1] > [2]</text><text x="24" y="330" font-size="12" font-weight="700" style="fill:var(--query)">LLM 同時看到多段，可以直接比較「哪一段比較能回答」，不用自己定分數門檻。</text><text x="24" y="358" font-size="12" font-weight="700" style="fill:var(--query)">輸出只是一串編號（排列 permutation），再依這個順序重排候選清單即可。</text><text x="24" y="400" font-size="11.5" class="t-muted">Sun 等人，Is ChatGPT Good at Search?（EMNLP 2023，arXiv 2304.09542）；分數為示意。</text></g><g data-from="2" data-to="2"><text x="24" y="128" font-size="12" font-weight="700" style="fill:var(--accent)">候選 8 段（BM25 順序）；LLM 一次只能讀 w = 4 段，每次往前移 s = 2 段</text><rect x="454" y="168" width="439" height="58" rx="4" style="fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4"/><text x="673.5" y="160" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">第 1 個窗口：第 5–8 名</text><rect x="24" y="180" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="74.0" y="201.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">1. 統計</text><rect x="133" y="180" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="183.0" y="201.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">2. 讀值說明</text><rect x="242" y="180" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="292.0" y="201.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">3. 告警定義</text><rect x="351" y="180" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="401.0" y="201.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">4. 風向標異常</text><rect x="460" y="180" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="510.0" y="201.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">5. 通報流程</text><rect x="569" y="180" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="619.0" y="201.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">6. 北向校正</text><rect x="678" y="180" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="728.0" y="201.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">7. 煞車殘壓</text><rect x="787" y="180" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="837.0" y="201.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--vec)">8. 自動解纜</text><text x="24" y="270" font-size="12" font-weight="700" style="fill:var(--accent)">為什麼從後面開始？最相關的段落可能排在很後面，由後往前掃，</text><text x="24" y="296" font-size="12" font-weight="700" style="fill:var(--accent)">每個窗口都把它推到窗口最上方，下一個窗口又會包含它，一路被「帶」到最前面。</text><text x="24" y="330" font-size="12" font-weight="700" style="fill:var(--accent)">窗口重疊 w − s = 2 段，就是負責「接力」的部分。</text><text x="24" y="400" font-size="11.5" class="t-muted">RankGPT 原始設定：BM25 前 100 段，w = 20、s = 10；此圖縮小為 8 段示意。</text></g><g data-from="3" data-to="3"><text x="24" y="128" font-size="11.5" font-weight="700" style="fill:var(--muted)">排序前</text><rect x="24" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="74.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">1. 統計</text><rect x="133" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="183.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">2. 讀值說明</text><rect x="242" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="292.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">3. 告警定義</text><rect x="351" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="401.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">4. 風向標異常</text><rect x="460" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="510.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">5. 通報流程</text><rect x="569" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="619.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">6. 北向校正</text><rect x="678" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="728.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">7. 煞車殘壓</text><rect x="787" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="837.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--vec)">8. 自動解纜</text><rect x="454" y="236" width="439" height="58" rx="4" style="fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4"/><text x="673.5" y="228" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">第 1 次呼叫：第 5–8 名</text><rect x="24" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="74.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">1. 統計</text><rect x="133" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="183.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">2. 讀值說明</text><rect x="242" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="292.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">3. 告警定義</text><rect x="351" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="401.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">4. 風向標異常</text><rect x="460" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="510.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">5. 北向校正</text><rect x="569" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="619.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">6. 煞車殘壓</text><rect x="678" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="728.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--vec)">7. 自動解纜</text><rect x="787" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="837.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">8. 通報流程</text><text x="24" y="240" font-size="11.5" font-weight="700" style="fill:var(--muted)">排序後</text><path d="M455 174 L455 212" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="316" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM 輸入：[1] 通報流程 [2] 北向校正 [3] 煞車殘壓 [4] 自動解纜</text><text x="24" y="340" font-size="11.5" font-weight="700" style="fill:var(--good)">LLM 輸出：[2] > [3] > [4] > [1]</text><text x="24" y="370" font-size="12" font-weight="700" style="fill:var(--llm)">北向校正、煞車殘壓升到窗口最上方（第 5、6 名），落在下一個窗口的重疊區。</text></g><g data-from="4" data-to="4"><text x="24" y="128" font-size="11.5" font-weight="700" style="fill:var(--muted)">排序前</text><rect x="24" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="74.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">1. 統計</text><rect x="133" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="183.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">2. 讀值說明</text><rect x="242" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="292.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">3. 告警定義</text><rect x="351" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="401.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">4. 風向標異常</text><rect x="460" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="510.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">5. 北向校正</text><rect x="569" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="619.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">6. 煞車殘壓</text><rect x="678" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="728.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--vec)">7. 自動解纜</text><rect x="787" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="837.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">8. 通報流程</text><rect x="236" y="236" width="439" height="58" rx="4" style="fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4"/><text x="455.5" y="228" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">第 2 次呼叫：第 3–6 名</text><rect x="24" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="74.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">1. 統計</text><rect x="133" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="183.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">2. 讀值說明</text><rect x="242" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="292.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">3. 北向校正</text><rect x="351" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="401.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">4. 煞車殘壓</text><rect x="460" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="510.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">5. 告警定義</text><rect x="569" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="619.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">6. 風向標異常</text><rect x="678" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="728.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--vec)">7. 自動解纜</text><rect x="787" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="837.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">8. 通報流程</text><text x="24" y="240" font-size="11.5" font-weight="700" style="fill:var(--muted)">排序後</text><path d="M455 174 L455 212" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="316" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM 輸入：[1] 告警定義 [2] 風向標異常 [3] 北向校正 [4] 煞車殘壓</text><text x="24" y="340" font-size="11.5" font-weight="700" style="fill:var(--good)">LLM 輸出：[3] > [4] > [1] > [2]</text><text x="24" y="370" font-size="12" font-weight="700" style="fill:var(--llm)">兩段最相關的段落再往前推到第 3、4 名，下一個窗口（第 1–4 名）仍會包含它們。</text></g><g data-from="5" data-to="5"><text x="24" y="128" font-size="11.5" font-weight="700" style="fill:var(--muted)">排序前</text><rect x="24" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="74.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">1. 統計</text><rect x="133" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="183.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">2. 讀值說明</text><rect x="242" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="292.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">3. 北向校正</text><rect x="351" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="401.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">4. 煞車殘壓</text><rect x="460" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="510.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">5. 告警定義</text><rect x="569" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="619.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">6. 風向標異常</text><rect x="678" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="728.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--vec)">7. 自動解纜</text><rect x="787" y="136" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="837.0" y="157.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">8. 通報流程</text><rect x="18" y="236" width="439" height="58" rx="4" style="fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4"/><text x="237.5" y="228" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--accent)">排序後｜第 3 次呼叫：第 1–4 名</text><rect x="24" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="74.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">1. 北向校正</text><rect x="133" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="183.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--good)">2. 煞車殘壓</text><rect x="242" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="292.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">3. 統計</text><rect x="351" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="401.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">4. 讀值說明</text><rect x="460" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="510.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">5. 告警定義</text><rect x="569" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="619.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--doc)">6. 風向標異常</text><rect x="678" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--vec);stroke-width:1.6"/><text x="728.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--vec)">7. 自動解纜</text><rect x="787" y="248" width="100" height="34" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6;stroke-dasharray:5 4"/><text x="837.0" y="269.0" text-anchor="middle" font-size="11" font-weight="700" style="fill:var(--bad)">8. 通報流程</text><path d="M455 174 L455 212" class="flow" style="fill:none;stroke-width:1.8;stroke:var(--muted)"/><text x="24" y="316" font-size="11.5" font-weight="700" style="fill:var(--llm)">LLM 輸入：[1] 告警統計 [2] 讀值說明 [3] 北向校正 [4] 煞車殘壓</text><text x="24" y="340" font-size="11.5" font-weight="700" style="fill:var(--good)">LLM 輸出：[3] > [4] > [1] > [2]</text><text x="24" y="370" font-size="12" font-weight="700" style="fill:var(--llm)">3 次呼叫後，最相關的兩段到了第 1、2 名；但「自動解纜」仍在第 7 名。</text><text x="24" y="396" font-size="12" font-weight="700" style="fill:var(--llm)">只掃一輪時，只保證前 w − s 名正確；要更多名次正確就加大窗口或再掃一輪。</text></g><g data-from="6" data-to="6"><rect x="24" y="108" width="430" height="70" rx="4" style="fill:var(--panel);stroke:var(--doc);stroke-width:1.6"/><text x="239.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">RankGPT：Sun 等人，EMNLP 2023</text><text x="239.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">前 100 段、w = 20、s = 10</text><text x="239.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--doc)">由後往前共 9 次 LLM 呼叫</text><rect x="482" y="108" width="410" height="70" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="687.0" y="130.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">排列蒸餾（permutation distillation）</text><text x="687.0" y="147.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">把 LLM 的排序教給小模型</text><text x="687.0" y="164.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">論文：440M 小模型在 BEIR 勝過 3B 監督模型</text><rect x="24" y="206" width="430" height="70" rx="4" style="fill:var(--panel);stroke:var(--warn);stroke-width:1.6"/><text x="239.0" y="228.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">呼叫次數多、延遲高</text><text x="239.0" y="245.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">每次呼叫要放 w 段全文</text><text x="239.0" y="262.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--warn)">比 cross-encoder 貴得多</text><rect x="482" y="206" width="410" height="70" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="687.0" y="228.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">位置與輸入順序會影響結果</text><text x="687.0" y="245.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">輸出可能漏號、重複或多話</text><text x="687.0" y="262.0" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">要解析、補齊缺漏的編號</text><text x="24" y="316" font-size="12" font-weight="700" style="fill:var(--warn)">呼叫次數 ≈ (重排深度 − w) ÷ s + 1；深度 100、w 20、s 10 → 9 次。</text><text x="24" y="344" font-size="12" font-weight="700" style="fill:var(--warn)">論文結果來自公開檢索資料集；在自己的手冊上是否值得，請用評估集（第 021 堂）驗證。</text><text x="24" y="400" font-size="11.5" class="t-muted">數字摘自論文與官方程式碼；其餘為示意。</text></g><g data-from="7"><rect x="24" y="112" width="430" height="100" rx="4" style="fill:var(--panel);stroke:var(--bad);stroke-width:1.6"/><text x="239.0" y="140.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">只用 BM25</text><text x="239.0" y="157.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">1. 告警統計　2. 讀值說明</text><text x="239.0" y="174.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">3. 告警定義</text><text x="239.0" y="191.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--bad)">LLM 只能回答「請通報」</text><rect x="462" y="112" width="430" height="100" rx="4" style="fill:var(--panel);stroke:var(--good);stroke-width:1.6"/><text x="677.0" y="140.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">BM25 + LLM 滑動窗口重排</text><text x="677.0" y="157.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">1. 北向校正　2. 煞車殘壓</text><text x="677.0" y="174.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">3. 自動解纜</text><text x="677.0" y="191.5" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:var(--good)">LLM 拿到排除步驟，答得出要查什麼</text><text x="24" y="256" font-size="12" font-weight="700" style="fill:var(--good)">第一階段（BM25 或向量）負責撈得廣，LLM 列表式重排負責排得準，再取前幾段生成答案。</text><text x="24" y="284" font-size="12" font-weight="700" style="fill:var(--good)">前提：關鍵段落要先進入重排範圍；候選清單外的段落，重排也救不回來。</text><text x="24" y="400" font-size="11.5" class="t-muted">範例為虛構；右側為互動範例深度 12、w = 4、s = 2、掃兩輪的結果。</text></g></svg>
+  </div></div>
+
+  <h2>🧩 重點整理</h2>
+  <div class="keypoints">
+    <div class="card"><b>列表式：一次比較多段</b>逐段打分（pointwise）的模型各看一段、分數彼此獨立；列表式把多段放進同一個提示，請 LLM 輸出排列（permutation），例如 <code>[2] &gt; [3] &gt; [1]</code>，模型能直接比較「哪段比較能回答」。</div>
+    <div class="card"><b>滑動窗口由後往前</b>候選太多時，一次只排 w 段、每次往前移 s 段。由後往前掃，排在後面的好段落會被推到窗口頂端、落在重疊區，再被下一個窗口接力往前送。</div>
+    <div class="card"><b>一輪只保證前 w − s 名</b>假設模型每次都排對，掃一輪後最相關的 w − s 段一定在最前面；第 w − s 名之後不一定正確。呼叫次數約為 (深度 − w) ÷ s + 1。</div>
+    <div class="card"><b>貴、慢、會受順序影響</b>每次呼叫都要放 w 段全文，比 cross-encoder 貴得多；結果會受輸入順序與位置影響，輸出也可能漏號或重複。只救得回已進入候選清單的段落。</div>
+  </div>
+
+  <h2>🧪 互動範例：BM25 排序 vs. LLM 滑動窗口重排</h2>
+  <div class="prose"><p>知識庫是虛構《OW-8 運維手冊》偏航系統（yaw）一章與相關文件，共 16 段；問題是「<b>YW-042 偏航誤差過大，風向標讀值正常，要先查什麼？</b>」。第一階段的 BM25 與滑動窗口流程都在瀏覽器裡真的計算；<b>LLM 是示意</b>：它每次只看得到窗口內的段落，依每段預先標註的相關度（0–3）排序，可選擇加入隨機雜訊模擬「偶爾排錯」。調整窗口大小 w、步長 s、重排深度與掃描方向，觀察呼叫次數、讀取段數與前 5 名品質（nDCG@5）的變化。</p></div>
+  <div class="card demo" id="demo">
+    <div class="muted" style="font-size:13px">問題：<b id="qtext"></b></div>
+    <div class="row seg" id="dir" style="margin-top:10px"><button type="button" data-v="back" class="on">由後往前（RankGPT）</button><button type="button" data-v="front">由前往後</button></div>
+    <div class="row seg" id="noise" style="margin-top:8px"><button type="button" data-v="0" class="on">LLM 每次都排對</button><button type="button" data-v="1">LLM 偶爾排錯（雜訊）</button></div>
+    <label style="font-size:13px;display:block;margin-top:10px">重排深度（BM25 前幾段交給 LLM）= <b id="dv"></b>
+      <input type="range" id="depth" min="4" max="16" step="1" value="12" style="width:100%"></label>
+    <label style="font-size:13px;display:block;margin-top:10px">窗口大小 w（一次呼叫讀幾段）= <b id="wv"></b>
+      <input type="range" id="w" min="2" max="8" step="1" value="4" style="width:100%"></label>
+    <label style="font-size:13px;display:block;margin-top:10px">步長 s（每次往前移幾段）= <b id="sv"></b>
+      <input type="range" id="s" min="1" max="7" step="1" value="2" style="width:100%"></label>
+    <label style="font-size:13px;display:block;margin-top:10px">掃描輪數 = <b id="pv"></b>
+      <input type="range" id="passes" min="1" max="3" step="1" value="1" style="width:100%"></label>
+    <div class="row" style="margin-top:10px"><button type="button" class="ghost" id="reseed">🎲 重新抽雜訊</button><span class="muted" style="font-size:12.5px">雜訊第 <b id="seedv"></b> 組（只在「偶爾排錯」時有作用）</span></div>
+    <div id="out" style="display:grid;gap:8px;margin-top:12px"></div>
+  </div>
+
+  <h2>💻 程式範例（Python）</h2>
+  <div class="prose"><p>下面是最小實作：先用 BM25（中文以二字詞切分）撈出候選，再照 RankGPT 的做法由後往前滑動窗口，每個窗口請 Claude 輸出 <code>[i] &gt; [j]</code> 格式的排序。LLM 的輸出不一定乾淨，所以要用正規表示式抓編號、去掉重複與超出範圍的號碼，並把漏掉的編號依原順序補在最後。需要 <code>pip install anthropic rank_bm25</code>。</p></div>
+<pre class="code"><code><span class="k">import</span> re
+<span class="k">import</span> anthropic
+<span class="k">from</span> rank_bm25 <span class="k">import</span> BM25Okapi
+
+client = anthropic.<span class="f">Anthropic</span>()
+MODEL = <span class="s">"claude-sonnet-5"</span>
+DOCS = [  <span class="c"># 虛構《OW-8 運維手冊》偏航系統一章</span>
+    <span class="s">"YW-042 偏航誤差過大告警統計：彙整各機組去年告警次數，供年度報告使用。"</span>,
+    <span class="s">"風向標讀值說明：風向標讀值是偏航控制的輸入，本節說明單位與更新頻率。"</span>,
+    <span class="s">"YW-042 偏航誤差過大：機艙方向與風向平均偏差超過設定值即觸發。"</span>,
+    <span class="s">"風向標安裝方位偏移時讀值看似正常，機艙卻固定偏一個角度，須以 GPS 羅經校正。"</span>,
+    <span class="s">"機艙轉向遲緩時，先量測偏航煞車卡鉗殘餘壓力，確認放壓閥動作正常。"</span>,
+    <span class="s">"偏航驅動馬達過載跳脫會使機艙轉不動；檢查馬達煞車與變頻器參數。"</span>,
+    <span class="s">"扭纜感測器達上限時會自動解纜，解纜期間機艙方向暫時偏離屬正常。"</span>,
+    <span class="s">"GB-117 齒輪箱高速軸軸承溫度過高：檢查油溫、油位與冷卻器。"</span>,
+]
+
+<span class="k">def</span> <span class="f">bigrams</span>(text):
+    text = re.<span class="f">sub</span>(<span class="s">r"\s+"</span>, <span class="s">""</span>, text.<span class="f">lower</span>())
+    <span class="k">return</span> [text[i:i + <span class="s">2</span>] <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(text) - <span class="s">1</span>)]
+
+<span class="k">def</span> <span class="f">first_stage</span>(query, k=<span class="s">8</span>):
+    bm25 = <span class="f">BM25Okapi</span>([<span class="f">bigrams</span>(d) <span class="k">for</span> d <span class="k">in</span> DOCS])
+    scores = bm25.<span class="f">get_scores</span>(<span class="f">bigrams</span>(query))
+    <span class="k">return</span> <span class="f">sorted</span>(<span class="f">range</span>(<span class="f">len</span>(DOCS)), key=<span class="k">lambda</span> i: -scores[i])[:k]
+
+<span class="k">def</span> <span class="f">rank_window</span>(query, ids):
+    <span class="s">"""請 LLM 排序一個窗口內的段落，回傳重排後的文件編號。"""</span>
+    listing = <span class="s">"\n"</span>.<span class="f">join</span>(<span class="s">f"[{j + 1}] {DOCS[i]}"</span> <span class="k">for</span> j, i <span class="k">in</span> <span class="f">enumerate</span>(ids))
+    msg = client.messages.<span class="f">create</span>(model=MODEL, max_tokens=<span class="s">100</span>, messages=[{
+        <span class="s">"role"</span>: <span class="s">"user"</span>,
+        <span class="s">"content"</span>: <span class="s">f"以下 {len(ids)} 段以 [] 編號。\n{listing}\n\n問題：{query}\n"</span>
+                   <span class="s">"依與問題的相關程度由高到低排序，只輸出編號，格式如 [2] &gt; [1] &gt; [3]。"</span>}])
+    order = []
+    <span class="k">for</span> n <span class="k">in</span> re.<span class="f">findall</span>(<span class="s">r"\[(\d+)\]"</span>, msg.content[<span class="s">0</span>].text):
+        j = <span class="f">int</span>(n) - <span class="s">1</span>
+        <span class="k">if</span> <span class="s">0</span> &lt;= j &lt; <span class="f">len</span>(ids) <span class="k">and</span> j <span class="k">not in</span> order:   <span class="c"># 去掉重複、超出範圍的編號</span>
+            order.<span class="f">append</span>(j)
+    order += [j <span class="k">for</span> j <span class="k">in</span> <span class="f">range</span>(<span class="f">len</span>(ids)) <span class="k">if</span> j <span class="k">not in</span> order]  <span class="c"># 漏掉的依原順序補上</span>
+    <span class="k">return</span> [ids[j] <span class="k">for</span> j <span class="k">in</span> order]
+
+<span class="k">def</span> <span class="f">sliding_rerank</span>(query, cands, w=<span class="s">4</span>, s=<span class="s">2</span>):
+    cands = <span class="f">list</span>(cands)
+    start = <span class="f">max</span>(<span class="s">0</span>, <span class="f">len</span>(cands) - w)            <span class="c"># 從最後一個窗口開始</span>
+    <span class="k">while True</span>:
+        cands[start:start + w] = <span class="f">rank_window</span>(query, cands[start:start + w])
+        <span class="k">if</span> start == <span class="s">0</span>:
+            <span class="k">return</span> cands
+        start = <span class="f">max</span>(<span class="s">0</span>, start - s)                  <span class="c"># 往前移 s 段，與上一窗重疊 w - s 段</span>
+
+q = <span class="s">"WTG-17 出現 YW-042 偏航誤差過大，風向標讀值正常，要先查什麼？"</span>
+cands = <span class="f">first_stage</span>(q)
+<span class="k">for</span> rank, i <span class="k">in</span> <span class="f">enumerate</span>(<span class="f">sliding_rerank</span>(q, cands)[:<span class="s">3</span>], <span class="s">1</span>):
+    <span class="f">print</span>(rank, DOCS[i])</code></pre>
+  <div class="prose"><p>實務上要記錄每個窗口的輸入順序與 LLM 輸出，才看得出是第一階段沒撈到、還是重排排錯；並用評估集（第 021 堂）比較「BM25 + cross-encoder」與「BM25 + LLM 重排」的命中率、延遲與費用。若要降低成本，可參考論文的<b>排列蒸餾</b>：用 LLM 的排序結果訓練較小的重排模型。</p></div>
+
+  <h2>⚖️ 與前面課程的比較</h2>
+  <table class="cmp">
+    <tr><th></th><th>BM25 / 向量（第 003、004 堂）</th><th>Cross-encoder 重排（第 005 堂）</th><th>ColBERT 晚期互動（第 018 堂）</th><th>LLM 列表式重排</th></tr>
+    <tr><th>怎麼判斷相關</th><td>字面或向量相似度</td><td>問題與單段一起編碼，輸出分數</td><td>逐詞向量 MaxSim 加總</td><td>LLM 同時讀多段，輸出排列</td></tr>
+    <tr><th>能否比較段落之間</th><td>不能</td><td>不能（逐段獨立）</td><td>不能（逐段獨立）</td><td>能（同一窗口內）</td></tr>
+    <tr><th>適合的位置</th><td>第一階段，撈全庫</td><td>第二階段，數十到上百段</td><td>第一或第二階段</td><td>最後一階段，少量候選</td></tr>
+    <tr><th>成本與延遲</th><td>最低</td><td>中等，可批次平行</td><td>索引大、查詢快</td><td>最高，窗口要依序呼叫</td></tr>
+    <tr><th>主要風險</th><td>關鍵字堆疊、同義詞漏抓</td><td>需選對領域的模型</td><td>儲存空間大</td><td>受輸入順序影響、輸出格式錯誤、費用高</td></tr>
+  </table>
+
+  <h2>⚠️ LLM 列表式重排常見的坑 / 何時不該用</h2>
+  <div class="prose">
+    <ul>
+      <li><b>候選清單外救不回來</b>：重排只改順序，不會找到新段落。互動範例把重排深度調到 6，「煞車殘壓」（BM25 第 7 名）就永遠進不了前 5。第一階段要撈得夠廣（混合檢索見第 004 堂）。</li>
+      <li><b>步長太接近窗口</b>：只掃一輪時，保證正確的只有前 w − s 名；s 接近 w 時重疊太少，好段落接力不上來。s = w 時窗口完全不重疊，好段落最多只能升到它所在窗口的頂端。</li>
+      <li><b>方向弄反</b>：由前往後掃會把最不相關的段落往後推，排在後面的好段落只能前進一個窗口。互動範例切到「由前往後」可以看到差異。</li>
+      <li><b>受輸入順序與位置影響</b>：Tang 等人（NAACL 2024）指出 LLM 的列表式排序會隨輸入順序改變，提出把清單打亂多排幾次再彙整（permutation self-consistency）。代價是呼叫次數再翻倍。</li>
+      <li><b>輸出格式不可靠</b>：模型可能漏號、重複、多說話或編出不存在的編號，一定要解析與補齊（程式範例的 <code>rank_window</code>）。候選段落中若夾帶指令，也可能干擾排序（第 024 堂）。</li>
+      <li><b>何時不該用</b>：延遲要求在一兩秒內、查詢量大、或 cross-encoder 已經夠準時，LLM 重排的費用與等待時間不划算；窗口要依序呼叫，難以平行。先用評估集確認提升幅度再上線。</li>
+    </ul>
+    <div class="callout warn">風場、機型、手冊內容、告警代碼、技術通報與數據皆為虛構，實際作業以原廠手冊與現場規範為準。互動範例的 LLM 是依預先標註的相關度排序的示意，不是真實模型輸出。</div>
+    <p class="muted" style="font-size:13px">延伸閱讀：Sun 等人，<a href="https://arxiv.org/abs/2304.09542">Is ChatGPT Good at Search? Investigating Large Language Models as Re-Ranking Agents</a>（EMNLP 2023，arXiv 2304.09542）與官方程式碼 <a href="https://github.com/sunnweiwei/RankGPT">sunnweiwei/RankGPT</a>；Tang 等人，<a href="https://arxiv.org/abs/2310.07712">Found in the Middle: Permutation Self-Consistency Improves Listwise Ranking in Large Language Models</a>（NAACL 2024，arXiv 2310.07712）。</p>
+  </div>
+
+  <h2>📝 小測驗</h2>
+  <div class="quiz card" data-answer="2">
+    <p><b>RankGPT 的滑動窗口為什麼要「由後往前」掃？</b></p>
+    <button class="opt">A. 因為 LLM 只能讀清單的後半段</button>
+    <button class="opt">B. 為了讓呼叫次數變少</button>
+    <button class="opt">C. 排在後面的好段落會被推到窗口頂端、落在重疊區，被下一個窗口接力帶到最前面</button>
+    <div class="why">每個窗口把最相關的段落排到窗口頂端；由後往前時，頂端正好是下一個窗口的重疊區，所以好段落能一路往前送。由前往後則只能前進一個窗口。</div>
+  </div>
+  <div class="quiz card" data-answer="0">
+    <p><b>候選 40 段、窗口 w = 10、步長 s = 5，只掃一輪。假設 LLM 每次都排對，哪個說法正確？</b></p>
+    <button class="opt">A. 需要 7 次呼叫，最後前 5 名一定是最相關的 5 段</button>
+    <button class="opt">B. 需要 4 次呼叫，全部 40 段的順序都會正確</button>
+    <button class="opt">C. 需要 8 次呼叫，只有第 1 名保證正確</button>
+    <div class="why">呼叫次數 = (40 − 10) ÷ 5 + 1 = 7。一輪只保證前 w − s = 5 名正確，其餘名次不一定。</div>
+  </div>
+
+  <nav class="pager" data-slug="llm-listwise-rerank"></nav>
+</main>
+
+<footer><div class="wrap">RAG 動畫教室 · 每天一堂，用動畫看懂一種 RAG 技術 · <a href="https://github.com/dofliu/ragTutor">GitHub</a><br>國立勤益科技大學 智慧自動化工程系 劉瑞弘老師研究室</div></footer>
+<script>
+RagTutor.player({ el:'#p1', interval:8000, steps:[
+  { title:'BM25 排序的問題', text:'技師問 <b>YW-042</b> 風向標正常要先查什麼。BM25 只看字面，把「告警統計」「讀值說明」這些<b>關鍵字最多</b>的段落排在前面，真正的排除步驟落在第 6、7 名，被 <b>top-5</b> 截掉。' },
+  { title:'想法：列表式排序', text:'Cross-encoder 是<b>逐段打分</b>，各段分數彼此獨立。<b>列表式（listwise）</b>把多段一起放進提示，請 LLM 直接輸出排序編號 <b>[3] &gt; [4] &gt; [1] &gt; [2]</b>，模型可以互相比較。' },
+  { title:'滑動窗口', text:'候選常有上百段，一次放不下。RankGPT 用<b>滑動窗口</b>：一次只排 <b>w</b> 段，每次往前移 <b>s</b> 段，<b>由最後面開始</b>。相鄰窗口重疊 w − s 段，負責接力。' },
+  { title:'第 1 次呼叫', text:'先排第 5–8 名。LLM 輸出 <b>[2] &gt; [3] &gt; [4] &gt; [1]</b>，「北向校正」「煞車殘壓」升到窗口頂端，剛好落在下一個窗口會包含的<b>重疊區</b>。' },
+  { title:'第 2 次呼叫', text:'窗口往前移 2 段，排第 3–6 名。兩段最相關的段落再被推到<b>第 3、4 名</b>，仍在下一個窗口裡，繼續接力。' },
+  { title:'第 3 次呼叫', text:'排第 1–4 名後，最相關的兩段到了<b>第 1、2 名</b>。但「自動解纜」還在第 7 名：一輪只保證前 <b>w − s</b> 名正確，要更多就加大窗口或再掃一輪。' },
+  { title:'出處與限制', text:'RankGPT（<b>EMNLP 2023</b>）重排 BM25 前 100 段，w = 20、s = 10，共 <b>9 次</b>呼叫；並用<b>排列蒸餾</b>把能力教給小模型。代價是費用高、受輸入順序影響、輸出可能漏號。' },
+  { title:'結果', text:'第一階段撈得廣，LLM 列表式重排排得準：前幾名換成<b>北向校正、煞車殘壓</b>等排除步驟，LLM 才答得出要查什麼。前提是關鍵段落有進入重排範圍。' }
+]});
+
+(function(){
+  const { rt } = RagTutor;
+  const $ = s => document.querySelector(s);
+  const esc = RagTutor.escapeHtml;
+  /* g：預先標註的相關度（3 最相關、0 無助於回答），只有示意 LLM 會用到 */
+  const DOCS = [
+    { t:'YW-042 偏航誤差過大：機艙方向與風向的平均偏差超過設定值並持續一段時間即觸發，事件記錄於 SCADA。', n:'告警定義', g:1 },
+    { t:'YW-042 偏航誤差過大告警統計：彙整各機組去年偏航誤差過大告警次數，供年度報告使用。', n:'告警統計', g:0 },
+    { t:'風向標讀值異常時，先以手持風速風向計比對風向標讀值，並檢查風向標加熱器與信號線。', n:'風向標異常', g:1 },
+    { t:'風向標讀值說明：風向標讀值是偏航控制的輸入，本節說明讀值單位、更新頻率與偏航誤差的計算方式。', n:'讀值說明', g:0 },
+    { t:'YW-042 偏航誤差過大的通報流程：值班人員記錄告警時間，通知運維工程師並開立工單。', n:'通報流程', g:0 },
+    { t:'機艙轉向遲緩、跟不上風向變化時，先量測偏航煞車卡鉗的殘餘壓力，確認放壓閥動作正常；殘壓未釋放會拖住齒圈。', n:'煞車殘壓', g:3 },
+    { t:'風向標安裝方位偏移（北向校正錯誤）時，讀值看似正常，機艙卻固定偏一個角度，須以 GPS 羅經重新校正方位。', n:'北向校正', g:3 },
+    { t:'偏航驅動馬達電流不平衡或過載跳脫，會使機艙轉不動；檢查馬達煞車、接線與變頻器參數。', n:'驅動馬達', g:2 },
+    { t:'偏航軸承齒圈潤滑不足會增加轉動阻力，以自動潤滑系統補脂，並確認油脂分配器作動。', n:'齒圈潤滑', g:2 },
+    { t:'偏航減速機漏油或齒輪異音時，檢查油位並以內視鏡檢查齒面。', n:'減速機', g:1 },
+    { t:'技術通報 TB-2026-07：OW-8 韌體更新後偏航控制的平均時間窗已調整，更新後若告警頻繁出現，先確認控制器韌體版本。', n:'技術通報', g:2 },
+    { t:'扭纜感測器達上限時機艙會自動解纜，解纜期間機艙方向暫時偏離屬正常，待解纜完成再判讀。', n:'自動解纜', g:2 },
+    { t:'上機艙作業前須執行上鎖掛牌（LOTO），偏航系統切換為維修模式並啟用偏航鎖定銷。', n:'LOTO', g:1 },
+    { t:'PT-203 旋角馬達過溫：檢查旋角馬達冷卻風扇與溫度感測器。', n:'PT-203', g:0 },
+    { t:'GB-117 齒輪箱高速軸軸承溫度過高：檢查油溫、油位與冷卻器。', n:'GB-117', g:0 },
+    { t:'CV-310 變流器功率模組過溫：檢查冷卻液流量與散熱風扇。', n:'CV-310', g:0 }
+  ];
+  const Q = 'YW-042 偏航誤差過大，風向標讀值正常，要先查什麼？';
+  const IDX = rt.buildIndex(DOCS.map(d => ({ text:d.t })));
+  const BM = rt.searchBM25(IDX, Q, DOCS.length).map(h => h.i);   /* 第一階段：BM25 全庫排序 */
+  const COLOR = ['bad', 'doc', 'vec', 'good'];
+  let dir = 'back', noisy = false, seed = 1;
+  $('#qtext').textContent = Q;
+
+  function rng(s){ return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  /* nDCG@k，增益 2^g − 1；理想排序取全庫 */
+  function ndcg(list, k){
+    const dcg = l => l.slice(0, k).reduce((a, i, r) => a + (Math.pow(2, DOCS[i].g) - 1) / Math.log2(r + 2), 0);
+    const ideal = DOCS.map((_, i) => i).sort((a, b) => DOCS[b].g - DOCS[a].g);
+    return dcg(list) / dcg(ideal);
+  }
+  /* 示意 LLM：只看窗口內的段落，依相關度排序（可加雜訊），同分維持原順序；回傳排列（窗口內 1 起算的編號） */
+  function llm(ids, r){
+    const sc = ids.map((i, j) => ({ j, v: DOCS[i].g + (noisy ? (r() + r() + r() - 1.5) * 1.6 : 0) }));
+    sc.sort((a, b) => b.v - a.v || a.j - b.j);
+    return sc.map(x => x.j);
+  }
+  function rerank(cands, w, s, passes){
+    const list = cands.slice(), log = [], r = rng(seed * 7919 + 17);
+    const D = list.length; w = Math.min(w, D);
+    let read = 0;
+    for(let p=0; p<passes; p++){
+      let start = dir === 'back' ? Math.max(0, D - w) : 0;
+      while(true){
+        const ids = list.slice(start, start + w);
+        const perm = llm(ids, r);
+        list.splice(start, ids.length, ...perm.map(j => ids[j]));
+        read += ids.length;
+        log.push({ p, a: start, b: start + ids.length, perm });
+        if(dir === 'back'){ if(start === 0) break; start = Math.max(0, start - s); }
+        else { if(start + w >= D) break; start = Math.min(start + s, D - w); }
+      }
+    }
+    return { list, log, read };
+  }
+  const item = (i, rank, extra) => '<div style="font-size:12.5px;padding:2px 0"><b>' + rank + '.</b> <span style="color:var(--' + COLOR[DOCS[i].g] + ');font-weight:700">' + esc(DOCS[i].n) + '</span>' +
+    ' <span class="muted">（相關度 ' + DOCS[i].g + '）</span>' + (extra || '') + '</div>';
+  function run(){
+    const depth = +$('#depth').value, w = Math.min(+$('#w').value, depth);
+    const sEl = $('#s'); sEl.max = Math.max(1, +$('#w').value - 1); if(+sEl.value > +sEl.max) sEl.value = sEl.max;
+    const s = +sEl.value, passes = +$('#passes').value;
+    $('#dv').textContent = depth; $('#wv').textContent = $('#w').value + (+$('#w').value > depth ? '（超過深度，以 ' + depth + ' 計）' : ''); $('#sv').textContent = s; $('#pv').textContent = passes; $('#seedv').textContent = seed;
+    const cands = BM.slice(0, depth);
+    const res = rerank(cands, w, s, passes);
+    const final = res.list.concat(BM.slice(depth));
+    const nb = ndcg(BM, 5), nr = ndcg(final, 5);
+    const posBM = i => BM.indexOf(i);
+    const A = '<div class="hit low"><div class="meta"><span>A. 只用 BM25（不重排）</span><span>nDCG@5 = ' + nb.toFixed(3) + '</span></div>' +
+      BM.slice(0, 5).map((i, r) => item(i, r + 1)).join('') +
+      '<div class="muted" style="font-size:12.5px;margin-top:4px">關鍵字「YW-042」「偏航誤差」「風向標讀值」重複最多的段落排在最前。</div></div>';
+    const rows = final.slice(0, 5).map((i, r) => {
+      const d = posBM(i) - r;
+      return item(i, r + 1, d > 0 ? ' <span style="color:var(--good)">↑' + d + '（BM25 第 ' + (posBM(i) + 1) + ' 名）</span>' : d < 0 ? ' <span class="muted">↓' + (-d) + '</span>' : '');
+    }).join('');
+    const top2 = DOCS.map((_, i) => i).filter(i => DOCS[i].g === 3);
+    const missing = top2.filter(i => posBM(i) >= depth);
+    const inTop = top2.filter(i => final.indexOf(i) < 5).length;
+    const logHtml = res.log.map((c, k) => '第 ' + (k + 1) + ' 次' + (passes > 1 ? '（第 ' + (c.p + 1) + ' 輪）' : '') + '：第 ' + (c.a + 1) + '–' + c.b + ' 名 → ' + c.perm.map(j => '[' + (j + 1) + ']').join(' &gt; ')).join('<br>');
+    const B = '<div class="hit ' + (inTop === top2.length ? 'top' : '') + '"><div class="meta"><span>B. BM25 前 ' + depth + ' 段 + LLM 滑動窗口重排</span><span>nDCG@5 = ' + nr.toFixed(3) + '</span></div>' + rows +
+      '<div class="muted" style="font-size:12.5px;margin-top:8px">LLM 呼叫 <b>' + res.log.length + '</b> 次（每次最多 ' + w + ' 段，' + (dir === 'back' ? '由後往前' : '由前往後') + '）｜累計讀取 <b>' + res.read + '</b> 段次｜一輪保證正確的前幾名：<b>' + (dir === 'back' && w < depth ? Math.max(0, w - s) : (w >= depth ? depth : '不保證')) + '</b>' +
+      '<br>最相關的 2 段（北向校正、煞車殘壓）進入前 5：<b style="color:var(--' + (inTop === top2.length ? 'good' : 'bad') + ')">' + inTop + ' / ' + top2.length + '</b>' +
+      (missing.length ? '<br><b style="color:var(--bad)">「' + missing.map(i => DOCS[i].n).join('」「') + '」不在重排深度內，重排救不回來。</b>' : '') + '</div>' +
+      '<details style="margin-top:6px;font-size:12.5px"><summary>看每一次呼叫的 LLM 輸出</summary><div class="muted" style="margin-top:4px;line-height:1.7">' + logHtml + '</div></details></div>';
+    $('#out').innerHTML = A + B;
+    window.__demo.last = { nb, nr, calls: res.log.length, inTop, top5: final.slice(0, 5).map(i => DOCS[i].n) };
+  }
+  window.__demo = { run };
+  ['#depth', '#w', '#s', '#passes'].forEach(s => $(s).addEventListener('input', run));
+  $('#reseed').addEventListener('click', () => { seed++; run(); });
+  [['#dir', v => dir = v], ['#noise', v => noisy = v === '1']].forEach(([id, set]) =>
+    document.querySelectorAll(id + ' button').forEach(b => b.addEventListener('click', () => {
+      set(b.dataset.v); document.querySelectorAll(id + ' button').forEach(x => x.classList.toggle('on', x === b)); run();
+    })));
+  run();
+})();
+</script>
+</body>
+</html>

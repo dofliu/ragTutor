@@ -56,6 +56,7 @@
 | 039 | [問題分解：一句話問了好幾件事，就先拆開再查](https://dofliu.github.io/ragTutor/lessons/039-query-decomposition.html) |
 | 040 | [Speculative RAG：小模型平行打草稿，大模型只負責挑](https://dofliu.github.io/ragTutor/lessons/040-speculative-rag.html) |
 | 🎯 關卡 10 | [測驗關卡 10：命題檢索、FLARE、問題分解與 Speculative RAG（第 037–040 堂）](https://dofliu.github.io/ragTutor/lessons/quiz-10-proposition-flare-decompose-speculative.html) |
+| 041 | [LLM 列表式重排：RankGPT 滑動窗口，讓模型一次比較多段](https://dofliu.github.io/ragTutor/lessons/041-llm-listwise-rerank.html) |
 
 完整主題路線圖見 [`lessons/roadmap.json`](lessons/roadmap.json)；製作規範見 [`CLAUDE.md`](CLAUDE.md)。
 

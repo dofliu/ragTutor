@@ -699,6 +699,20 @@
         "測驗關卡"
       ],
       "date": "2026-11-15"
+    },
+    {
+      "no": 41,
+      "slug": "llm-listwise-rerank",
+      "file": "lessons/041-llm-listwise-rerank.html",
+      "title": "LLM 列表式重排：RankGPT 滑動窗口，讓模型一次比較多段",
+      "en": "LLM Listwise Reranking (RankGPT)",
+      "level": 2,
+      "summary": "BM25 常把關鍵字最多的段落排在前面。LLM 列表式重排把多段候選一起交給模型輸出排序編號，候選太多時用由後往前的滑動窗口接力。本堂用互動範例調整窗口、步長、深度與方向，比較呼叫次數與 nDCG@5。",
+      "tags": [
+        "進階",
+        "重排序"
+      ],
+      "date": "2026-11-22"
     }
   ]
 }
